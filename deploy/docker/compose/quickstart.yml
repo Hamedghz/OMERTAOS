@@ -63,10 +63,12 @@ services:
       AION_RUNTIME_CAPABILITIES: ${AION_RUNTIME_CAPABILITIES:-terminal.execute}
       AION_RUNTIME_MEMORY_MB: ${AION_RUNTIME_TOTAL_MEMORY_MB:-512}
       AION_RUNTIME_LEASE_MAX_TTL_SECONDS: ${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-120}
-      OMERTA_RUNTIME_LEASE_HMAC_KEY: ${OMERTA_RUNTIME_LEASE_HMAC_KEY:-}
+      OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
       AION_RUNTIME_LEASE_STATE_PATH: /var/lib/omerta/runtime/lease-fence.json
       OMERTA_PROFILE: ${OMERTA_PROFILE:-lite}
       RUST_LOG: ${RUST_LOG:-info}
+    secrets:
+      - runtime-lease-hmac-key
     volumes:
       - runtime-state:/var/lib/omerta/runtime
     ports:
@@ -107,7 +109,7 @@ services:
       AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: ${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}
       AION_RUNTIME_PROBE_TIMEOUT_SECONDS: ${AION_RUNTIME_PROBE_TIMEOUT_SECONDS:-3}
       AION_RUNTIME_LEASE_TTL_SECONDS: ${AION_RUNTIME_LEASE_TTL_SECONDS:-45}
-      OMERTA_RUNTIME_LEASE_HMAC_KEY: ${OMERTA_RUNTIME_LEASE_HMAC_KEY:-}
+      OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
       AION_RUNTIME_NODES_JSON: ${AION_RUNTIME_NODES_JSON:-}
       AION_RUNTIME_MANAGED_NODE_LIMIT: ${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}
       TENANCY_MODE: ${TENANCY_MODE:-single}
@@ -116,6 +118,8 @@ services:
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,control,gateway,console,redis,postgres,qdrant,minio,mongo}
+    secrets:
+      - runtime-lease-hmac-key
     depends_on:
       install:
         condition: service_completed_successfully
@@ -236,6 +240,10 @@ volumes:
   mongo-data:
   minio-data:
   runtime-state:
+
+secrets:
+  runtime-lease-hmac-key:
+    file: ${OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE:-.secrets-out/runtime-lease-hmac-key}
 
 networks:
   default:

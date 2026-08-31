@@ -21,4 +21,5 @@ if str(CLI_DIR) not in sys.path:
 @pytest.fixture(autouse=True)
 def runtime_lease_hmac_key(monkeypatch: pytest.MonkeyPatch) -> None:
     encoded = base64.b64encode(b"test-runtime-lease-key-material-32").decode()
+    monkeypatch.delenv("OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE", raising=False)
     monkeypatch.setenv("OMERTA_RUNTIME_LEASE_HMAC_KEY", encoded)

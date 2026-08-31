@@ -43,10 +43,12 @@ The container healthcheck uses `runtime-daemon --healthcheck` to verify that the
 configured gRPC listener accepts connections before dependent services start.
 
 `ExecuteCommand` requires node-bound lease metadata with a bounded expiry and a
-monotonic generation. Runtime verifies the metadata HMAC using the dedicated
-`OMERTA_RUNTIME_LEASE_HMAC_KEY`; missing, invalid, or mismatched key material
-fails closed. The key must be base64 encoding of 32-64 random bytes and must
-match Control without reusing an administrator or encryption credential.
+monotonic generation. Runtime verifies the metadata HMAC using a dedicated key
+loaded from `OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE` (preferred) or
+`OMERTA_RUNTIME_LEASE_HMAC_KEY`. Setting both sources, or supplying missing,
+invalid, or mismatched key material, fails closed. The key must be base64
+encoding of 32-64 random bytes and must match Control without reusing an
+administrator or encryption credential.
 
 When `AION_RUNTIME_LEASE_STATE_PATH` is configured, Runtime atomically persists
 only a hashed tenant/task identity, generation, and expiry. Quickstart mounts

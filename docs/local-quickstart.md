@@ -106,12 +106,17 @@ lease metadata. `AION_RUNTIME_LEASE_TTL_SECONDS` is bounded to 5-120 seconds;
 120 seconds. Keep the Control TTL above `AION_RUNTIME_TIMEOUT_SECONDS` and at or
 below the Runtime maximum.
 
-Before starting execution-capable services, provision one dedicated
-`OMERTA_RUNTIME_LEASE_HMAC_KEY` in `.env`. It must be base64 encoding of 32-64
-random bytes and is shared only by Control and Runtime. For example, an operator
-may generate a new value locally with `openssl rand -base64 32`; never paste the
-value into logs, chat, source control, or command history. Do not reuse the
-Gateway admin token, database password, or Control local encryption key.
+Before starting execution-capable services, provision one dedicated secret file
+and set `OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE` in `.env` to its host path. The file
+must contain base64 encoding of 32-64 random bytes, be readable only by the local
+operator, and is mounted read-only into Control and Runtime. For example, create
+the ignored `.secrets-out/runtime-lease-hmac-key` with mode `0600` and write the
+output of `openssl rand -base64 32` directly to it; never paste the value into
+logs, chat, source control, `.env`, or command history. Do not reuse the Gateway
+admin token, database password, or Control local encryption key. The direct
+`OMERTA_RUNTIME_LEASE_HMAC_KEY` environment source remains available outside the
+canonical Compose path for development compatibility, but production should use
+an external secret manager with audited access and rotation.
 Quickstart persists the Runtime generation fence in the `runtime-state` volume;
 normal `stop`/`start` or container recreation preserves it. Do not use
 `docker compose down -v`.

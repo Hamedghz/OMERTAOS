@@ -7,10 +7,12 @@ services:
       AION_RUNTIME_CAPABILITIES: terminal.execute,resource.allocate
       AION_RUNTIME_MEMORY_MB: "1024"
       AION_RUNTIME_LEASE_MAX_TTL_SECONDS: ${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-120}
-      OMERTA_RUNTIME_LEASE_HMAC_KEY: ${OMERTA_RUNTIME_LEASE_HMAC_KEY:-}
+      OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
       AION_RUNTIME_LEASE_STATE_PATH: /var/lib/omerta/runtime/lease-fence.json
       OMERTA_PROFILE: ${OMERTA_PROFILE:-lite}
       RUST_LOG: ${RUST_LOG:-info}
+    secrets:
+      - runtime-lease-hmac-key
     volumes:
       - runtime-secondary-state:/var/lib/omerta/runtime
     ports: []

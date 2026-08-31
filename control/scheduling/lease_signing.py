@@ -7,9 +7,11 @@ import os
 import secrets
 import struct
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 LEASE_HMAC_ENV = "OMERTA_RUNTIME_LEASE_HMAC_KEY"
+LEASE_HMAC_FILE_ENV = "OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE"
 _DOMAIN = b"OMERTA_RUNTIME_LEASE_V1\x00"
 _MIN_KEY_BYTES = 32
 _MAX_KEY_BYTES = 64
@@ -18,6 +20,31 @@ _NONCE_BYTES = 32
 
 class LeaseSigningError(RuntimeError):
     """Raised when execution-lease signing is unavailable or invalid."""
+
+
+def _encoded_key_from_environment() -> str:
+    encoded = os.getenv(LEASE_HMAC_ENV, "")
+    key_file = os.getenv(LEASE_HMAC_FILE_ENV, "")
+    if encoded and key_file:
+        raise LeaseSigningError(
+            f"set exactly one of {LEASE_HMAC_ENV} or {LEASE_HMAC_FILE_ENV}"
+        )
+    if encoded:
+        return encoded
+    if not key_file:
+        raise LeaseSigningError(
+            f"one of {LEASE_HMAC_ENV} or {LEASE_HMAC_FILE_ENV} is required"
+        )
+    try:
+        raw = Path(key_file).read_bytes()
+    except OSError as error:
+        raise LeaseSigningError(f"{LEASE_HMAC_FILE_ENV} cannot be read") from error
+    if len(raw) > 256:
+        raise LeaseSigningError(f"{LEASE_HMAC_FILE_ENV} contains invalid key material")
+    try:
+        return raw.rstrip(b"\r\n").decode("ascii")
+    except UnicodeDecodeError as error:
+        raise LeaseSigningError(f"{LEASE_HMAC_FILE_ENV} must contain ASCII base64") from error
 
 
 def _decode_key(encoded: str) -> bytes:
@@ -76,10 +103,7 @@ class LeaseSigner:
 
     @classmethod
     def from_env(cls) -> LeaseSigner:
-        encoded = os.getenv(LEASE_HMAC_ENV, "")
-        if not encoded:
-            raise LeaseSigningError(f"{LEASE_HMAC_ENV} is required")
-        return cls(_decode_key(encoded))
+        return cls(_decode_key(_encoded_key_from_environment()))
 
     @classmethod
     def from_encoded(cls, encoded: str) -> LeaseSigner:
