@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
-const DOMAIN: &[u8] = b"AION_RUNTIME_LEASE_V1\0";
+const DOMAIN: &[u8] = b"OMERTA_RUNTIME_LEASE_V1\0";
 const KEY_MIN_BYTES: usize = 32;
 const KEY_MAX_BYTES: usize = 64;
 const TOKEN_PART_BYTES: usize = 32;
@@ -391,7 +391,7 @@ mod tests {
             "task-a",
             "task-a:0",
             "runtime-a",
-            "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.2Gt4ib0TObynqCH2ccgXBWm-Dn28vmZiKVsWFNRFreo",
+            "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8.pDKR8czXaUyYsAv_qBTKz4re6Bgw0utl1i9B6vCfKpA",
             "7",
             "2000000000000",
         )

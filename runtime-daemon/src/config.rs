@@ -25,7 +25,7 @@ impl Default for RuntimeConfig {
                 .and_then(|value| value.parse().ok())
                 .filter(|value| (5..=300).contains(value))
                 .unwrap_or(120),
-            lease_hmac_key: std::env::var("AION_RUNTIME_LEASE_HMAC_KEY")
+            lease_hmac_key: std::env::var("OMERTA_RUNTIME_LEASE_HMAC_KEY")
                 .ok()
                 .filter(|value| !value.is_empty())
                 .and_then(|value| LeaseHmacKey::from_encoded(&value).ok()),

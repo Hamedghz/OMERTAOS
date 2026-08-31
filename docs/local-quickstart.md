@@ -107,7 +107,7 @@ lease metadata. `AION_RUNTIME_LEASE_TTL_SECONDS` is bounded to 5-120 seconds;
 below the Runtime maximum.
 
 Before starting execution-capable services, provision one dedicated
-`AION_RUNTIME_LEASE_HMAC_KEY` in `.env`. It must be base64 encoding of 32-64
+`OMERTA_RUNTIME_LEASE_HMAC_KEY` in `.env`. It must be base64 encoding of 32-64
 random bytes and is shared only by Control and Runtime. For example, an operator
 may generate a new value locally with `openssl rand -base64 32`; never paste the
 value into logs, chat, source control, or command history. Do not reuse the

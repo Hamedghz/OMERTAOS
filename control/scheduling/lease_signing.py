@@ -9,8 +9,8 @@ import struct
 from dataclasses import dataclass, field
 
 
-LEASE_HMAC_ENV = "AION_RUNTIME_LEASE_HMAC_KEY"
-_DOMAIN = b"AION_RUNTIME_LEASE_V1\x00"
+LEASE_HMAC_ENV = "OMERTA_RUNTIME_LEASE_HMAC_KEY"
+_DOMAIN = b"OMERTA_RUNTIME_LEASE_V1\x00"
 _MIN_KEY_BYTES = 32
 _MAX_KEY_BYTES = 64
 _NONCE_BYTES = 32
@@ -110,4 +110,3 @@ class LeaseSigner:
         )
         signature = hmac.new(self._key, payload, hashlib.sha256).digest()
         return f"{_urlsafe(resolved_nonce)}.{_urlsafe(signature)}"
-

@@ -333,7 +333,7 @@ def test_scheduler_persists_only_execution_lease_token_hash(db: Session) -> None
 def test_scheduler_without_signing_key_fails_before_reserving_capacity(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv("AION_RUNTIME_LEASE_HMAC_KEY", raising=False)
+    monkeypatch.delenv("OMERTA_RUNTIME_LEASE_HMAC_KEY", raising=False)
     scheduler = RuntimeScheduler()
     node = _register(scheduler, db, "node-a")
 

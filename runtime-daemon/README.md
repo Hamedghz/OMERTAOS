@@ -44,7 +44,7 @@ configured gRPC listener accepts connections before dependent services start.
 
 `ExecuteCommand` requires node-bound lease metadata with a bounded expiry and a
 monotonic generation. Runtime verifies the metadata HMAC using the dedicated
-`AION_RUNTIME_LEASE_HMAC_KEY`; missing, invalid, or mismatched key material
+`OMERTA_RUNTIME_LEASE_HMAC_KEY`; missing, invalid, or mismatched key material
 fails closed. The key must be base64 encoding of 32-64 random bytes and must
 match Control without reusing an administrator or encryption credential.
 
