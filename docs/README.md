@@ -26,6 +26,8 @@ rules:
 - [ARCHITECTURE](../ARCHITECTURE.md): technical boundary and protocol model;
 - [STRUCTURE](../STRUCTURE.md): canonical directory ownership;
 - [ADR 0001](adr/0001-canonical-aion-ownership.md): accepted ownership decision;
+- [ADR 0002](adr/0002-omerta-configuration-namespace.md): canonical `OMERTA_*`
+  configuration namespace and compatibility rules;
 - [Canonical paths](migration/canonical-paths.md): migration and compatibility
   map;
 - [Security policy](../SECURITY.md): disclosure scope and supported branch.

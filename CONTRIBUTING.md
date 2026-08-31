@@ -10,6 +10,9 @@ Console -> Gateway -> Control -> Runtime Daemon
 Read [ARCHITECTURE.md](ARCHITECTURE.md), [STRUCTURE.md](STRUCTURE.md), and
 [ADR 0001](docs/adr/0001-canonical-aion-ownership.md) before changing service
 boundaries.
+Use the canonical `OMERTA_*` namespace from
+[ADR 0002](docs/adr/0002-omerta-configuration-namespace.md) for new
+product-owned configuration.
 
 ## Contribution principles
 

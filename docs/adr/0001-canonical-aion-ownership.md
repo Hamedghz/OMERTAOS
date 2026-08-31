@@ -1,5 +1,10 @@
 # ADR 0001: Canonical AION service ownership
 
+> Naming clarification: ADR 0002 defines `OMERTA_*` as the canonical product
+> configuration namespace. The AION wording in this historical ownership ADR
+> identifies the source branch of the consolidation and does not define a
+> runtime configuration or product namespace.
+
 - Status: accepted
 - Date: 2026-07-05
 - Contract frozen: 2026-07-12 (Structure S1)
