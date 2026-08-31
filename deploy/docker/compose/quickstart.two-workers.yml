@@ -11,11 +11,13 @@ services:
       AION_RUNTIME_LEASE_STATE_PATH: /var/lib/omerta/runtime/lease-fence.json
       OMERTA_PROFILE: ${OMERTA_PROFILE:-lite}
       RUST_LOG: ${RUST_LOG:-info}
-    secrets:
-      - runtime-lease-hmac-key
     volumes:
       - runtime-secondary-state:/var/lib/omerta/runtime
+      - runtime-lease-secret:/run/secrets:ro
     ports: []
+    depends_on:
+      runtime-lease-secret-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "/usr/local/bin/runtime-daemon", "--healthcheck"]
       interval: 5s

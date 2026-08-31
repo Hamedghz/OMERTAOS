@@ -52,6 +52,25 @@ services:
     volumes:
       - ./deploy/proxy/xray/config.json:/etc/xray/config.json:ro
     ports: []
+  runtime-lease-secret-init:
+    image: alpine:3.20
+    user: "0:0"
+    command:
+      - sh
+      - -ec
+      - |
+        temporary="$$(mktemp /target/.runtime-lease-hmac-key.XXXXXX)"
+        trap 'rm -f "$$temporary"' EXIT
+        cp /run/secrets/runtime-lease-hmac-key "$$temporary"
+        chown 10001:10001 "$$temporary"
+        chmod 0400 "$$temporary"
+        mv -f "$$temporary" /target/runtime-lease-hmac-key
+        trap - EXIT
+    secrets:
+      - runtime-lease-hmac-key
+    volumes:
+      - runtime-lease-secret:/target
+    restart: "no"
   runtime:
     image: ${AION_RUNTIME_IMAGE:-omertaos-runtime}
     build:
@@ -67,10 +86,12 @@ services:
       AION_RUNTIME_LEASE_STATE_PATH: /var/lib/omerta/runtime/lease-fence.json
       OMERTA_PROFILE: ${OMERTA_PROFILE:-lite}
       RUST_LOG: ${RUST_LOG:-info}
-    secrets:
-      - runtime-lease-hmac-key
     volumes:
       - runtime-state:/var/lib/omerta/runtime
+      - runtime-lease-secret:/run/secrets:ro
+    depends_on:
+      runtime-lease-secret-init:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:${AION_RUNTIME_HOST_PORT:-50051}:50051"
     healthcheck:
@@ -118,9 +139,11 @@ services:
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,control,gateway,console,redis,postgres,qdrant,minio,mongo}
-    secrets:
-      - runtime-lease-hmac-key
+    volumes:
+      - runtime-lease-secret:/run/secrets:ro
     depends_on:
+      runtime-lease-secret-init:
+        condition: service_completed_successfully
       install:
         condition: service_completed_successfully
       postgres:
@@ -240,6 +263,7 @@ volumes:
   mongo-data:
   minio-data:
   runtime-state:
+  runtime-lease-secret:
 
 secrets:
   runtime-lease-hmac-key:

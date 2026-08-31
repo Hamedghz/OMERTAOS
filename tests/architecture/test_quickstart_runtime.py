@@ -22,6 +22,21 @@ def test_quickstart_uses_canonical_runtime_daemon() -> None:
     assert "ENV CARGO_BUILD_JOBS=1" in dockerfile
 
 
+def test_quickstart_stages_runtime_lease_secret_for_non_root_runtime() -> None:
+    compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
+    runtime = compose.split("  runtime:\n", maxsplit=1)[1].split(
+        "  control:\n", maxsplit=1
+    )[0]
+
+    assert "  runtime-lease-secret-init:\n" in compose
+    assert "OMERTA_RUNTIME_LEASE_HMAC_KEY:" not in compose
+    assert "OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key" in runtime
+    assert "chown 10001:10001" in compose
+    assert "chmod 0400" in compose
+    assert "runtime-lease-secret:/run/secrets:ro" in runtime
+    assert "runtime-lease-secret-init:\n        condition: service_completed_successfully" in runtime
+
+
 def test_runtime_daemon_handles_container_stop_gracefully() -> None:
     server = (REPO_ROOT / "runtime-daemon" / "src" / "server.rs").read_text()
 

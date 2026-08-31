@@ -117,6 +117,9 @@ admin token, database password, or Control local encryption key. The direct
 `OMERTA_RUNTIME_LEASE_HMAC_KEY` environment source remains available outside the
 canonical Compose path for development compatibility, but production should use
 an external secret manager with audited access and rotation.
+Quickstart stages the file through a one-shot init service into a Docker volume
+as UID 10001 with mode `0400`, then mounts that volume read-only. This preserves
+the non-root Runtime boundary without making the host secret world-readable.
 Quickstart persists the Runtime generation fence in the `runtime-state` volume;
 normal `stop`/`start` or container recreation preserves it. Do not use
 `docker compose down -v`.
