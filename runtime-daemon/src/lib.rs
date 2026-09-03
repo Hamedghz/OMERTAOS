@@ -41,7 +41,7 @@ pub async fn run() -> anyhow::Result<()> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let config = RuntimeConfig::default();
+    let config = RuntimeConfig::from_environment()?;
     tracing::info!(
         bind_addr = %config.bind_addr,
         profile = %config.profile,

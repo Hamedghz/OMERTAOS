@@ -37,6 +37,27 @@ def test_quickstart_stages_runtime_lease_secret_for_non_root_runtime() -> None:
     assert "runtime-lease-secret-init:\n        condition: service_completed_successfully" in runtime
 
 
+def test_quickstart_uses_canonical_runtime_lease_namespace() -> None:
+    compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
+    two_workers = (
+        REPO_ROOT / "deploy/docker/compose/quickstart.two-workers.yml"
+    ).read_text()
+
+    assert "AION_RUNTIME_LEASE_STATE_PATH" not in compose
+    assert "AION_RUNTIME_LEASE_STATE_PATH" not in two_workers
+    assert "OMERTA_RUNTIME_LEASE_TTL_SECONDS" in compose
+    assert "OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS" in compose
+    assert "OMERTA_RUNTIME_LEASE_STATE_PATH" in compose
+    assert (
+        "${OMERTA_RUNTIME_LEASE_TTL_SECONDS:-"
+        "${AION_RUNTIME_LEASE_TTL_SECONDS:-45}}" in compose
+    )
+    assert (
+        "${OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS:-"
+        "${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-120}}" in compose
+    )
+
+
 def test_runtime_daemon_handles_container_stop_gracefully() -> None:
     server = (REPO_ROOT / "runtime-daemon" / "src" / "server.rs").read_text()
 

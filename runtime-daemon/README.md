@@ -50,13 +50,13 @@ invalid, or mismatched key material, fails closed. The key must be base64
 encoding of 32-64 random bytes and must match Control without reusing an
 administrator or encryption credential.
 
-When `AION_RUNTIME_LEASE_STATE_PATH` is configured, Runtime atomically persists
+When `OMERTA_RUNTIME_LEASE_STATE_PATH` is configured, Runtime atomically persists
 only a hashed tenant/task identity, generation, and expiry. Quickstart mounts
 `runtime-state` at `/var/lib/omerta/runtime`, so repeated or older admissions
 remain fenced after a normal daemon restart. A malformed or unavailable state
 file fails startup/admission closed; the raw lease token is never persisted or
 logged. State is local to one Runtime node and must not be shared by concurrent
-workers. `AION_RUNTIME_LEASE_MAX_TTL_SECONDS` defaults to 120 seconds.
+workers. `OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS` defaults to 120 seconds.
 
 This is authenticated lease metadata inside the prototype service network, not
 caller identity, mTLS, cancellation of work already admitted under an older

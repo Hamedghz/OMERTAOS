@@ -39,6 +39,11 @@ deployed before this decision. It therefore changes directly from
 alias. Its not-yet-deployed signature domain changes directly from
 `AION_RUNTIME_LEASE_V1` to `OMERTA_RUNTIME_LEASE_V1`.
 
+The lease TTL, maximum TTL and persistent fence path use the canonical
+`OMERTA_RUNTIME_LEASE_*` names. Their previously documented `AION_*` names remain
+temporary nonsecret aliases; conflicting canonical and legacy values fail
+closed without including either value in diagnostics.
+
 Standard ecosystem variables such as `DATABASE_URL`, `NEXTAUTH_*`, `VAULT_*`,
 `HTTP_PROXY` and `NO_PROXY` retain their external names. Historical branch names,
 Git references and evidence documents remain historical facts. Database names,

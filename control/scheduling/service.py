@@ -22,6 +22,25 @@ from .models import (
 )
 from .lease_signing import LeaseSigner
 
+LEASE_TTL_ENV = "OMERTA_RUNTIME_LEASE_TTL_SECONDS"
+LEGACY_LEASE_TTL_ENV = "AION_RUNTIME_LEASE_TTL_SECONDS"
+
+
+def _compatible_environment_value(
+    canonical_name: str, legacy_name: str, default: str
+) -> str:
+    canonical_value = os.getenv(canonical_name) or None
+    legacy_value = os.getenv(legacy_name) or None
+    if (
+        canonical_value is not None
+        and legacy_value is not None
+        and canonical_value != legacy_value
+    ):
+        raise ValueError(
+            f"{canonical_name} conflicts with deprecated {legacy_name}"
+        )
+    return canonical_value or legacy_value or default
+
 
 class NodeState(str, Enum):
     healthy = "healthy"
@@ -170,7 +189,9 @@ class RuntimeScheduler:
         resolved_lease_ttl = lease_ttl_seconds
         if resolved_lease_ttl is None:
             resolved_lease_ttl = int(
-                os.getenv("AION_RUNTIME_LEASE_TTL_SECONDS", "45")
+                _compatible_environment_value(
+                    LEASE_TTL_ENV, LEGACY_LEASE_TTL_ENV, "45"
+                )
             )
         if resolved_lease_ttl < 5 or resolved_lease_ttl > 120:
             raise ValueError("lease_ttl_seconds must be between 5 and 120")

@@ -84,6 +84,34 @@ def test_runtime_scheduler_migration_is_additive_and_idempotent(tmp_path) -> Non
     assert missing_tables(engine) == set()
 
 
+def test_runtime_scheduler_uses_canonical_lease_ttl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OMERTA_RUNTIME_LEASE_TTL_SECONDS", "60")
+    monkeypatch.delenv("AION_RUNTIME_LEASE_TTL_SECONDS", raising=False)
+
+    assert RuntimeScheduler().lease_ttl == timedelta(seconds=60)
+
+
+def test_runtime_scheduler_accepts_legacy_lease_ttl_alias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OMERTA_RUNTIME_LEASE_TTL_SECONDS", raising=False)
+    monkeypatch.setenv("AION_RUNTIME_LEASE_TTL_SECONDS", "55")
+
+    assert RuntimeScheduler().lease_ttl == timedelta(seconds=55)
+
+
+def test_runtime_scheduler_rejects_conflicting_lease_ttl_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OMERTA_RUNTIME_LEASE_TTL_SECONDS", "60")
+    monkeypatch.setenv("AION_RUNTIME_LEASE_TTL_SECONDS", "55")
+
+    with pytest.raises(ValueError, match="conflicts with deprecated"):
+        RuntimeScheduler()
+
+
 def test_round_robin_scheduler_is_capability_and_tenant_aware(db: Session) -> None:
     scheduler = RuntimeScheduler()
     _register(scheduler, db, "node-a", tenants=("tenant-a",))

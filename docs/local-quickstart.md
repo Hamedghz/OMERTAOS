@@ -101,8 +101,8 @@ Control issues short-lived execution leases with a default 45-second TTL and
 reclaims expired capacity during lifecycle synchronization or the next
 scheduling transaction. Runtime accepts the first valid generation for a
 tenant/task pair and rejects missing, expired, repeated, older, or wrong-node
-lease metadata. `AION_RUNTIME_LEASE_TTL_SECONDS` is bounded to 5-120 seconds;
-`AION_RUNTIME_LEASE_MAX_TTL_SECONDS` bounds Runtime admission and defaults to
+lease metadata. `OMERTA_RUNTIME_LEASE_TTL_SECONDS` is bounded to 5-120 seconds;
+`OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS` bounds Runtime admission and defaults to
 120 seconds. Keep the Control TTL above `AION_RUNTIME_TIMEOUT_SECONDS` and at or
 below the Runtime maximum.
 
