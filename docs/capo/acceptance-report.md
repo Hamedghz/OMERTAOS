@@ -1,5 +1,49 @@
 # CAPO acceptance report
 
+## R6.15 OMERTA lease namespace and file-backed secret acceptance — 2026-09-03
+
+Branch: `Radin/omerta-env-namespace`
+
+Baseline: `1d9183b` (`feat(runtime): persist authenticated lease fences`)
+
+Implementation commits: `9579bc0`, `127267a`, `d8944e9`, `cfb9c05`,
+`29cda45`, and `44329cf`.
+
+This gate moved the canonical execution-lease signing namespace from the
+release/branch name to the product identity: `OMERTA_RUNTIME_LEASE_HMAC_KEY`
+and `OMERTA_RUNTIME_LEASE_V1`. The preferred input is now
+`OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE`; the direct value remains a documented
+development compatibility path. Python and Runtime reject absent, malformed,
+or conflicting key sources. The local key used for acceptance remained outside
+Git and no credential value was printed or committed.
+
+| Gate | Result | Executable evidence and boundary |
+|---|---|---|
+| Focused secret/config regression | pass | Python secret-source and lease tests reported `19 passed`; Rust reported `16 passed`; Ruff and Runtime formatting passed |
+| Full Python regression | pass with exclusions | `241 passed, 2 skipped, 1 deselected`, with three existing FastAPI/Starlette deprecation warnings and the intentionally red Structure completion gate excluded |
+| Architecture regression | pass | Final run reported `74 passed, 1 deselected` in 7.34 seconds |
+| Compose rendering | pass | Canonical one-worker and opt-in two-worker configurations both rendered with exit 0; no second worker was started in this gate |
+| Non-root secret staging | pass live | The one-shot initializer staged the key into a named volume as uid/gid 10001 and mode 0400; Runtime and Control received only the file path and no raw-key environment variable |
+| Runtime and Control health | pass live | Rebuilt/recreated Runtime and Control remained healthy with one Runtime worker; PostgreSQL, Redis, Gateway, and the preserved Console also remained healthy |
+| Canonical execution and persistence | pass live, constrained | Authenticated deterministic echo completed through Console -> Gateway -> Control -> Runtime. A direct Gateway probe persisted matching tenant, idempotency, correlation, and trace evidence. Runtime fence state retained the same sanitized fingerprint across a normal stop/start and remained mode 0600 as uid 10001 |
+| Fresh Console image build | blocked by network | The locked BuildKit build reused 658 of 659 cached packages, but npm registry metadata/attestation requests repeatedly returned `ECONNRESET`, `UND_ERR_SOCKET`, and curl error 23. The final attempt made no CPU or output progress for more than five minutes after about 24 minutes and was interrupted with exit 130 |
+| Full Console propagation on current source image | blocked | The running Console image predates the forwarding repair. Source-level forwarding is covered, but a fresh image could not be produced, so end-to-end Console-originated idempotency/correlation propagation is not claimed |
+| Resource guard | pass | Available memory remained about 4.1 GiB and disk availability about 33 GiB; builds were sequential and only one Runtime worker was active |
+
+Earlier failed attempts are retained as negative evidence: an image command
+initially omitted the required Compose project directory; a direct host bind
+was unreadable by the non-root Runtime and was replaced by the least-privilege
+staging volume; duplicate local administrator configuration caused an initial
+401; and interrupted registry-bound Console builds exited 130. No weaker
+unlocked/offline installation was substituted, supply-chain verification was
+not disabled, and no volume was deleted.
+
+The named Docker volume is an access-control mechanism, not encrypted secret
+storage. Production operation still requires an external secret manager or
+workload identity, rotation, and audited delivery. This gate does not establish
+multi-worker scalability, distributed consensus, successful Linux isolation,
+production readiness, or security certification.
+
 ## R6.14 Runtime execution-lease fencing — 2026-08-31
 
 Branch: `Radin/capo-r6-validation`
