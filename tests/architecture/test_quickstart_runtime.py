@@ -73,6 +73,14 @@ def test_gateway_image_uses_locked_audited_dependency_install() -> None:
     assert "--no-audit" not in dockerfile
 
 
+def test_console_image_uses_locked_reusable_dependency_install() -> None:
+    dockerfile = (REPO_ROOT / "console" / "Dockerfile").read_text()
+
+    assert "target=/pnpm/store,sharing=locked" in dockerfile
+    assert "pnpm install --frozen-lockfile" in dockerfile
+    assert "--no-verify-store-integrity" not in dockerfile
+
+
 def test_quickstart_supports_an_isolated_local_stack() -> None:
     compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
 

@@ -13,7 +13,9 @@ COPY packages/ui-core ./packages/ui-core
 
 WORKDIR /workspace/console
 
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=omerta-console-pnpm-v11,target=/pnpm/store,sharing=locked \
+    pnpm config set store-dir /pnpm/store \
+    && pnpm install --frozen-lockfile
 
 # Stage 2: build (Next.js + Prisma generate)
 FROM node:22-alpine AS builder
