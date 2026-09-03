@@ -1,6 +1,9 @@
 {
   "name": "@aion/ui-core",
   "version": "0.1.0",
+  "engines": {
+    "node": "22.23.2"
+  },
   "type": "module",
   "main": "src/index.tsx",
   "types": "src/index.tsx",

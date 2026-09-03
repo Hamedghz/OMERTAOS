@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:22-alpine AS deps
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24 AS deps
 
 WORKDIR /workspace
 
@@ -8,7 +8,7 @@ COPY shared/secret-provider-node ./shared/secret-provider-node
 WORKDIR /workspace/gateway
 RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
-FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24 AS builder
 
 WORKDIR /workspace
 COPY --from=deps /workspace/gateway/node_modules ./gateway/node_modules
@@ -19,7 +19,7 @@ COPY shared/secret-provider-node ./shared/secret-provider-node
 WORKDIR /workspace/gateway
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22.23.2-alpine3.24 AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production

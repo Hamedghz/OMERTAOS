@@ -19,7 +19,7 @@ reproducible artifact because it can move.
 | Area | Reference |
 |---|---|
 | Python | 3.11; project metadata allows 3.11–3.12 |
-| Gateway/Console | Node.js 20; Console declares pnpm 11 |
+| Gateway/Console | Node.js 22.23.2 and npm 10.9.8; Console declares pnpm 11.13.1 |
 | Runtime | Rust stable |
 | Containers | Docker Engine with Compose v2 |
 | Native acceptance | Compatible Linux host with systemd |

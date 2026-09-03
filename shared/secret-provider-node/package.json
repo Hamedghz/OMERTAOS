@@ -1,6 +1,9 @@
 {
   "name": "@aion/secret-provider",
   "version": "0.1.0",
+  "engines": {
+    "node": "22.23.2"
+  },
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",

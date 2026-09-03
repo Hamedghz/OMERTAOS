@@ -29,8 +29,9 @@ product-owned configuration.
 
 ## Development setup
 
-Reference versions are Python 3.11, Node.js 20, pnpm 11 for Console, Rust stable,
-and Docker Compose v2.
+Reference versions are Python 3.11, Node.js 22.23.2, npm 10.9.8, pnpm 11.13.1
+for Console, Rust stable, and Docker Compose v2. The repository `.node-version`
+and `.nvmrc` files are authoritative for Node.js.
 
 ```bash
 git clone --branch CAPO https://github.com/Hamedghz/OMERTAOS.git

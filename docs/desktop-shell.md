@@ -20,7 +20,7 @@ For a browser-only UI preview, use `npm run dev` and open `http://localhost:1420
 
 ## Dependencies
 
-- Node.js 18 or newer and npm
+- Node.js 22.23.2 and npm 10.9.8
 - Rust stable and Cargo
 - Tauri 2 platform prerequisites
 - Windows: Microsoft C++ Build Tools and WebView2

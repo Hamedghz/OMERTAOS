@@ -300,7 +300,7 @@ Legacy roots and compatibility paths remain migration inputs until their documen
 
 ## Development
 
-Reference toolchains are Python 3.11, Node.js 20+, pnpm 11, Rust stable, and Docker Compose v2. Install only the parts you plan to change; the complete local setup and review rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Reference toolchains are Python 3.11, Node.js 22.23.2, npm 10.9.8, pnpm 11.13.1, Rust stable, and Docker Compose v2. Install only the parts you plan to change; the complete local setup and review rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Preserve the canonical path when adding functionality:
 
