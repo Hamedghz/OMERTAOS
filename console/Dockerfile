@@ -15,7 +15,7 @@ WORKDIR /workspace/console
 
 RUN --mount=type=cache,id=omerta-console-pnpm-v11,target=/pnpm/store,sharing=locked \
     pnpm config set store-dir /pnpm/store \
-    && pnpm install --frozen-lockfile
+    && pnpm install --frozen-lockfile --network-concurrency=4 --child-concurrency=2
 
 # Stage 2: build (Next.js + Prisma generate)
 FROM node:22-alpine AS builder

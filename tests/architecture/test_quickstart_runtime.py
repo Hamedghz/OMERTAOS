@@ -78,6 +78,7 @@ def test_console_image_uses_locked_reusable_dependency_install() -> None:
 
     assert "target=/pnpm/store,sharing=locked" in dockerfile
     assert "pnpm install --frozen-lockfile" in dockerfile
+    assert "--network-concurrency=4 --child-concurrency=2" in dockerfile
     assert "--no-verify-store-integrity" not in dockerfile
 
 
