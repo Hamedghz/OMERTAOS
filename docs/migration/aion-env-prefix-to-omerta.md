@@ -1,8 +1,9 @@
 # برنامه مهاجرت namespace تنظیمات از AION به OMERTA
 
-**وضعیت:** طرح بازبینی و چک‌لیست؛ مجوز اجرای rename نیست  
-**مبنای بررسی:** branch `Radin/capo-r6-validation`، commit `1d9183b`  
-**تاریخ inventory:** 2026-09-03
+**وضعیت:** M0 تکمیل و ولیدیت شد؛ M1 در حال اجرا است و این سند مجوز rename سراسری نیست
+**مبنای بررسی:** branch `Radin/omerta-env-namespace`، checkpoint
+`a8c9b14b9f41dda49e7255fed0906472585acfbf`
+**تاریخ inventory:** 2026-09-04
 
 ## تصمیم نام‌گذاری
 
@@ -10,10 +11,12 @@
 edition/branch هستند و نباید namespace عمومی تنظیمات runtime را مالک باشند.
 بنابراین مقصد تنظیمات اختصاصی محصول `OMERTA_*` است، نه `AION_*`.
 
-این تغییر باید migration سازگار باشد، نه جایگزینی سراسری متن. در snapshot فعلی
-و با کنار گذاشتن شواهد تاریخی `docs/migration/evidence/**`، جست‌وجوی tracked
-repository حدود 929 رخداد، 162 token متمایز و 101 فایل درگیر را نشان می‌دهد.
-این اعداد baseline هستند و باید در شروع اجرا دوباره تولید شوند.
+این تغییر باید migration سازگار باشد، نه جایگزینی سراسری متن. baseline قابل
+بازتولید M0 با کنار گذاشتن شواهد تاریخی `docs/migration/evidence/**` شامل 926
+رخداد، 164 token متمایز و 99 فایل درگیر است. جزئیات owner، نوع، default policy،
+secret classification و مسیرهای شواهد در
+[`aion-env-inventory.json`](./aion-env-inventory.json) ثبت شده و با
+`scripts/audit_environment_namespace.py` بازتولید می‌شود.
 
 ## مرز تغییر
 
@@ -33,7 +36,7 @@ replace عمومی `AION -> OMERTA` تغییر کنند:
 
 | مورد | خطر تغییر مستقیم | تصمیم این migration |
 |---|---|---|
-| `AION_RUNTIME_LEASE_V1` | domain separator امضای HMAC است؛ تغییر آن تمام leaseهای در حال پرواز را نامعتبر می‌کند | ثابت بماند؛ تغییر فقط با protocol v2 و dual verification |
+| `AION_RUNTIME_LEASE_V1` | domain separator امضای HMAC است | در R6.15 پیش از provisioning پذیرفته‌شده مستقیماً به `OMERTA_RUNTIME_LEASE_V1` منتقل شد؛ alias ندارد |
 | headerهای `x-aion-*` | قرارداد wire بین Console، Gateway، Control و Runtime است | فعلاً ثابت؛ مهاجرت جداگانه با dual-read |
 | package و RPCهای `aion.v1` | تغییر breaking برای protobuf/gRPC و generated clients | ثابت تا schema migration مستقل |
 | مسیرهای `.aion/*` | rename ناگهانی state و secretهای موجود را orphan می‌کند | فقط با copy/verify/rollback مستقل |
@@ -43,6 +46,17 @@ replace عمومی `AION -> OMERTA` تغییر کنند:
 | DB user، database، bucket و hostnameهای دارای `aion` | ممکن است شناسه persistent یا credential باشند | بدون migration داده تغییر نکنند |
 | `docs/migration/evidence/**` | شواهد تاریخی باید immutable بماند | تغییر نکند |
 | استانداردهایی مثل `DATABASE_URL`, `NEXTAUTH_*`, `VAULT_*`, `HTTP_PROXY` | متعلق به ecosystem خارجی هستند | تغییر نکنند |
+
+سه استثنای نگاشت در M0 صریح شده‌اند:
+
+- `AION_PROFILE` به `OMERTA_GATEWAY_PROFILE` می‌رود؛ `OMERTA_PROFILE` از قبل
+  profile مربوط به Runtime با مقادیر `lite/full/enterprise` است.
+- aliasهای `AION_VAULT_*` در صورت وجود معادل استاندارد به `VAULT_*` می‌روند و
+  نباید به `OMERTA_VAULT_*` تکثیر شوند.
+- `AION_GATEWAY_ADMIN_TOKEN` و `AION_ADMIN_TOKEN` یک compatibility group برای
+  `OMERTA_GATEWAY_ADMIN_TOKEN` هستند. `OMERTA_ADMIN_TOKEN` موجود در Windows
+  Bridge به‌دلیل تفاوت header و semantics احراز هویت، مقصد خودکار این migration
+  نیست.
 
 ## نقاط پرخطر فعلی
 
@@ -62,10 +76,11 @@ replace عمومی `AION -> OMERTA` تغییر کنند:
 | CI و ابزار توسعه | `.codex/scripts/**`, `Makefile`, workflowها و test runners | CI سبز محلی ولی قرمز در runner دیگر |
 | Test contracts | `tests/architecture/**`, `tests/native/**`, `tests/control/**`, تست‌های Gateway/Console/Runtime | alias یا conflict policy بدون پوشش بماند |
 
-کلید R6.15 یعنی `AION_RUNTIME_LEASE_HMAC_KEY` باید به
-`OMERTA_RUNTIME_LEASE_HMAC_KEY` مهاجرت کند. چون secret است، mismatch دو نام باید
-بدون چاپ مقدار باعث fail-closed شود. همین قاعده برای admin tokenها، JWT/TLS،
-Vault credentials، DSNهای credentialدار و کلید رمزگذاری Control لازم است.
+کلید R6.15 پیش از provisioning پذیرفته‌شده مستقیماً به
+`OMERTA_RUNTIME_LEASE_HMAC_KEY` مهاجرت کرده و مطابق ADR 0002 alias قدیمی ندارد.
+برای admin tokenها، JWT/TLS، Vault credentials، DSNهای credentialدار و کلید
+رمزگذاری Control، rolloutهای بعدی باید conflict را بدون چاپ مقدار fail-closed
+کنند.
 
 ## قرارداد سازگاری
 
@@ -85,8 +100,8 @@ container فقط نام canonical را صادر کند:
 
 ```yaml
 environment:
-  OMERTA_RUNTIME_LEASE_HMAC_KEY: >-
-    ${OMERTA_RUNTIME_LEASE_HMAC_KEY:-${AION_RUNTIME_LEASE_HMAC_KEY:-}}
+  OMERTA_RUNTIME_LEASE_TTL_SECONDS: >-
+    ${OMERTA_RUNTIME_LEASE_TTL_SECONDS:-${AION_RUNTIME_LEASE_TTL_SECONDS:-45}}
 ```
 
 این الگو فقط پس از تست رفتار Compose در حالت unset، blank، old-only، new-only و
@@ -97,19 +112,19 @@ both-conflicting پذیرفته شود. برای blank باید تصمیم هر 
 
 ### M0 ـ تثبیت inventory و policy
 
-- فهرست machine-readable از کلیدهای فعال تولید شود.
-- owner، نوع، required/default، secret بودن و محل مصرف هر کلید ثبت شود.
-- موارد غیر-env و evidence تاریخی از rename list حذف شوند.
-- تست معماری اضافه شود که مصرف مستقیم جدید `AION_*` را خارج از compatibility
-  module ممنوع کند.
+- [x] فهرست machine-readable از 164 token baseline تولید شد.
+- [x] owner، نوع، required/default policy، secret بودن و محل مصرف ثبت شد.
+- [x] موارد غیر-env و evidence تاریخی از rename list جدا شدند.
+- [x] تست معماری و allowlist بازبینی‌شده، مصرف مستقیم جدید `AION_*` را خارج از
+  compatibility module ممنوع می‌کند.
 
 ### M1 ـ resolverهای dual-read
 
 - helper مشترک برای Python، Gateway/Console TypeScript و Runtime Rust ساخته شود.
 - `OMERTA_*` canonical و `AION_*` alias deprecated باشد.
 - conflict test و redacted diagnostics قبل از تغییر templateها اضافه شود.
-- R6.15 ابتدا برای lease key/TTL/state/endpoint مهاجرت شود، زیرا failure آن مسیر
-  execution را fail-closed می‌کند.
+- resolverهای موجود lease TTL/max TTL/state به helperهای typed منتقل شوند؛ HMAC
+  key و domain پذیرفته‌شده R6.15 canonical-only باقی بمانند.
 
 ### M2 ـ deployment writers
 
@@ -163,6 +178,7 @@ both-conflicting پذیرفته شود. برای blank باید تصمیم هر 
 
 ```bash
 git grep -nE '\bAION_[A-Z0-9_]+' -- ':!docs/migration/evidence/**'
+python3 scripts/audit_environment_namespace.py --check
 python -m pytest tests/architecture -q -k 'not test_structure_migration_gate'
 python -m pytest tests/control tests/native -q
 npm run build --prefix gateway
@@ -215,3 +231,14 @@ rollback باید configuration-first باشد و تاریخچه Git بازنو�
 تا پایان M4 نباید `AION_*` از resolverها حذف شود. تا پایان migration مستقل wire و
 storage نیز نباید `x-aion-*`, `aion.v1`, `.aion`, نام volumeها یا شواهد تاریخی با
 این پروژه rename شوند.
+
+## موارد quarantine شده در M0
+
+- `deploy/docker/compose/catalog.yml` هنوز به مسیرهای حذف‌شده `aion/control` و
+  `aion/worker` اشاره می‌کند؛ tokenهای اختصاصی آن تا تعیین مالک جدید مهاجرت
+  نمی‌کنند.
+- metadata بسته `aion-core` به entrypoint موجودی اشاره می‌کند که روی snapshot
+  فعلی import نمی‌شود؛ rename package پیش از تعمیر مستقل packaging ممنوع است.
+- Windows Bridge از `OMERTA_ADMIN_TOKEN` به‌صورت Bearer استفاده می‌کند، در حالی
+  که Gateway credential داخلی را از header دیگری می‌پذیرد؛ این مورد یک تغییر
+  auth جدا و نیازمند تست امنیتی است.

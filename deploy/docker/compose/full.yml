@@ -141,11 +141,17 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD", "python", "-m", "control.os.healthcheck"]
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)
       interval: 5s
       timeout: 5s
       retries: 60
-    command: ["python", "-m", "control.os.main"]
+    command: ["python", "-m", "control.app.serve"]
     networks: [aion]
 
   gateway:
@@ -156,11 +162,11 @@ services:
     environment:
       AION_GATEWAY_PORT: ${AION_GATEWAY_PORT:-8080}
       AION_GATEWAY_HOST: ${AION_GATEWAY_HOST:-0.0.0.0}
-      AION_CONTROL_GRPC: ${AION_CONTROL_GRPC:-http://control:50051}
+      AION_CONTROL_GRPC: ${AION_CONTROL_GRPC:-control:50051}
       AION_CONTROL_BASE_URL: ${AION_CONTROL_BASE_URL:-http://control:8000}
       AION_REDIS_URL: ${AION_REDIS_URL:-redis://redis:6379/0}
       AION_RATE_LIMIT_MAX: ${AION_RATE_LIMIT_MAX:-1000}
-      AION_RATE_LIMIT_PER_IP: ${AION_RATE_LIMIT_PER_IP:-true}
+      AION_RATE_LIMIT_PER_IP: ${AION_RATE_LIMIT_PER_IP:-30}
       AION_RATE_LIMIT_WINDOW: ${AION_RATE_LIMIT_WINDOW:-60}
       AION_IDEMPOTENCY_TTL: ${AION_IDEMPOTENCY_TTL:-900}
       AION_TLS_REQUIRE_MTLS: ${AION_TLS_REQUIRE_MTLS:-false}

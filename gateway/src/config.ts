@@ -144,7 +144,7 @@ const parseApiKeysSecret = (secret: Record<string, unknown> | string): Record<st
 const profile = (process.env.AION_PROFILE || 'user').toLowerCase() as GatewayConfig['profile'];
 const featureSeal = process.env.FEATURE_SEAL === '1' || profile === 'enterprise-vip';
 
-const defaultConsoleOrigin = process.env.AION_CONSOLE_ORIGIN || 'http://localhost:3001';
+const defaultConsoleOrigin = process.env.AION_CONSOLE_ORIGIN || 'http://localhost:3000';
 
 const parseCorsOrigins = (raw: string | undefined): string[] => {
   if (!raw) {
@@ -605,7 +605,7 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
   })();
 
   return {
-    port: Number(process.env.AION_GATEWAY_PORT || 3000),
+    port: Number(process.env.AION_GATEWAY_PORT || 8080),
     host: process.env.AION_GATEWAY_HOST || '0.0.0.0',
     controlGrpcEndpoint: process.env.AION_CONTROL_GRPC || 'control:50051',
     controlBaseUrl: `${trimmedControlBase}${apiPrefix}`,

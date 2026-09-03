@@ -1,0 +1,4211 @@
+{
+  "schema_version": 1,
+  "origin": {
+    "commit": "a8c9b14b9f41dda49e7255fed0906472585acfbf",
+    "captured_on": "2026-09-04",
+    "scope": "tracked repository excluding historical migration evidence",
+    "token_count": 164,
+    "files_with_tokens": 99,
+    "occurrences": 926
+  },
+  "snapshot": {
+    "token_count": 164,
+    "files_with_tokens": 99,
+    "occurrences": 925
+  },
+  "policy": {
+    "canonical_product_prefix": "OMERTA_",
+    "conflict": "fail-closed-with-key-names-only",
+    "secret_values": "never-recorded",
+    "wire_and_storage_identifiers": "out-of-scope",
+    "standard_ecosystem_names": "preserved"
+  },
+  "entries": [
+    {
+      "legacy_name": "AION_ADMIN_TOKEN",
+      "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN",
+      "classification": "product-environment",
+      "owners": [
+        "console",
+        "control",
+        "docker-deployment",
+        "gateway",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "mapping-decided",
+      "legacy_alias": "AION_ADMIN_TOKEN",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "console/lib/gatewayClient.ts",
+        "console/lib/serverConfig.ts",
+        "control/app/service_auth.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "deploy/native/env/console.env.example",
+        "deploy/native/env/contract.json",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 20,
+      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+    },
+    {
+      "legacy_name": "AION_ADMIN_TOKEN_SECRET_PATH",
+      "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "console",
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "mapping-decided",
+      "legacy_alias": "AION_ADMIN_TOKEN_SECRET_PATH",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "console/lib/serverConfig.ts",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 9,
+      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+    },
+    {
+      "legacy_name": "AION_AGENT_CATALOG_DIR",
+      "canonical_name": "OMERTA_AGENT_CATALOG_DIR",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_AGENT_CATALOG_DIR",
+      "source_files": [
+        "dev.env"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_ALLOWED_PATHS",
+      "canonical_name": "OMERTA_ALLOWED_PATHS",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_ALLOWED_PATHS",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_API_PROVIDER",
+      "canonical_name": "OMERTA_API_PROVIDER",
+      "classification": "product-environment",
+      "owners": [
+        "control"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_API_PROVIDER",
+      "source_files": [
+        "control/app/configuration/service.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_AUTH_MODE",
+      "canonical_name": "OMERTA_AUTH_MODE",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_AUTH_MODE",
+      "source_files": [
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "gateway/src/auth/index.ts"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_BACKUP_DIR",
+      "canonical_name": "OMERTA_BACKUP_DIR",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_BACKUP_DIR",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_BACKUP_HISTORY",
+      "canonical_name": "OMERTA_BACKUP_HISTORY",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_BACKUP_HISTORY",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_BACKUP_TARGET",
+      "canonical_name": "OMERTA_BACKUP_TARGET",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_BACKUP_TARGET",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONSOLE_HEALTH_URL",
+      "canonical_name": "OMERTA_CONSOLE_HEALTH_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONSOLE_HEALTH_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONSOLE_HOST_PORT",
+      "canonical_name": "OMERTA_CONSOLE_HOST_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_CONSOLE_HOST_PORT",
+      "source_files": [
+        "deploy/CAPO/tests/contract-tests.ps1",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/scripts/smoke-test.sh",
+        "docs/capo/validation-recovery.md",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/native/test_smoke_contract.py"
+      ],
+      "occurrences": 10,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_CONSOLE_IMAGE",
+      "canonical_name": "OMERTA_CONSOLE_IMAGE",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "documentation",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_CONSOLE_IMAGE",
+      "source_files": [
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 4,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_CONSOLE_ORIGIN",
+      "canonical_name": "OMERTA_CONSOLE_ORIGIN",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "gateway",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONSOLE_ORIGIN",
+      "source_files": [
+        "control/config.py",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "gateway/src/config.ts",
+        "tests/control/test_config_cors.py"
+      ],
+      "occurrences": 5,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONSOLE_PORT",
+      "canonical_name": "OMERTA_CONSOLE_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONSOLE_PORT",
+      "source_files": [
+        "deploy/bundles/example/my-config/env/aion.env.example"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_",
+      "canonical_name": null,
+      "classification": "prefix-pattern",
+      "owners": [
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "prefix-pattern",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "deploy/native/env/contract.json",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 2,
+      "note": "Prefix pattern, not a concrete environment key."
+    },
+    {
+      "legacy_name": "AION_CONTROL_API",
+      "canonical_name": "OMERTA_CONTROL_API",
+      "classification": "stale-catalog-contract",
+      "owners": [
+        "docker-deployment"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "quarantined-stale",
+      "legacy_alias": "AION_CONTROL_API",
+      "source_files": [
+        "deploy/docker/compose/catalog.yml"
+      ],
+      "occurrences": 1,
+      "note": "Belongs to the non-canonical catalog Compose definition."
+    },
+    {
+      "legacy_name": "AION_CONTROL_API_PREFIX",
+      "canonical_name": "OMERTA_CONTROL_API_PREFIX",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_API_PREFIX",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 10,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_BASE",
+      "canonical_name": "OMERTA_CONTROL_BASE",
+      "classification": "product-environment",
+      "owners": [
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_BASE",
+      "source_files": [
+        ".env.schema",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_BASE_URL",
+      "canonical_name": "OMERTA_CONTROL_BASE_URL",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "gateway",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_BASE_URL",
+      "source_files": [
+        ".env.example",
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "docs/capo/validation-recovery.md",
+        "gateway/scripts/run-tests.mjs",
+        "gateway/src/config.ts",
+        "tests/architecture/test_deployment_consolidation.py",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 15,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_BIND",
+      "canonical_name": "OMERTA_CONTROL_BIND",
+      "classification": "product-environment",
+      "owners": [
+        "deploy"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_BIND",
+      "source_files": [
+        "deploy/bundles/example/my-config/env/aion.env.example"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_CORS_ORIGINS",
+      "canonical_name": "OMERTA_CONTROL_CORS_ORIGINS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "delimited-list",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_CORS_ORIGINS",
+      "source_files": [
+        ".env.example",
+        "control/config.py",
+        "deploy/native/env/control.env.example",
+        "tests/control/test_config_cors.py"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_DATABASE_URL",
+      "canonical_name": "OMERTA_CONTROL_DATABASE_URL",
+      "classification": "product-environment",
+      "owners": [
+        "control"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_DATABASE_URL",
+      "source_files": [
+        "control/app/network/models.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_DATA_DIR",
+      "canonical_name": "OMERTA_CONTROL_DATA_DIR",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "native-deployment"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_DATA_DIR",
+      "source_files": [
+        "control/app/network/models.py",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "deploy/native/scripts/install-control.sh"
+      ],
+      "occurrences": 4,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_DISABLE_SECRETS",
+      "canonical_name": "OMERTA_CONTROL_DISABLE_SECRETS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "policies",
+        "repository-configuration",
+        "shared",
+        "tests"
+      ],
+      "value_type": "boolean",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_DISABLE_SECRETS",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/app/network/service.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "dev.env",
+        "policies/provider.py",
+        "shared/secret_store/provider.py",
+        "tests/control/test_network_proxies_api.py"
+      ],
+      "occurrences": 10,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_GRPC",
+      "canonical_name": "OMERTA_CONTROL_GRPC",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "gateway",
+        "kubernetes-deployment",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_GRPC",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/kubernetes/gateway-deployment.yaml",
+        "deploy/kubernetes/helm-chart.yaml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "deploy/native/env/validate.py",
+        "gateway/README.md",
+        "gateway/src/config.ts",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 16,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_GRPC_BIND",
+      "canonical_name": "OMERTA_CONTROL_GRPC_BIND",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_GRPC_BIND",
+      "source_files": [
+        "control/transports/tasks_grpc.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 5,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_HEALTH_URL",
+      "canonical_name": "OMERTA_CONTROL_HEALTH_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_HEALTH_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_HOST_PORT",
+      "canonical_name": "OMERTA_CONTROL_HOST_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_CONTROL_HOST_PORT",
+      "source_files": [
+        "deploy/CAPO/tests/contract-tests.ps1",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/scripts/smoke-test.sh",
+        "docs/capo/validation-recovery.md",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/native/test_smoke_contract.py"
+      ],
+      "occurrences": 8,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_CONTROL_HTTP_HOST",
+      "canonical_name": "OMERTA_CONTROL_HTTP_HOST",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_HTTP_HOST",
+      "source_files": [
+        ".env.example",
+        "control/app/serve.py"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_HTTP_PORT",
+      "canonical_name": "OMERTA_CONTROL_HTTP_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "deploy",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_HTTP_PORT",
+      "source_files": [
+        ".env.example",
+        "control/app/serve.py",
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/CAPO/systemd/omertaos-control.service",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "deploy/native/systemd/omertaos-control.service"
+      ],
+      "occurrences": 8,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_LOCAL_SECRET_KEY",
+      "canonical_name": "OMERTA_CONTROL_LOCAL_SECRET_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_LOCAL_SECRET_KEY",
+      "source_files": [
+        ".env.example",
+        "control/README.md",
+        "control/app/network/service.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "dev.env",
+        "tests/control/test_network_proxies_api.py",
+        "tests/control/test_network_proxy_secrets.py"
+      ],
+      "occurrences": 18,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_",
+      "canonical_name": null,
+      "classification": "prefix-pattern",
+      "owners": [
+        "control"
+      ],
+      "value_type": "prefix-pattern",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "control/README.md"
+      ],
+      "occurrences": 1,
+      "note": "Prefix pattern, not a concrete environment key."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_ACCESS_KEY",
+      "canonical_name": "OMERTA_CONTROL_MINIO_ACCESS_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MINIO_ACCESS_KEY",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_BUCKET",
+      "canonical_name": "OMERTA_CONTROL_MINIO_BUCKET",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MINIO_BUCKET",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_ENDPOINT",
+      "canonical_name": "OMERTA_CONTROL_MINIO_ENDPOINT",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MINIO_ENDPOINT",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_SECRET_KEY",
+      "canonical_name": "OMERTA_CONTROL_MINIO_SECRET_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MINIO_SECRET_KEY",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MINIO_SECURE",
+      "canonical_name": "OMERTA_CONTROL_MINIO_SECURE",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MINIO_SECURE",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MODELS_DIRECTORY",
+      "canonical_name": "OMERTA_CONTROL_MODELS_DIRECTORY",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MODELS_DIRECTORY",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "control/models/registry.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "dev.env",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 13,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_MONGO_DSN",
+      "canonical_name": "OMERTA_CONTROL_MONGO_DSN",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_MONGO_DSN",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 9,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_POLICIES_DIRECTORY",
+      "canonical_name": "OMERTA_CONTROL_POLICIES_DIRECTORY",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_POLICIES_DIRECTORY",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "dev.env",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 13,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_POSTGRES_DSN",
+      "canonical_name": "OMERTA_CONTROL_POSTGRES_DSN",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "kubernetes-deployment",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_POSTGRES_DSN",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "control/app/network/models.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "deploy/kubernetes/control-deployment.yaml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "deploy/native/env/validate_data_env.py",
+        "deploy/native/scripts/backup.sh",
+        "deploy/native/scripts/migrate-database.sh",
+        "dev.env"
+      ],
+      "occurrences": 21,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_QDRANT_URL",
+      "canonical_name": "OMERTA_CONTROL_QDRANT_URL",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_QDRANT_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "dev.env"
+      ],
+      "occurrences": 9,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_REDIS_URL",
+      "canonical_name": "OMERTA_CONTROL_REDIS_URL",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "kubernetes-deployment",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_REDIS_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "control/README.md",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/kubernetes/control-deployment.yaml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "deploy/native/env/validate_data_env.py",
+        "dev.env"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_SECRET_DIR",
+      "canonical_name": "OMERTA_CONTROL_SECRET_DIR",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_SECRET_DIR",
+      "source_files": [
+        "control/app/network/service.py",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "tests/control/test_network_proxy_secrets.py"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_TLS_NAME",
+      "canonical_name": "OMERTA_CONTROL_TLS_NAME",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_TLS_NAME",
+      "source_files": [
+        "gateway/src/server/grpc.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CONTROL_URL",
+      "canonical_name": "OMERTA_CONTROL_URL",
+      "classification": "product-environment",
+      "owners": [
+        "tests"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CONTROL_URL",
+      "source_files": [
+        "tests/architecture/test_canonical_contract.py",
+        "tests/architecture/test_deployment_consolidation.py"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_CORS_ORIGINS",
+      "canonical_name": "OMERTA_CORS_ORIGINS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "documentation",
+        "gateway",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "delimited-list",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_CORS_ORIGINS",
+      "source_files": [
+        ".env.example",
+        "control/config.py",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "gateway/README.md",
+        "gateway/src/config.ts",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_config_cors.py"
+      ],
+      "occurrences": 12,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DATASET_REGISTRY",
+      "canonical_name": "OMERTA_DATASET_REGISTRY",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DATASET_REGISTRY",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DB_HOST",
+      "canonical_name": "OMERTA_DB_HOST",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DB_HOST",
+      "source_files": [
+        "deploy/docker/scripts/install.sh"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DB_NAME",
+      "canonical_name": "OMERTA_DB_NAME",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DB_NAME",
+      "source_files": [
+        ".env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "dev.env"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DB_PASSWORD",
+      "canonical_name": "OMERTA_DB_PASSWORD",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DB_PASSWORD",
+      "source_files": [
+        ".env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "dev.env"
+      ],
+      "occurrences": 5,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DB_SECRET_PATH",
+      "canonical_name": "OMERTA_DB_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DB_SECRET_PATH",
+      "source_files": [
+        ".env.schema",
+        "deploy/docker/compose/full.yml"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DB_USER",
+      "canonical_name": "OMERTA_DB_USER",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DB_USER",
+      "source_files": [
+        ".env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "dev.env"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEFAULT_ROLES",
+      "canonical_name": "OMERTA_DEFAULT_ROLES",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "delimited-list",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEFAULT_ROLES",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEV_ADMIN_TOKEN",
+      "canonical_name": "OMERTA_DEV_ADMIN_TOKEN",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEV_ADMIN_TOKEN",
+      "source_files": [
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh"
+      ],
+      "occurrences": 8,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEV_BYPASS_AUTH",
+      "canonical_name": "OMERTA_DEV_BYPASS_AUTH",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEV_BYPASS_AUTH",
+      "source_files": [
+        "gateway/src/auth/index.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEV_KERNEL_ENABLED",
+      "canonical_name": "OMERTA_DEV_KERNEL_ENABLED",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEV_KERNEL_ENABLED",
+      "source_files": [
+        "deploy/docker/compose/local.yml",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEV_KERNEL_PROFILE",
+      "canonical_name": "OMERTA_DEV_KERNEL_PROFILE",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEV_KERNEL_PROFILE",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DEV_KERNEL_URL",
+      "canonical_name": "OMERTA_DEV_KERNEL_URL",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DEV_KERNEL_URL",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DISABLE_WORKERS",
+      "canonical_name": "OMERTA_DISABLE_WORKERS",
+      "classification": "product-environment",
+      "owners": [
+        "tests"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DISABLE_WORKERS",
+      "source_files": [
+        "tests/test_agent_catalog_api.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DOCKER",
+      "canonical_name": "OMERTA_DOCKER",
+      "classification": "product-environment",
+      "owners": [
+        "console",
+        "docker-deployment"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_DOCKER",
+      "source_files": [
+        "console/app/api/system/database/route.ts",
+        "console/lib/gatewayConfig.ts",
+        "console/lib/prisma.ts",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh"
+      ],
+      "occurrences": 9,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_DOCKER_COMPOSE_FILE",
+      "canonical_name": "OMERTA_DOCKER_COMPOSE_FILE",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_DOCKER_COMPOSE_FILE",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_DOCKER_NETWORK",
+      "canonical_name": "OMERTA_DOCKER_NETWORK",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_DOCKER_NETWORK",
+      "source_files": [
+        "deploy/CAPO/tests/contract-tests.ps1",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 4,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_ENABLE_PRISMA",
+      "canonical_name": "OMERTA_ENABLE_PRISMA",
+      "classification": "product-environment",
+      "owners": [
+        "console",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_ENABLE_PRISMA",
+      "source_files": [
+        ".env.example",
+        "console/lib/prisma.ts",
+        "deploy/native/env/console.env.example",
+        "deploy/native/env/contract.json",
+        "deploy/native/scripts/install-console.sh",
+        "dev.env"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_ENV",
+      "canonical_name": "OMERTA_ENV",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_ENV",
+      "source_files": [
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "gateway/scripts/run-tests.mjs",
+        "gateway/src/auth/index.ts",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 22,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_ADMIN_TOKEN",
+      "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN",
+      "classification": "product-environment",
+      "owners": [
+        "ci-tooling",
+        "control",
+        "docker-deployment",
+        "gateway",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "mapping-decided",
+      "legacy_alias": "AION_GATEWAY_ADMIN_TOKEN",
+      "source_files": [
+        ".codex/scripts/test.ps1",
+        ".codex/scripts/test.sh",
+        ".env.example",
+        "control/README.md",
+        "control/app/service_auth.py",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "gateway/scripts/run-tests.mjs",
+        "gateway/src/config.ts",
+        "tests/control/test_configuration_api.py",
+        "tests/control/test_network_proxies_api.py",
+        "tests/control/test_runtime_node_routes.py"
+      ],
+      "occurrences": 39,
+      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+      "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "mapping-decided",
+      "legacy_alias": "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+      "source_files": [
+        ".env.example",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 5,
+      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_API_KEYS",
+      "canonical_name": "OMERTA_GATEWAY_API_KEYS",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_API_KEYS",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/scripts/run-tests.mjs",
+        "gateway/src/config.ts",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_API_KEYS_SECRET_PATH",
+      "canonical_name": "OMERTA_GATEWAY_API_KEYS_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_API_KEYS_SECRET_PATH",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_HEALTH_URL",
+      "canonical_name": "OMERTA_GATEWAY_HEALTH_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_HEALTH_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_HOST",
+      "canonical_name": "OMERTA_GATEWAY_HOST",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_HOST",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 11,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_HOST_PORT",
+      "canonical_name": "OMERTA_GATEWAY_HOST_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_GATEWAY_HOST_PORT",
+      "source_files": [
+        "deploy/CAPO/tests/contract-tests.ps1",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/scripts/smoke-test.sh",
+        "docs/capo/validation-recovery.md",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/native/test_smoke_contract.py"
+      ],
+      "occurrences": 8,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_PORT",
+      "canonical_name": "OMERTA_GATEWAY_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "gateway",
+        "kubernetes-deployment",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "integer",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_PORT",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/bundles/example/my-config/env/aion.env.example",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "deploy/kubernetes/gateway-deployment.yaml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 19,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_GATEWAY_URL",
+      "canonical_name": "OMERTA_GATEWAY_URL",
+      "classification": "product-environment",
+      "owners": [
+        "console",
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_GATEWAY_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "console/README.md",
+        "console/app/api/system/health/route.ts",
+        "console/lib/gatewayConfig.ts",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/docker/scripts/install.sh",
+        "dev.env"
+      ],
+      "occurrences": 10,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_IDEMPOTENCY_TTL",
+      "canonical_name": "OMERTA_IDEMPOTENCY_TTL",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "integer",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_IDEMPOTENCY_TTL",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_JWT_PUBLIC_KEY",
+      "canonical_name": "OMERTA_JWT_PUBLIC_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_JWT_PUBLIC_KEY",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/auth/index.ts",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_JWT_SECRET_PATH",
+      "canonical_name": "OMERTA_JWT_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_JWT_SECRET_PATH",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_KERNEL_HEALTH_URL",
+      "canonical_name": "OMERTA_KERNEL_HEALTH_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_KERNEL_HEALTH_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_KERNEL_PROFILE",
+      "canonical_name": "OMERTA_KERNEL_PROFILE",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_KERNEL_PROFILE",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml"
+      ],
+      "occurrences": 4,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_LOCAL_MODEL",
+      "canonical_name": "OMERTA_LOCAL_MODEL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_LOCAL_MODEL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_LOCAL_PROVIDER",
+      "canonical_name": "OMERTA_LOCAL_PROVIDER",
+      "classification": "product-environment",
+      "owners": [
+        "control"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_LOCAL_PROVIDER",
+      "source_files": [
+        "control/app/configuration/service.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_LOG_LEVEL",
+      "canonical_name": "OMERTA_LOG_LEVEL",
+      "classification": "product-environment",
+      "owners": [
+        "deploy"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_LOG_LEVEL",
+      "source_files": [
+        "deploy/headless-bundle/env/aion.env.example"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_LOG_STREAMS",
+      "canonical_name": "OMERTA_LOG_STREAMS",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_LOG_STREAMS",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_MEMORY_URL",
+      "canonical_name": "OMERTA_MEMORY_URL",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_MEMORY_URL",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_METRICS_ENABLED",
+      "canonical_name": "OMERTA_METRICS_ENABLED",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_METRICS_ENABLED",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_METRICS_PROM_URL",
+      "canonical_name": "OMERTA_METRICS_PROM_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_METRICS_PROM_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_MINIO_SECRET_PATH",
+      "canonical_name": "OMERTA_MINIO_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "filesystem-path",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_MINIO_SECRET_PATH",
+      "source_files": [
+        ".env.schema",
+        "deploy/docker/compose/full.yml"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_MODEL_REGISTRY",
+      "canonical_name": "OMERTA_MODEL_REGISTRY",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_MODEL_REGISTRY",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_MODEL_REGISTRY_URL",
+      "canonical_name": "OMERTA_MODEL_REGISTRY_URL",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_MODEL_REGISTRY_URL",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_NETWORK_PROXY_STATUS_PUBLIC",
+      "canonical_name": "OMERTA_NETWORK_PROXY_STATUS_PUBLIC",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "tests"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_NETWORK_PROXY_STATUS_PUBLIC",
+      "source_files": [
+        "control/app/network/routes.py",
+        "tests/control/test_network_proxies_api.py"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_OTEL_ENABLED",
+      "canonical_name": "OMERTA_OTEL_ENABLED",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_OTEL_ENABLED",
+      "source_files": [
+        "gateway/README.md",
+        "gateway/src/config.ts",
+        "gateway/src/telemetry.ts"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_PACKAGE_REGISTRY",
+      "canonical_name": "OMERTA_PACKAGE_REGISTRY",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_PACKAGE_REGISTRY",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_PACKAGE_STATE",
+      "canonical_name": "OMERTA_PACKAGE_STATE",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_PACKAGE_STATE",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_PROFILE",
+      "canonical_name": "OMERTA_GATEWAY_PROFILE",
+      "classification": "product-environment",
+      "owners": [
+        "developer-tooling",
+        "gateway",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "mapping-decided",
+      "legacy_alias": "AION_PROFILE",
+      "source_files": [
+        ".env.schema",
+        "Makefile",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "deploy/native/env/profiles/enterprise.env",
+        "deploy/native/env/profiles/full.env",
+        "deploy/native/env/profiles/lite.env",
+        "dev.env",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 11,
+      "note": "Maps to OMERTA_GATEWAY_PROFILE; OMERTA_PROFILE is the Runtime edition profile."
+    },
+    {
+      "legacy_name": "AION_PROTO_ROOT",
+      "canonical_name": "OMERTA_PROTO_ROOT",
+      "classification": "product-environment",
+      "owners": [
+        "documentation",
+        "gateway",
+        "tests"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_PROTO_ROOT",
+      "source_files": [
+        "docs/migration/schemas-protos-consolidation.md",
+        "gateway/src/protoPath.ts",
+        "tests/architecture/test_schema_consolidation.py"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_PROXY_SECRET_PREFIX",
+      "canonical_name": "OMERTA_PROXY_SECRET_PREFIX",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_PROXY_SECRET_PREFIX",
+      "source_files": [
+        ".env.example",
+        "control/app/network/service.py"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_QUICKSTART_COMPOSE_FILE",
+      "canonical_name": "OMERTA_QUICKSTART_COMPOSE_FILE",
+      "classification": "product-environment",
+      "owners": [
+        "native-deployment"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_QUICKSTART_COMPOSE_FILE",
+      "source_files": [
+        "deploy/native/scripts/smoke-test.sh"
+      ],
+      "occurrences": 1,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_RAG_COLLECTION",
+      "canonical_name": "OMERTA_RAG_COLLECTION",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RAG_COLLECTION",
+      "source_files": [
+        ".env.schema"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RAG_VECTOR_SIZE",
+      "canonical_name": "OMERTA_RAG_VECTOR_SIZE",
+      "classification": "product-environment",
+      "owners": [
+        "data"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RAG_VECTOR_SIZE",
+      "source_files": [
+        "data/vector/qdrant_client.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RATE_LIMIT_MAX",
+      "canonical_name": "OMERTA_RATE_LIMIT_MAX",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RATE_LIMIT_MAX",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RATE_LIMIT_PER_IP",
+      "canonical_name": "OMERTA_RATE_LIMIT_PER_IP",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RATE_LIMIT_PER_IP",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RATE_LIMIT_WINDOW",
+      "canonical_name": "OMERTA_RATE_LIMIT_WINDOW",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RATE_LIMIT_WINDOW",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_REDIS_HOST",
+      "canonical_name": "OMERTA_REDIS_HOST",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_REDIS_HOST",
+      "source_files": [
+        "gateway/src/redis.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_REDIS_URL",
+      "canonical_name": "OMERTA_REDIS_URL",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "kubernetes-deployment",
+        "native-deployment",
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_REDIS_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/kubernetes/gateway-deployment.yaml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/gateway.env.example",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_ROUTER_POLICY",
+      "canonical_name": "OMERTA_ROUTER_POLICY",
+      "classification": "product-environment",
+      "owners": [
+        "control"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_ROUTER_POLICY",
+      "source_files": [
+        "control/app/configuration/service.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_",
+      "canonical_name": null,
+      "classification": "prefix-pattern",
+      "owners": [
+        "documentation",
+        "native-deployment",
+        "tests"
+      ],
+      "value_type": "prefix-pattern",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "deploy/native/env/contract.json",
+        "docs/local-quickstart.md",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 3,
+      "note": "Prefix pattern, not a concrete environment key."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_AUTO_REGISTER",
+      "canonical_name": "OMERTA_RUNTIME_AUTO_REGISTER",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_AUTO_REGISTER",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 11,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_BIND_ADDR",
+      "canonical_name": "OMERTA_RUNTIME_BIND_ADDR",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "native-deployment",
+        "runtime-daemon",
+        "tests"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_BIND_ADDR",
+      "source_files": [
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/runtime.env.example",
+        "docs/capo/repository-audit.md",
+        "docs/migration/control-plane-to-control.md",
+        "runtime-daemon/README.md",
+        "runtime-daemon/src/config.rs",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/native/test_environment_contract.py"
+      ],
+      "occurrences": 12,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_CAPABILITIES",
+      "canonical_name": "OMERTA_RUNTIME_CAPABILITIES",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "runtime-daemon",
+        "tests"
+      ],
+      "value_type": "delimited-list",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_CAPABILITIES",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "runtime-daemon/src/cluster/resource_report.rs",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_ENDPOINT",
+      "canonical_name": "OMERTA_RUNTIME_ENDPOINT",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "native-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_ENDPOINT",
+      "source_files": [
+        ".env.example",
+        "control/README.md",
+        "control/app/runtime_nodes/lifecycle.py",
+        "control/clients/runtime/client.py",
+        "deploy/CAPO/CAPO.env.example",
+        "deploy/docker/compose/quickstart.yml",
+        "deploy/native/env/contract.json",
+        "deploy/native/env/control.env.example",
+        "docs/migration/control-plane-to-control.md",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_HEALTH_ADDR",
+      "canonical_name": "OMERTA_RUNTIME_HEALTH_ADDR",
+      "classification": "product-environment",
+      "owners": [
+        "documentation",
+        "native-deployment",
+        "runtime-daemon"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_HEALTH_ADDR",
+      "source_files": [
+        "deploy/native/env/contract.json",
+        "deploy/native/env/runtime.env.example",
+        "deploy/native/scripts/smoke-test.sh",
+        "docs/capo/capo-r4-validation-report.md",
+        "runtime-daemon/src/lib.rs"
+      ],
+      "occurrences": 6,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
+      "canonical_name": "OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 9,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_HOST_PORT",
+      "canonical_name": "OMERTA_RUNTIME_HOST_PORT",
+      "classification": "product-environment",
+      "owners": [
+        "deploy",
+        "docker-deployment",
+        "documentation",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_RUNTIME_HOST_PORT",
+      "source_files": [
+        "deploy/CAPO/tests/contract-tests.ps1",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 4,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_IMAGE",
+      "canonical_name": "OMERTA_RUNTIME_IMAGE",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "documentation",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-host-preflight",
+      "legacy_alias": "AION_RUNTIME_IMAGE",
+      "source_files": [
+        ".env.example",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 7,
+      "note": "Requires host-side conflict validation."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_LEASE_HMAC_KEY",
+      "canonical_name": "OMERTA_RUNTIME_LEASE_HMAC_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "documentation",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "migrated-no-alias",
+      "legacy_alias": null,
+      "source_files": [
+        "docs/adr/0002-omerta-configuration-namespace.md",
+        "tests/control/test_runtime_lease_signing.py"
+      ],
+      "occurrences": 2,
+      "note": "R6.15 accepted the canonical HMAC key without a legacy alias."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_LEASE_MAX_TTL_SECONDS",
+      "canonical_name": "OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "runtime-daemon",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "dual-read-implemented",
+      "legacy_alias": "AION_RUNTIME_LEASE_MAX_TTL_SECONDS",
+      "source_files": [
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "runtime-daemon/src/config.rs",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 9,
+      "note": "Canonical and legacy conflicts fail closed."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_LEASE_STATE_PATH",
+      "canonical_name": "OMERTA_RUNTIME_LEASE_STATE_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "runtime-daemon",
+        "tests"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "dual-read-implemented",
+      "legacy_alias": "AION_RUNTIME_LEASE_STATE_PATH",
+      "source_files": [
+        "runtime-daemon/src/config.rs",
+        "tests/architecture/test_quickstart_runtime.py"
+      ],
+      "occurrences": 3,
+      "note": "Canonical and legacy conflicts fail closed."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_LEASE_TTL_SECONDS",
+      "canonical_name": "OMERTA_RUNTIME_LEASE_TTL_SECONDS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "dual-read-implemented",
+      "legacy_alias": "AION_RUNTIME_LEASE_TTL_SECONDS",
+      "source_files": [
+        "control/scheduling/service.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_scheduler.py"
+      ],
+      "occurrences": 8,
+      "note": "Canonical and legacy conflicts fail closed."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_LEASE_V1",
+      "canonical_name": "OMERTA_RUNTIME_LEASE_V1",
+      "classification": "protocol-domain",
+      "owners": [
+        "documentation"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "migrated-no-alias",
+      "legacy_alias": null,
+      "source_files": [
+        "docs/adr/0002-omerta-configuration-namespace.md"
+      ],
+      "occurrences": 1,
+      "note": "R6.15 accepted OMERTA_RUNTIME_LEASE_V1 before deployment."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_MANAGED_NODE_LIMIT",
+      "canonical_name": "OMERTA_RUNTIME_MANAGED_NODE_LIMIT",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "documentation",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_MANAGED_NODE_LIMIT",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 12,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_MAX_RETRIES",
+      "canonical_name": "OMERTA_RUNTIME_MAX_RETRIES",
+      "classification": "product-environment",
+      "owners": [
+        "control"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_MAX_RETRIES",
+      "source_files": [
+        "control/orchestration/runtime_dispatch.py"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_MEMORY_MB",
+      "canonical_name": "OMERTA_RUNTIME_MEMORY_MB",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "runtime-daemon"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_MEMORY_MB",
+      "source_files": [
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "runtime-daemon/src/cluster/resource_report.rs"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_NODES_JSON",
+      "canonical_name": "OMERTA_RUNTIME_NODES_JSON",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "documentation",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "json",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_NODES_JSON",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "docs/local-quickstart.md",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_NODE_ID",
+      "canonical_name": "OMERTA_RUNTIME_NODE_ID",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "runtime-daemon",
+        "tests"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_NODE_ID",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.two-workers.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "runtime-daemon/src/cluster/resource_report.rs",
+        "runtime-daemon/src/config.rs",
+        "tests/architecture/test_quickstart_runtime.py",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 14,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_PROBE_TIMEOUT_SECONDS",
+      "canonical_name": "OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_PROBE_TIMEOUT_SECONDS",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_TENANT_IDS",
+      "canonical_name": "OMERTA_RUNTIME_TENANT_IDS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "delimited-list",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_TENANT_IDS",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_TIMEOUT_SECONDS",
+      "canonical_name": "OMERTA_RUNTIME_TIMEOUT_SECONDS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "documentation"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_TIMEOUT_SECONDS",
+      "source_files": [
+        "control/orchestration/runtime_dispatch.py",
+        "docs/local-quickstart.md"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_TOTAL_CPU_MILLIS",
+      "canonical_name": "OMERTA_RUNTIME_TOTAL_CPU_MILLIS",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_TOTAL_CPU_MILLIS",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 7,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_RUNTIME_TOTAL_MEMORY_MB",
+      "canonical_name": "OMERTA_RUNTIME_TOTAL_MEMORY_MB",
+      "classification": "product-environment",
+      "owners": [
+        "control",
+        "docker-deployment",
+        "repository-configuration",
+        "tests"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_RUNTIME_TOTAL_MEMORY_MB",
+      "source_files": [
+        ".env.example",
+        "control/app/runtime_nodes/lifecycle.py",
+        "deploy/docker/compose/quickstart.yml",
+        "tests/control/test_runtime_lifecycle.py"
+      ],
+      "occurrences": 8,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_SELF_EVOLVING_CHANNEL",
+      "canonical_name": "OMERTA_SELF_EVOLVING_CHANNEL",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_SELF_EVOLVING_CHANNEL",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_SELF_EVOLVING_ENABLED",
+      "canonical_name": "OMERTA_SELF_EVOLVING_ENABLED",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_SELF_EVOLVING_ENABLED",
+      "source_files": [
+        "deploy/docker/compose/local.yml",
+        "deploy/docker/compose/quickstart.yml",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 4,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_SERVICE_CONTROL_MODE",
+      "canonical_name": "OMERTA_SERVICE_CONTROL_MODE",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_SERVICE_CONTROL_MODE",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_SERVICE_CONTROL_SCRIPT",
+      "canonical_name": "OMERTA_SERVICE_CONTROL_SCRIPT",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_SERVICE_CONTROL_SCRIPT",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_SERVICE_NAME",
+      "canonical_name": "OMERTA_SERVICE_NAME",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_SERVICE_NAME",
+      "source_files": [
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TELEMETRY_ENDPOINT",
+      "canonical_name": "OMERTA_TELEMETRY_ENDPOINT",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TELEMETRY_ENDPOINT",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "dev.env"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TELEMETRY_OPT_IN",
+      "canonical_name": "OMERTA_TELEMETRY_OPT_IN",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TELEMETRY_OPT_IN",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "dev.env"
+      ],
+      "occurrences": 5,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TEST_LEGACY",
+      "canonical_name": null,
+      "classification": "test-fixture",
+      "owners": [
+        "runtime-daemon"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "runtime-daemon/src/config.rs"
+      ],
+      "occurrences": 4,
+      "note": "Synthetic test fixture, not an operator contract."
+    },
+    {
+      "legacy_name": "AION_TEST_LEGACY_VALUE",
+      "canonical_name": null,
+      "classification": "test-fixture",
+      "owners": [
+        "runtime-daemon"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "runtime-daemon/src/config.rs"
+      ],
+      "occurrences": 5,
+      "note": "Synthetic test fixture, not an operator contract."
+    },
+    {
+      "legacy_name": "AION_TEST_POSTGRES_DSN",
+      "canonical_name": null,
+      "classification": "test-fixture",
+      "owners": [
+        "tests"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "excluded",
+      "legacy_alias": null,
+      "source_files": [
+        "tests/control/test_runtime_scheduler_postgres.py"
+      ],
+      "occurrences": 2,
+      "note": "Synthetic test fixture, not an operator contract."
+    },
+    {
+      "legacy_name": "AION_TLS_CA_CHAIN",
+      "canonical_name": "OMERTA_TLS_CA_CHAIN",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_CA_CHAIN",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_CA_PEM",
+      "canonical_name": "OMERTA_TLS_CA_PEM",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_CA_PEM",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_CERT",
+      "canonical_name": "OMERTA_TLS_CERT",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_CERT",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_CERT_PEM",
+      "canonical_name": "OMERTA_TLS_CERT_PEM",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_CERT_PEM",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_CLIENT_CA_SECRET_PATH",
+      "canonical_name": "OMERTA_TLS_CLIENT_CA_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_CLIENT_CA_SECRET_PATH",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_KEY",
+      "canonical_name": "OMERTA_TLS_KEY",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_KEY",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_KEY_PEM",
+      "canonical_name": "OMERTA_TLS_KEY_PEM",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_KEY_PEM",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_REQUIRED",
+      "canonical_name": "OMERTA_TLS_REQUIRED",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_REQUIRED",
+      "source_files": [
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts",
+        "gateway/src/config/tls.ts"
+      ],
+      "occurrences": 10,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_REQUIRE_MTLS",
+      "canonical_name": "OMERTA_TLS_REQUIRE_MTLS",
+      "classification": "product-environment",
+      "owners": [
+        "docker-deployment",
+        "gateway",
+        "repository-configuration"
+      ],
+      "value_type": "boolean",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_REQUIRE_MTLS",
+      "source_files": [
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "dev.env",
+        "gateway/README.md",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 10,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TLS_SECRET_PATH",
+      "canonical_name": "OMERTA_TLS_SECRET_PATH",
+      "classification": "product-environment",
+      "owners": [
+        "gateway"
+      ],
+      "value_type": "filesystem-path",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TLS_SECRET_PATH",
+      "source_files": [
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TOKEN_TTL",
+      "canonical_name": "OMERTA_TOKEN_TTL",
+      "classification": "product-environment",
+      "owners": [
+        "deploy"
+      ],
+      "value_type": "integer",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TOKEN_TTL",
+      "source_files": [
+        "deploy/bundles/example/my-config/env/aion.env.example"
+      ],
+      "occurrences": 1,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_TRUST_PROXY",
+      "canonical_name": "OMERTA_TRUST_PROXY",
+      "classification": "product-environment",
+      "owners": [
+        "gateway",
+        "native-deployment"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_TRUST_PROXY",
+      "source_files": [
+        "deploy/native/env/gateway.env.example",
+        "gateway/README.md",
+        "gateway/src/server.ts"
+      ],
+      "occurrences": 3,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_UPDATE_FEED_URL",
+      "canonical_name": "OMERTA_UPDATE_FEED_URL",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "none-declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_UPDATE_FEED_URL",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_UPDATE_SCRIPT",
+      "canonical_name": "OMERTA_UPDATE_SCRIPT",
+      "classification": "product-environment",
+      "owners": [
+        "repository-configuration"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_UPDATE_SCRIPT",
+      "source_files": [
+        ".env.example",
+        ".env.schema"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    },
+    {
+      "legacy_name": "AION_VAULT_ADDR",
+      "canonical_name": "VAULT_ADDR",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "console",
+        "docker-deployment",
+        "gateway",
+        "policies",
+        "repository-configuration",
+        "shared"
+      ],
+      "value_type": "endpoint-or-url",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_ADDR",
+      "source_files": [
+        ".env.schema",
+        "console/lib/serverConfig.ts",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "gateway/src/config.ts",
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 16,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_APPROLE_ROLE_ID",
+      "canonical_name": "VAULT_APPROLE_ROLE_ID",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "policies",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_APPROLE_ROLE_ID",
+      "source_files": [
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 4,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_APPROLE_SECRET_ID",
+      "canonical_name": "VAULT_APPROLE_SECRET_ID",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "policies",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_APPROLE_SECRET_ID",
+      "source_files": [
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 4,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_AUTH_METHOD",
+      "canonical_name": "VAULT_AUTH_METHOD",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "policies",
+        "repository-configuration",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_AUTH_METHOD",
+      "source_files": [
+        ".env.schema",
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 3,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_ENABLED",
+      "canonical_name": "VAULT_ENABLED",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "console",
+        "gateway"
+      ],
+      "value_type": "boolean",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_ENABLED",
+      "source_files": [
+        "console/lib/serverConfig.ts",
+        "gateway/src/config.ts"
+      ],
+      "occurrences": 2,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_KEY",
+      "canonical_name": "OMERTA_VAULT_KEY",
+      "classification": "stale-catalog-contract",
+      "owners": [
+        "docker-deployment"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "quarantined-stale",
+      "legacy_alias": "AION_VAULT_KEY",
+      "source_files": [
+        "deploy/docker/compose/catalog.yml"
+      ],
+      "occurrences": 2,
+      "note": "Belongs to the non-canonical catalog Compose definition."
+    },
+    {
+      "legacy_name": "AION_VAULT_KV_MOUNT",
+      "canonical_name": "VAULT_KV_MOUNT",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "docker-deployment",
+        "policies",
+        "repository-configuration",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_KV_MOUNT",
+      "source_files": [
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "dev.env",
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 12,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_NAMESPACE",
+      "canonical_name": "VAULT_NAMESPACE",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "policies",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_NAMESPACE",
+      "source_files": [
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 2,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_VAULT_PROVIDER",
+      "canonical_name": "OMERTA_VAULT_PROVIDER",
+      "classification": "stale-catalog-contract",
+      "owners": [
+        "docker-deployment"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "quarantined-stale",
+      "legacy_alias": "AION_VAULT_PROVIDER",
+      "source_files": [
+        "deploy/docker/compose/catalog.yml"
+      ],
+      "occurrences": 2,
+      "note": "Belongs to the non-canonical catalog Compose definition."
+    },
+    {
+      "legacy_name": "AION_VAULT_TOKEN",
+      "canonical_name": "VAULT_TOKEN",
+      "classification": "third-party-compatibility",
+      "owners": [
+        "docker-deployment",
+        "documentation",
+        "policies",
+        "repository-configuration",
+        "shared"
+      ],
+      "value_type": "string",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": true,
+      "migration_state": "pending-ecosystem-alias",
+      "legacy_alias": "AION_VAULT_TOKEN",
+      "source_files": [
+        ".env.example",
+        ".env.schema",
+        "deploy/docker/compose/full.yml",
+        "deploy/docker/compose/local.yml",
+        "dev.env",
+        "docs/migration/s2-gate-report.md",
+        "policies/provider.py",
+        "shared/secret_store/provider.py"
+      ],
+      "occurrences": 17,
+      "note": "Canonical target is the standard VAULT namespace."
+    },
+    {
+      "legacy_name": "AION_WORKDIR",
+      "canonical_name": "OMERTA_WORKDIR",
+      "classification": "product-environment",
+      "owners": [
+        "deploy"
+      ],
+      "value_type": "string",
+      "required": "owner-defined",
+      "default_state": "owner-defined",
+      "contract_source": "owning-reader-or-deployment",
+      "migration_contract": "preserve-existing-required-and-default-behavior",
+      "secret": false,
+      "migration_state": "pending-dual-read",
+      "legacy_alias": "AION_WORKDIR",
+      "source_files": [
+        "deploy/bundles/example/my-config/modules/summarize-rs/aip.yaml"
+      ],
+      "occurrences": 2,
+      "note": "Preserve the current behavior until its owner migrates."
+    }
+  ]
+}

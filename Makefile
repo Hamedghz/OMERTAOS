@@ -66,7 +66,7 @@ run-user:
 	AION_PROFILE=user OMERTA_PROFILE=lite $(COMPOSE) up -d
 
 run-pro:
-	AION_PROFILE=professional OMERTA_PROFILE=professional $(COMPOSE) up -d
+	AION_PROFILE=professional OMERTA_PROFILE=full $(COMPOSE) up -d
 
 run-ent:
 	AION_PROFILE=enterprise-vip OMERTA_PROFILE=enterprise FEATURE_SEAL=1 $(COMPOSE) up -d
