@@ -19,17 +19,22 @@ INVENTORY_PATH = REPO_ROOT / "docs/migration/aion-env-inventory.json"
 ALLOWLIST_PATH = (
     REPO_ROOT / "tests/architecture/fixtures/aion_env_direct_readers.json"
 )
+ORIGIN_NAMES_PATH = (
+    REPO_ROOT / "tests/architecture/fixtures/aion_env_origin_names.json"
+)
 BASELINE_COMMIT = "a8c9b14b9f41dda49e7255fed0906472585acfbf"
 TOKEN_PATTERN = re.compile(r"\bAION_[A-Z0-9_]+\b")
 
 EXCLUDED_PATHS = {
     INVENTORY_PATH.relative_to(REPO_ROOT).as_posix(),
     ALLOWLIST_PATH.relative_to(REPO_ROOT).as_posix(),
+    ORIGIN_NAMES_PATH.relative_to(REPO_ROOT).as_posix(),
     "docs/migration/aion-env-prefix-to-omerta.md",
     "scripts/audit_environment_namespace.py",
     "tests/architecture/test_environment_namespace.py",
 }
 EXCLUDED_PREFIXES = ("docs/migration/evidence/",)
+DIRECT_READER_EXCLUDED_PREFIXES = ("docs/", "tests/")
 
 DIRECT_READER_PATTERNS = (
     (
@@ -97,6 +102,8 @@ CANONICAL_OVERRIDES = {
 }
 
 IMPLEMENTED_DUAL_READ = {
+    "AION_GATEWAY_URL",
+    "AION_PROFILE",
     "AION_RUNTIME_LEASE_MAX_TTL_SECONDS",
     "AION_RUNTIME_LEASE_STATE_PATH",
     "AION_RUNTIME_LEASE_TTL_SECONDS",
@@ -148,12 +155,12 @@ BOOLEAN_NAMES = {
 }
 
 
-def _git_tracked_paths(root: Path) -> tuple[str, ...]:
+def _git_source_paths(root: Path) -> tuple[str, ...]:
     git = shutil.which("git")
     if not git:
         raise RuntimeError("git executable is required")
     result = subprocess.run(  # nosec B603 - fixed Git subcommand and arguments
-        [git, "ls-files", "-z"],
+        [git, "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=root,
         check=True,
         capture_output=True,
@@ -170,7 +177,7 @@ def _is_scanned(path: str) -> bool:
 
 
 def _tracked_text(root: Path) -> Iterable[tuple[str, str]]:
-    for relative_path in _git_tracked_paths(root):
+    for relative_path in _git_source_paths(root):
         if not _is_scanned(relative_path):
             continue
         path = root / relative_path
@@ -301,6 +308,11 @@ def _schema_contracts(root: Path) -> dict[str, dict[str, Any]]:
     }
 
 
+def _origin_names(root: Path) -> set[str]:
+    payload = json.loads((root / ORIGIN_NAMES_PATH.relative_to(REPO_ROOT)).read_text())
+    return set(payload["names"])
+
+
 def _entry(
     name: str,
     locations: dict[str, int],
@@ -353,9 +365,10 @@ def build_inventory(root: Path = REPO_ROOT) -> dict[str, Any]:
             locations[match.group(0)][relative_path] += 1
 
     schema_contracts = _schema_contracts(root)
+    names = set(locations).union(_origin_names(root))
     entries = [
         _entry(name, locations[name], schema_contracts.get(name))
-        for name in sorted(locations)
+        for name in sorted(names)
     ]
     return {
         "schema_version": 1,
@@ -369,6 +382,8 @@ def build_inventory(root: Path = REPO_ROOT) -> dict[str, Any]:
         },
         "snapshot": {
             "token_count": len(entries),
+            "active_token_count": sum(entry["occurrences"] > 0 for entry in entries),
+            "retired_token_count": sum(entry["occurrences"] == 0 for entry in entries),
             "files_with_tokens": scanned_files,
             "occurrences": sum(entry["occurrences"] for entry in entries),
         },
@@ -386,6 +401,8 @@ def build_inventory(root: Path = REPO_ROOT) -> dict[str, Any]:
 def scan_direct_readers(root: Path = REPO_ROOT) -> list[dict[str, str]]:
     readers: set[tuple[str, str, str]] = set()
     for relative_path, source in _tracked_text(root):
+        if relative_path.startswith(DIRECT_READER_EXCLUDED_PREFIXES):
+            continue
         for kind, pattern in DIRECT_READER_PATTERNS:
             for match in pattern.finditer(source):
                 readers.add((relative_path, match.group("name").upper(), kind))
@@ -431,32 +448,30 @@ def _check_reader_allowlist(readers: list[dict[str, str]]) -> list[str]:
     ]
 
 
+def _check_no_new_legacy_names(inventory: dict[str, Any]) -> list[str]:
+    origin_names = _origin_names(REPO_ROOT)
+    active_names = {
+        entry["legacy_name"]
+        for entry in inventory["entries"]
+        if entry["occurrences"] > 0
+    }
+    return [
+        f"new legacy environment token is forbidden: {name}"
+        for name in sorted(active_names - origin_names)
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--write", action="store_true")
     mode.add_argument("--check", action="store_true")
-    parser.add_argument(
-        "--bootstrap-reader-allowlist",
-        action="store_true",
-        help="M0-only: replace the reviewed legacy direct-reader baseline",
-    )
     args = parser.parse_args()
 
     inventory = build_inventory()
     readers = scan_direct_readers()
     if args.write:
         _write_json(INVENTORY_PATH, inventory)
-        if args.bootstrap_reader_allowlist:
-            _write_json(
-                ALLOWLIST_PATH,
-                {
-                    "schema_version": 1,
-                    "baseline_commit": BASELINE_COMMIT,
-                    "policy": "grandfathered legacy readers; additions are forbidden",
-                    "readers": readers,
-                },
-            )
         print(
             f"inventory: {inventory['snapshot']['token_count']} tokens, "
             f"{inventory['snapshot']['files_with_tokens']} files, "
@@ -465,6 +480,7 @@ def main() -> int:
         return 0
 
     errors = _check_exact(INVENTORY_PATH, inventory)
+    errors.extend(_check_no_new_legacy_names(inventory))
     errors.extend(_check_reader_allowlist(readers))
     if errors:
         print("\n".join(errors), file=sys.stderr)
@@ -472,7 +488,7 @@ def main() -> int:
     print(
         f"environment namespace gate passed: "
         f"{inventory['snapshot']['token_count']} inventoried tokens; "
-        f"{len(readers)} grandfathered direct readers"
+        f"{len(readers)} active direct legacy readers within the M0 allowlist"
     )
     return 0
 

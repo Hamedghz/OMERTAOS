@@ -23,6 +23,7 @@ from control.scheduling.models import (
     TaskAttempt,
 )
 from control.scheduling.lease_signing import LeaseSigningError
+from shared.config.environment import DeprecatedEnvironmentAliasWarning
 
 
 @pytest.fixture()
@@ -99,7 +100,11 @@ def test_runtime_scheduler_accepts_legacy_lease_ttl_alias(
     monkeypatch.delenv("OMERTA_RUNTIME_LEASE_TTL_SECONDS", raising=False)
     monkeypatch.setenv("AION_RUNTIME_LEASE_TTL_SECONDS", "55")
 
-    assert RuntimeScheduler().lease_ttl == timedelta(seconds=55)
+    with pytest.warns(
+        DeprecatedEnvironmentAliasWarning,
+        match="AION_RUNTIME_LEASE_TTL_SECONDS",
+    ):
+        assert RuntimeScheduler().lease_ttl == timedelta(seconds=55)
 
 
 def test_runtime_scheduler_rejects_conflicting_lease_ttl_names(
@@ -110,6 +115,20 @@ def test_runtime_scheduler_rejects_conflicting_lease_ttl_names(
 
     with pytest.raises(ValueError, match="conflicts with deprecated"):
         RuntimeScheduler()
+
+
+def test_runtime_scheduler_rejects_malformed_lease_ttl_without_echoing_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    malformed = "invalid-sensitive-ttl"
+    monkeypatch.setenv("OMERTA_RUNTIME_LEASE_TTL_SECONDS", malformed)
+    monkeypatch.delenv("AION_RUNTIME_LEASE_TTL_SECONDS", raising=False)
+
+    with pytest.raises(ValueError) as raised:
+        RuntimeScheduler()
+
+    assert "OMERTA_RUNTIME_LEASE_TTL_SECONDS" in str(raised.value)
+    assert malformed not in f"{raised.value!s} {raised.value!r}"
 
 
 def test_round_robin_scheduler_is_capability_and_tenant_aware(db: Session) -> None:

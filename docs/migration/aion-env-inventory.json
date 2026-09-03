@@ -10,8 +10,10 @@
   },
   "snapshot": {
     "token_count": 164,
-    "files_with_tokens": 99,
-    "occurrences": 925
+    "active_token_count": 163,
+    "retired_token_count": 1,
+    "files_with_tokens": 106,
+    "occurrences": 940
   },
   "policy": {
     "canonical_product_prefix": "OMERTA_",
@@ -343,9 +345,10 @@
         "deploy/native/env/contract.json",
         "deploy/native/env/gateway.env.example",
         "gateway/src/config.ts",
-        "tests/control/test_config_cors.py"
+        "tests/control/test_config_cors.py",
+        "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 5,
+      "occurrences": 6,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -667,9 +670,10 @@
         "deploy/native/env/validate.py",
         "gateway/README.md",
         "gateway/src/config.ts",
+        "tests/architecture/test_environment_baseline.py",
         "tests/native/test_environment_contract.py"
       ],
-      "occurrences": 16,
+      "occurrences": 18,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1096,7 +1100,8 @@
         "docker-deployment",
         "kubernetes-deployment",
         "native-deployment",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "endpoint-or-url",
       "required": false,
@@ -1121,9 +1126,10 @@
         "deploy/native/env/validate_data_env.py",
         "deploy/native/scripts/backup.sh",
         "deploy/native/scripts/migrate-database.sh",
-        "dev.env"
+        "dev.env",
+        "tests/architecture/test_environment_baseline.py"
       ],
-      "occurrences": 21,
+      "occurrences": 22,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1287,9 +1293,10 @@
         "gateway/README.md",
         "gateway/src/config.ts",
         "tests/architecture/test_quickstart_runtime.py",
-        "tests/control/test_config_cors.py"
+        "tests/control/test_config_cors.py",
+        "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 12,
+      "occurrences": 13,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1608,11 +1615,12 @@
         "console/app/api/system/database/route.ts",
         "console/lib/gatewayConfig.ts",
         "console/lib/prisma.ts",
+        "console/tests/unit/gateway-config-env.test.tsx",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/docker/scripts/install.sh"
       ],
-      "occurrences": 9,
+      "occurrences": 10,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1948,7 +1956,8 @@
         "gateway",
         "kubernetes-deployment",
         "native-deployment",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "integer",
       "required": false,
@@ -1972,9 +1981,10 @@
         "deploy/native/env/gateway.env.example",
         "dev.env",
         "gateway/README.md",
-        "gateway/src/config.ts"
+        "gateway/src/config.ts",
+        "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 19,
+      "occurrences": 20,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1992,7 +2002,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_URL",
       "source_files": [
         ".env.example",
@@ -2000,13 +2010,14 @@
         "console/README.md",
         "console/app/api/system/health/route.ts",
         "console/lib/gatewayConfig.ts",
+        "console/tests/unit/gateway-config-env.test.tsx",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/docker/scripts/install.sh",
         "dev.env"
       ],
-      "occurrences": 10,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 15,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_IDEMPOTENCY_TTL",
@@ -2452,7 +2463,8 @@
         "developer-tooling",
         "gateway",
         "native-deployment",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "string",
       "required": false,
@@ -2460,7 +2472,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "mapping-decided",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_PROFILE",
       "source_files": [
         ".env.schema",
@@ -2471,10 +2483,12 @@
         "deploy/native/env/profiles/full.env",
         "deploy/native/env/profiles/lite.env",
         "dev.env",
-        "gateway/src/config.ts"
+        "gateway/src/config.ts",
+        "tests/architecture/test_environment_baseline.py",
+        "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 11,
-      "note": "Maps to OMERTA_GATEWAY_PROFILE; OMERTA_PROFILE is the Runtime edition profile."
+      "occurrences": 15,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_PROTO_ROOT",
@@ -2622,7 +2636,8 @@
       "owners": [
         "docker-deployment",
         "gateway",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "string",
       "required": false,
@@ -2638,9 +2653,10 @@
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "gateway/README.md",
-        "gateway/src/config.ts"
+        "gateway/src/config.ts",
+        "tests/architecture/test_environment_baseline.py"
       ],
-      "occurrences": 7,
+      "occurrences": 9,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3109,7 +3125,7 @@
         "tests/architecture/test_quickstart_runtime.py",
         "tests/control/test_runtime_scheduler.py"
       ],
-      "occurrences": 8,
+      "occurrences": 10,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -3564,7 +3580,9 @@
       "canonical_name": null,
       "classification": "test-fixture",
       "owners": [
-        "runtime-daemon"
+        "console",
+        "runtime-daemon",
+        "tests"
       ],
       "value_type": "string",
       "required": "owner-defined",
@@ -3575,7 +3593,10 @@
       "migration_state": "excluded",
       "legacy_alias": null,
       "source_files": [
-        "runtime-daemon/src/config.rs"
+        "console/tests/unit/environment.test.tsx",
+        "runtime-daemon/src/environment.rs",
+        "tests/gateway/environment.spec.ts",
+        "tests/shared/test_environment.py"
       ],
       "occurrences": 4,
       "note": "Synthetic test fixture, not an operator contract."
@@ -3584,9 +3605,7 @@
       "legacy_name": "AION_TEST_LEGACY_VALUE",
       "canonical_name": null,
       "classification": "test-fixture",
-      "owners": [
-        "runtime-daemon"
-      ],
+      "owners": [],
       "value_type": "string",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -3595,10 +3614,8 @@
       "secret": false,
       "migration_state": "excluded",
       "legacy_alias": null,
-      "source_files": [
-        "runtime-daemon/src/config.rs"
-      ],
-      "occurrences": 5,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Synthetic test fixture, not an operator contract."
     },
     {

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
@@ -11,6 +10,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from control.audit import append_runtime_audit_event
+from shared.config.environment import integer_parser, resolve_environment
 from shared.telemetry.audit import emit_audit
 
 from .models import (
@@ -24,22 +24,6 @@ from .lease_signing import LeaseSigner
 
 LEASE_TTL_ENV = "OMERTA_RUNTIME_LEASE_TTL_SECONDS"
 LEGACY_LEASE_TTL_ENV = "AION_RUNTIME_LEASE_TTL_SECONDS"
-
-
-def _compatible_environment_value(
-    canonical_name: str, legacy_name: str, default: str
-) -> str:
-    canonical_value = os.getenv(canonical_name) or None
-    legacy_value = os.getenv(legacy_name) or None
-    if (
-        canonical_value is not None
-        and legacy_value is not None
-        and canonical_value != legacy_value
-    ):
-        raise ValueError(
-            f"{canonical_name} conflicts with deprecated {legacy_name}"
-        )
-    return canonical_value or legacy_value or default
 
 
 class NodeState(str, Enum):
@@ -188,11 +172,13 @@ class RuntimeScheduler:
             raise ValueError("heartbeat_timeout_seconds must be positive")
         resolved_lease_ttl = lease_ttl_seconds
         if resolved_lease_ttl is None:
-            resolved_lease_ttl = int(
-                _compatible_environment_value(
-                    LEASE_TTL_ENV, LEGACY_LEASE_TTL_ENV, "45"
-                )
+            resolved_lease_ttl = resolve_environment(
+                LEASE_TTL_ENV,
+                aliases=(LEGACY_LEASE_TTL_ENV,),
+                default="45",
+                parser=integer_parser(minimum=5, maximum=120),
             )
+            assert isinstance(resolved_lease_ttl, int)
         if resolved_lease_ttl < 5 or resolved_lease_ttl > 120:
             raise ValueError("lease_ttl_seconds must be between 5 and 120")
         self.heartbeat_timeout = timedelta(seconds=heartbeat_timeout_seconds)

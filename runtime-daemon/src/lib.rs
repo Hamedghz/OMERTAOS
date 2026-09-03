@@ -4,6 +4,7 @@ pub mod cluster {
     pub mod resource_report;
 }
 pub mod config;
+mod environment;
 pub mod execution;
 pub mod isolation {
     pub mod cpu;

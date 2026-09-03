@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use crate::environment::{resolve_environment, EnvironmentSpec};
 use crate::security::lease::LeaseHmacKey;
 
 const LEASE_HMAC_ENV: &str = "OMERTA_RUNTIME_LEASE_HMAC_KEY";
@@ -10,36 +11,17 @@ const LEASE_STATE_PATH_ENV: &str = "OMERTA_RUNTIME_LEASE_STATE_PATH";
 const LEGACY_LEASE_STATE_PATH_ENV: &str = "AION_RUNTIME_LEASE_STATE_PATH";
 const MAX_ENCODED_KEY_FILE_BYTES: usize = 256;
 
-fn compatible_environment_value(
-    canonical_name: &str,
-    legacy_name: &str,
-) -> anyhow::Result<Option<String>> {
-    let canonical_value = std::env::var(canonical_name)
-        .ok()
-        .filter(|value| !value.is_empty());
-    let legacy_value = std::env::var(legacy_name)
-        .ok()
-        .filter(|value| !value.is_empty());
-    if let (Some(canonical), Some(legacy)) = (&canonical_value, &legacy_value) {
-        if canonical != legacy {
-            anyhow::bail!("{canonical_name} conflicts with deprecated {legacy_name}");
-        }
-    }
-    Ok(canonical_value.or(legacy_value))
-}
-
 fn lease_max_ttl_from_environment() -> anyhow::Result<u64> {
-    let Some(value) = compatible_environment_value(LEASE_MAX_TTL_ENV, LEGACY_LEASE_MAX_TTL_ENV)?
-    else {
-        return Ok(120);
-    };
-    let parsed = value
-        .parse::<u64>()
-        .map_err(|_| anyhow::anyhow!("{LEASE_MAX_TTL_ENV} must be an integer"))?;
-    if !(5..=300).contains(&parsed) {
-        anyhow::bail!("{LEASE_MAX_TTL_ENV} must be between 5 and 300");
-    }
-    Ok(parsed)
+    let resolved = resolve_environment(
+        EnvironmentSpec::new(LEASE_MAX_TTL_ENV)
+            .aliases(&[LEGACY_LEASE_MAX_TTL_ENV])
+            .default("120"),
+        |value| {
+            let parsed = value.parse::<u64>().map_err(|_| ())?;
+            (5..=300).contains(&parsed).then_some(parsed).ok_or(())
+        },
+    )?;
+    Ok(resolved.expect("lease max TTL has a default"))
 }
 
 fn lease_hmac_key_from_environment() -> Option<LeaseHmacKey> {
@@ -89,21 +71,17 @@ impl RuntimeConfig {
                 .unwrap_or_else(|_| "runtime-local-1".to_string()),
             lease_max_ttl_seconds: lease_max_ttl_from_environment()?,
             lease_hmac_key: lease_hmac_key_from_environment(),
-            lease_state_path: compatible_environment_value(
-                LEASE_STATE_PATH_ENV,
-                LEGACY_LEASE_STATE_PATH_ENV,
-            )?
-            .map(PathBuf::from),
+            lease_state_path: resolve_environment(
+                EnvironmentSpec::new(LEASE_STATE_PATH_ENV).aliases(&[LEGACY_LEASE_STATE_PATH_ENV]),
+                |value| Ok(PathBuf::from(value)),
+            )?,
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        compatible_environment_value, lease_hmac_key_from_file_contents,
-        lease_max_ttl_from_environment,
-    };
+    use super::{lease_hmac_key_from_file_contents, lease_max_ttl_from_environment};
 
     #[test]
     fn lease_hmac_key_file_accepts_base64_with_a_trailing_newline() {
@@ -119,45 +97,9 @@ mod tests {
     }
 
     #[test]
-    fn compatible_value_rejects_conflicting_names_without_values_in_error() {
-        std::env::set_var("OMERTA_TEST_CANONICAL", "canonical-secret");
-        std::env::set_var("AION_TEST_LEGACY", "legacy-secret");
-
-        let error = compatible_environment_value("OMERTA_TEST_CANONICAL", "AION_TEST_LEGACY")
-            .expect_err("conflicting names must fail closed")
-            .to_string();
-
-        std::env::remove_var("OMERTA_TEST_CANONICAL");
-        std::env::remove_var("AION_TEST_LEGACY");
-        assert!(error.contains("OMERTA_TEST_CANONICAL"));
-        assert!(error.contains("AION_TEST_LEGACY"));
-        assert!(!error.contains("canonical-secret"));
-        assert!(!error.contains("legacy-secret"));
-    }
-
-    #[test]
-    fn compatible_value_prefers_canonical_and_accepts_legacy_alias() {
-        std::env::set_var("OMERTA_TEST_CANONICAL_VALUE", "canonical");
-        std::env::remove_var("AION_TEST_LEGACY_VALUE");
-        assert_eq!(
-            compatible_environment_value("OMERTA_TEST_CANONICAL_VALUE", "AION_TEST_LEGACY_VALUE")
-                .unwrap(),
-            Some("canonical".to_string())
-        );
-
-        std::env::remove_var("OMERTA_TEST_CANONICAL_VALUE");
-        std::env::set_var("AION_TEST_LEGACY_VALUE", "legacy");
-        assert_eq!(
-            compatible_environment_value("OMERTA_TEST_CANONICAL_VALUE", "AION_TEST_LEGACY_VALUE")
-                .unwrap(),
-            Some("legacy".to_string())
-        );
-        std::env::remove_var("AION_TEST_LEGACY_VALUE");
-    }
-
-    #[test]
     fn lease_max_ttl_rejects_malformed_canonical_value() {
-        std::env::set_var("OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS", "invalid");
+        let malformed = "sensitive-ttl-value";
+        std::env::set_var("OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS", malformed);
         std::env::remove_var("AION_RUNTIME_LEASE_MAX_TTL_SECONDS");
 
         let error = lease_max_ttl_from_environment()
@@ -166,6 +108,6 @@ mod tests {
 
         std::env::remove_var("OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS");
         assert!(error.contains("OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS"));
-        assert!(!error.contains("invalid"));
+        assert!(!error.contains(malformed));
     }
 }

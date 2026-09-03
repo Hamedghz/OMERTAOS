@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { config } from 'dotenv';
 
+import { choiceParser, resolveEnvironment } from './config/environment.js';
+
 type SecretPayload = Record<string, unknown> | string;
 
 interface SecretProvider {
@@ -141,7 +143,11 @@ const parseApiKeysSecret = (secret: Record<string, unknown> | string): Record<st
   return keys;
 };
 
-const profile = (process.env.AION_PROFILE || 'user').toLowerCase() as GatewayConfig['profile'];
+const profile = resolveEnvironment<GatewayConfig['profile']>('OMERTA_GATEWAY_PROFILE', {
+  aliases: ['AION_PROFILE'],
+  defaultValue: 'user',
+  parse: choiceParser(['user', 'professional', 'enterprise-vip'] as const),
+}) as GatewayConfig['profile'];
 const featureSeal = process.env.FEATURE_SEAL === '1' || profile === 'enterprise-vip';
 
 const defaultConsoleOrigin = process.env.AION_CONSOLE_ORIGIN || 'http://localhost:3000';

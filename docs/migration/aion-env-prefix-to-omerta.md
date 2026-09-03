@@ -1,6 +1,6 @@
 # برنامه مهاجرت namespace تنظیمات از AION به OMERTA
 
-**وضعیت:** M0 تکمیل و ولیدیت شد؛ M1 در حال اجرا است و این سند مجوز rename سراسری نیست
+**وضعیت:** M0 و M1 تکمیل و ولیدیت شدند؛ اجرای M2 نیازمند تأیید جداگانه است
 **مبنای بررسی:** branch `Radin/omerta-env-namespace`، checkpoint
 `a8c9b14b9f41dda49e7255fed0906472585acfbf`
 **تاریخ inventory:** 2026-09-04
@@ -120,11 +120,20 @@ both-conflicting پذیرفته شود. برای blank باید تصمیم هر 
 
 ### M1 ـ resolverهای dual-read
 
-- helper مشترک برای Python، Gateway/Console TypeScript و Runtime Rust ساخته شود.
-- `OMERTA_*` canonical و `AION_*` alias deprecated باشد.
-- conflict test و redacted diagnostics قبل از تغییر templateها اضافه شود.
-- resolverهای موجود lease TTL/max TTL/state به helperهای typed منتقل شوند؛ HMAC
-  key و domain پذیرفته‌شده R6.15 canonical-only باقی بمانند.
+- [x] helper typed برای Python، Gateway/Console TypeScript و Runtime Rust ساخته شد.
+- [x] `OMERTA_*` canonical و `AION_*` alias deprecated با warning نام‌محور است.
+- [x] ماتریس old-only، new-only، equal، conflict، unset، blank، malformed و
+  redaction پیش از تغییر templateها اضافه شد.
+- [x] lease TTL/max TTL/state به helperهای typed منتقل شد؛ HMAC key و domain
+  پذیرفته‌شده R6.15 canonical-only باقی ماندند.
+- [x] `AION_PROFILE` با معنای درست به `OMERTA_GATEWAY_PROFILE` و
+  `AION_GATEWAY_URL` به `OMERTA_GATEWAY_URL` متصل شد.
+
+پیاده‌سازی‌های M1 در `shared/config/environment.py`،
+`gateway/src/config/environment.ts`، `console/lib/environment.ts` و
+`runtime-daemon/src/environment.rs` قرار دارند. این milestone فقط resolver و دو
+نمونه مصرف TypeScript را اضافه کرده است؛ تغییر writerهای deployment عمداً برای
+M2 باقی مانده است.
 
 ### M2 ـ deployment writers
 
