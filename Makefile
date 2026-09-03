@@ -1,6 +1,6 @@
 .PHONY: dev-control doctor bundle edge-setup test status logs restart start stop \
 	setup train train-ci guard model-all run-user run-pro run-ent install-deps \
-	lint verify structure-audit compose-config compose-up compose-down \
+	lint verify structure-audit env-preflight compose-config compose-up compose-down \
 	compose-clean build-image bootstrap claude-install claude-bootstrap \
 	claude-status desktop-dev desktop-build
 
@@ -8,6 +8,8 @@ PY ?= python3
 CLI = $(PY) -m aion_core.cli
 COMPOSE_FILE ?= deploy/docker/compose/quickstart.yml
 COMPOSE = docker compose --project-directory . -f $(COMPOSE_FILE)
+ENV_FILE_ARG = $(if $(wildcard .env),--env-file .env,)
+ENV_PREFLIGHT = $(PY) scripts/validate_environment_aliases.py $(ENV_FILE_ARG)
 
 dev-control:
 	PYTHONPATH=$(CURDIR) uvicorn control.app.main:app --reload --port 8000
@@ -63,13 +65,16 @@ guard:
 model-all: setup train guard
 
 run-user:
-	AION_PROFILE=user OMERTA_PROFILE=lite $(COMPOSE) up -d
+	OMERTA_GATEWAY_PROFILE=user OMERTA_PROFILE=lite $(ENV_PREFLIGHT)
+	OMERTA_GATEWAY_PROFILE=user OMERTA_PROFILE=lite $(COMPOSE) up -d
 
 run-pro:
-	AION_PROFILE=professional OMERTA_PROFILE=full $(COMPOSE) up -d
+	OMERTA_GATEWAY_PROFILE=professional OMERTA_PROFILE=full $(ENV_PREFLIGHT)
+	OMERTA_GATEWAY_PROFILE=professional OMERTA_PROFILE=full $(COMPOSE) up -d
 
 run-ent:
-	AION_PROFILE=enterprise-vip OMERTA_PROFILE=enterprise FEATURE_SEAL=1 $(COMPOSE) up -d
+	OMERTA_GATEWAY_PROFILE=enterprise-vip OMERTA_PROFILE=enterprise FEATURE_SEAL=1 $(ENV_PREFLIGHT)
+	OMERTA_GATEWAY_PROFILE=enterprise-vip OMERTA_PROFILE=enterprise FEATURE_SEAL=1 $(COMPOSE) up -d
 
 # Developer quality gates
 install-deps:
@@ -92,10 +97,13 @@ structure-audit:
 	$(PY) scripts/check_structure_consistency.py
 
 # Docker Compose helpers for the quickstart stack
-compose-config:
-	$(COMPOSE) config
+env-preflight:
+	$(ENV_PREFLIGHT)
 
-compose-up:
+compose-config: env-preflight
+	$(COMPOSE) config --quiet
+
+compose-up: env-preflight
 	$(COMPOSE) up --build -d
 
 compose-down:
