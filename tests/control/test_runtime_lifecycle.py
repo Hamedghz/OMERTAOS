@@ -25,19 +25,23 @@ from control.scheduling.models import (
     RuntimeResourceLease,
     TaskAttempt,
 )
+from shared.config.environment import (
+    DeprecatedEnvironmentAliasWarning,
+    EnvironmentConflictError,
+)
 
 
 def _config(**overrides: str) -> RuntimeLifecycleConfig:
     values = {
-        "AION_RUNTIME_AUTO_REGISTER": "true",
-        "AION_RUNTIME_NODE_ID": "runtime-a",
-        "AION_RUNTIME_ENDPOINT": "runtime:50051",
-        "AION_RUNTIME_CAPABILITIES": "terminal.execute",
-        "AION_RUNTIME_TENANT_IDS": "tenant-a,tenant-b",
-        "AION_RUNTIME_TOTAL_CPU_MILLIS": "1000",
-        "AION_RUNTIME_TOTAL_MEMORY_MB": "512",
-        "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS": "10",
-        "AION_RUNTIME_PROBE_TIMEOUT_SECONDS": "3",
+        "OMERTA_RUNTIME_AUTO_REGISTER": "true",
+        "OMERTA_RUNTIME_NODE_ID": "runtime-a",
+        "OMERTA_RUNTIME_ENDPOINT": "runtime:50051",
+        "OMERTA_RUNTIME_CAPABILITIES": "terminal.execute",
+        "OMERTA_RUNTIME_TENANT_IDS": "tenant-a,tenant-b",
+        "OMERTA_RUNTIME_TOTAL_CPU_MILLIS": "1000",
+        "OMERTA_RUNTIME_TOTAL_MEMORY_MB": "512",
+        "OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS": "10",
+        "OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS": "3",
         **overrides,
     }
     return RuntimeLifecycleConfig.from_env(values)
@@ -60,16 +64,37 @@ def test_runtime_lifecycle_config_is_opt_in_and_bounded() -> None:
     assert _config().tenant_ids == ("tenant-a", "tenant-b")
 
     with pytest.raises(ValueError, match="must not exceed 20"):
-        _config(AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS="21")
+        _config(OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS="21")
     with pytest.raises(ValueError, match="must not exceed the heartbeat interval"):
-        _config(AION_RUNTIME_PROBE_TIMEOUT_SECONDS="11")
+        _config(OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS="11")
+
+
+def test_runtime_lifecycle_accepts_deprecated_alias_and_rejects_conflict() -> None:
+    with pytest.warns(
+        DeprecatedEnvironmentAliasWarning,
+        match="AION_RUNTIME_AUTO_REGISTER.*OMERTA_RUNTIME_AUTO_REGISTER",
+    ):
+        config = RuntimeLifecycleConfig.from_env(
+            {"AION_RUNTIME_AUTO_REGISTER": "true"}
+        )
+    assert config.enabled is True
+
+    with pytest.raises(EnvironmentConflictError) as error:
+        RuntimeLifecycleConfig.from_env(
+            {
+                "OMERTA_RUNTIME_AUTO_REGISTER": "true",
+                "AION_RUNTIME_AUTO_REGISTER": "false",
+            }
+        )
+    assert "OMERTA_RUNTIME_AUTO_REGISTER" in str(error.value)
+    assert "AION_RUNTIME_AUTO_REGISTER" in str(error.value)
 
 
 def test_runtime_lifecycle_parses_two_unique_nodes() -> None:
     values = {
-        "AION_RUNTIME_AUTO_REGISTER": "true",
-        "AION_RUNTIME_MANAGED_NODE_LIMIT": "2",
-        "AION_RUNTIME_NODES_JSON": (
+        "OMERTA_RUNTIME_AUTO_REGISTER": "true",
+        "OMERTA_RUNTIME_MANAGED_NODE_LIMIT": "2",
+        "OMERTA_RUNTIME_NODES_JSON": (
             '[{"node_id":"runtime-a","endpoint":"runtime-a:50051",'
             '"capabilities":["terminal.execute"],"tenant_ids":["tenant-a"]},'
             '{"node_id":"runtime-b","endpoint":"runtime-b:50051",'
@@ -104,9 +129,9 @@ def test_runtime_lifecycle_rejects_duplicate_identity_or_endpoint(
     with pytest.raises(ValueError, match="duplicate"):
         RuntimeLifecycleConfig.all_from_env(
             {
-                "AION_RUNTIME_AUTO_REGISTER": "true",
-                "AION_RUNTIME_MANAGED_NODE_LIMIT": "2",
-                "AION_RUNTIME_NODES_JSON": nodes_json,
+                "OMERTA_RUNTIME_AUTO_REGISTER": "true",
+                "OMERTA_RUNTIME_MANAGED_NODE_LIMIT": "2",
+                "OMERTA_RUNTIME_NODES_JSON": nodes_json,
             }
         )
 
@@ -196,10 +221,10 @@ async def test_lifecycle_reconciles_trusted_config_without_resetting_leases(
     )
     updated = RuntimeNodeLifecycle(
         _config(
-            AION_RUNTIME_CAPABILITIES="terminal.execute,resource.allocate",
-            AION_RUNTIME_TENANT_IDS="tenant-c",
-            AION_RUNTIME_TOTAL_CPU_MILLIS="2000",
-            AION_RUNTIME_TOTAL_MEMORY_MB="1024",
+            OMERTA_RUNTIME_CAPABILITIES="terminal.execute,resource.allocate",
+            OMERTA_RUNTIME_TENANT_IDS="tenant-c",
+            OMERTA_RUNTIME_TOTAL_CPU_MILLIS="2000",
+            OMERTA_RUNTIME_TOTAL_MEMORY_MB="1024",
         ),
         session_factory=session_factory,
         probe=reachable,
@@ -337,9 +362,9 @@ async def test_lifecycle_manager_probes_nodes_sequentially(
 
     configs = RuntimeLifecycleConfig.all_from_env(
         {
-            "AION_RUNTIME_AUTO_REGISTER": "true",
-            "AION_RUNTIME_MANAGED_NODE_LIMIT": "2",
-            "AION_RUNTIME_NODES_JSON": (
+            "OMERTA_RUNTIME_AUTO_REGISTER": "true",
+            "OMERTA_RUNTIME_MANAGED_NODE_LIMIT": "2",
+            "OMERTA_RUNTIME_NODES_JSON": (
                 '[{"node_id":"runtime-a","endpoint":"runtime-a:50051"},'
                 '{"node_id":"runtime-b","endpoint":"runtime-b:50051"}]'
             ),

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
 
+from shared.config.environment import resolve_environment
 from shared.telemetry.audit import emit_audit
 
 from .models import ControlConfiguration
@@ -16,11 +16,28 @@ CONFIGURATION_ID = 1
 
 
 def _default_configuration() -> dict[str, object]:
+    router_policy = resolve_environment(
+        "OMERTA_ROUTER_POLICY",
+        aliases=("AION_ROUTER_POLICY",),
+        default="auto",
+        blank="preserve",
+    )
+    local_provider = resolve_environment(
+        "OMERTA_LOCAL_PROVIDER",
+        aliases=("AION_LOCAL_PROVIDER",),
+        blank="preserve",
+    )
+    api_provider = resolve_environment(
+        "OMERTA_API_PROVIDER",
+        aliases=("AION_API_PROVIDER",),
+        blank="preserve",
+    )
+    assert isinstance(router_policy, str)
     return {
         "router": {
-            "mode": os.getenv("AION_ROUTER_POLICY", "auto"),
-            "local_provider": os.getenv("AION_LOCAL_PROVIDER") or None,
-            "api_provider": os.getenv("AION_API_PROVIDER") or None,
+            "mode": router_policy,
+            "local_provider": local_provider or None,
+            "api_provider": api_provider or None,
         }
     }
 

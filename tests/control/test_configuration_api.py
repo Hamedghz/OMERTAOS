@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from control.app.main import app
+from control.app.configuration.service import _default_configuration
 from shared.config.environment import EnvironmentConflictError
 
 
@@ -100,3 +101,37 @@ def test_configuration_rejects_conflicting_gateway_tokens(monkeypatch):
     assert "AION_GATEWAY_ADMIN_TOKEN" in rendered
     assert canonical_value not in rendered
     assert legacy_value not in rendered
+
+
+def test_default_configuration_prefers_canonical_router_settings(monkeypatch):
+    for name in (
+        "AION_ROUTER_POLICY",
+        "AION_LOCAL_PROVIDER",
+        "AION_API_PROVIDER",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("OMERTA_ROUTER_POLICY", "local")
+    monkeypatch.setenv("OMERTA_LOCAL_PROVIDER", "ollama")
+    monkeypatch.setenv("OMERTA_API_PROVIDER", "openai")
+
+    assert _default_configuration() == {
+        "router": {
+            "mode": "local",
+            "local_provider": "ollama",
+            "api_provider": "openai",
+        }
+    }
+
+
+def test_default_configuration_rejects_conflicting_router_aliases(monkeypatch):
+    monkeypatch.setenv("OMERTA_ROUTER_POLICY", "local")
+    monkeypatch.setenv("AION_ROUTER_POLICY", "api")
+
+    with pytest.raises(EnvironmentConflictError) as raised:
+        _default_configuration()
+
+    rendered = str(raised.value)
+    assert "OMERTA_ROUTER_POLICY" in rendered
+    assert "AION_ROUTER_POLICY" in rendered
+    assert "local" not in rendered
+    assert "api" not in rendered

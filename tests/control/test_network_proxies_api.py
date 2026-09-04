@@ -16,10 +16,11 @@ def admin_headers() -> dict[str, str]:
 
 
 def test_proxy_profile_crud_masks_secrets(monkeypatch):
-    monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", "test-admin-token")
-    monkeypatch.setenv("AION_CONTROL_DISABLE_SECRETS", "1")
+    monkeypatch.setenv("OMERTA_GATEWAY_ADMIN_TOKEN", "test-admin-token")
+    monkeypatch.setenv("OMERTA_CONTROL_DISABLE_SECRETS", "1")
     monkeypatch.setenv(
-        "AION_CONTROL_LOCAL_SECRET_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        "OMERTA_CONTROL_LOCAL_SECRET_KEY",
+        "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
     )
     name = f"test-http-{uuid4()}"
 
@@ -64,7 +65,7 @@ def test_proxy_profile_crud_masks_secrets(monkeypatch):
 
 
 def test_proxy_profile_mutations_are_admin_only(monkeypatch):
-    monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", "test-admin-token")
+    monkeypatch.setenv("OMERTA_GATEWAY_ADMIN_TOKEN", "test-admin-token")
     with TestClient(app) as client:
         user_role = client.post(
             "/v1/network/proxies",
@@ -82,7 +83,7 @@ def test_proxy_profile_mutations_are_admin_only(monkeypatch):
 
 
 def test_proxy_profile_views_require_token_before_trusting_roles(monkeypatch):
-    monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", "test-admin-token")
+    monkeypatch.setenv("OMERTA_GATEWAY_ADMIN_TOKEN", "test-admin-token")
     enabled_name = f"enabled-{uuid4()}"
     disabled_name = f"disabled-{uuid4()}"
 
@@ -122,7 +123,7 @@ def test_proxy_profile_views_require_token_before_trusting_roles(monkeypatch):
             },
         )
         admin = client.get("/v1/network/proxies", headers=admin_headers())
-        monkeypatch.setenv("AION_NETWORK_PROXY_STATUS_PUBLIC", "1")
+        monkeypatch.setenv("OMERTA_NETWORK_PROXY_STATUS_PUBLIC", "1")
         public = client.get(
             "/v1/network/proxies",
             headers={"x-aion-roles": "admin"},

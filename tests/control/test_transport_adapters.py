@@ -13,6 +13,8 @@ from control.orchestration.runtime_dispatch import (
 )
 from control.transports import GrpcAdapter, GrpcTransportUnavailable
 from control.transports.tasks_grpc import AionTasksGenericHandler, TaskId, TaskRequest
+from control.transports import tasks_grpc as tasks_grpc_module
+from shared.config.environment import EnvironmentConflictError
 
 
 @dataclass(frozen=True)
@@ -152,6 +154,35 @@ def test_control_grpc_submit_rejects_invalid_runtime_request() -> None:
     assert response.status == "ERROR"
     assert response.error.code == "RUNTIME_REQUEST_INVALID"
     assert dispatcher.requests == []
+
+
+def test_control_grpc_server_reads_canonical_bind_and_rejects_conflict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeServer:
+        def __init__(self) -> None:
+            self.endpoints: list[str] = []
+            self.started = False
+
+        def add_insecure_port(self, endpoint: str) -> int:
+            self.endpoints.append(endpoint)
+            return 50051
+
+        def start(self) -> None:
+            self.started = True
+
+    server = FakeServer()
+    monkeypatch.delenv("AION_CONTROL_GRPC_BIND", raising=False)
+    monkeypatch.setenv("OMERTA_CONTROL_GRPC_BIND", "127.0.0.1:50051")
+    monkeypatch.setattr(tasks_grpc_module, "create_server", lambda: server)
+
+    assert tasks_grpc_module.serve() is server
+    assert server.endpoints == ["127.0.0.1:50051"]
+    assert server.started is True
+
+    monkeypatch.setenv("AION_CONTROL_GRPC_BIND", "0.0.0.0:50051")
+    with pytest.raises(EnvironmentConflictError):
+        tasks_grpc_module.serve()
 
 
 def test_minimal_control_grpc_status_fails_closed_without_storage() -> None:

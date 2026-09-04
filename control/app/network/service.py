@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 import secrets
 from datetime import UTC, datetime
 from pathlib import Path
@@ -85,7 +84,12 @@ class LocalSecretProvider:
 
 
 def _secret_provider():
-    if os.getenv("AION_CONTROL_DISABLE_SECRETS", "1") == "1":
+    disable_secrets = resolve_environment(
+        "OMERTA_CONTROL_DISABLE_SECRETS",
+        aliases=("AION_CONTROL_DISABLE_SECRETS",),
+        default="1",
+    )
+    if disable_secrets == "1":
         return LocalSecretProvider()
     provider = get_secret_provider()
     if not hasattr(provider, "set_secret"):
@@ -94,7 +98,12 @@ def _secret_provider():
 
 
 def _secret_path(profile_id: int) -> str:
-    prefix = os.getenv("AION_PROXY_SECRET_PREFIX", "aion/network/proxy-profiles")
+    prefix = resolve_environment(
+        "OMERTA_PROXY_SECRET_PREFIX",
+        aliases=("AION_PROXY_SECRET_PREFIX",),
+        default="aion/network/proxy-profiles",
+    )
+    assert isinstance(prefix, str)
     return f"{prefix.strip('/')}/{profile_id}"
 
 

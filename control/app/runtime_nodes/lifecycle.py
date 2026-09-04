@@ -19,6 +19,7 @@ from control.scheduling import (
     RuntimeScheduler,
 )
 from control.scheduling.models import RuntimeNode
+from shared.config.environment import integer_parser, resolve_environment
 from shared.generated.python.runtime import runtime_pb2, runtime_pb2_grpc
 
 logger = logging.getLogger(__name__)
@@ -40,23 +41,53 @@ def _csv(value: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(item.strip() for item in value.split(",") if item.strip()))
 
 
-def _positive_int(env: Mapping[str, str], name: str, default: int) -> int:
-    try:
-        value = int(env.get(name, str(default)))
-    except ValueError as exc:
-        raise ValueError(f"{name} must be an integer") from exc
-    if value <= 0:
-        raise ValueError(f"{name} must be positive")
+def _positive_int(
+    env: Mapping[str, str], canonical_name: str, legacy_name: str, default: int
+) -> int:
+    value = resolve_environment(
+        canonical_name,
+        aliases=(legacy_name,),
+        default=str(default),
+        parser=integer_parser(minimum=1),
+        environ=env,
+    )
+    assert isinstance(value, int)
     return value
 
 
-def _positive_float(env: Mapping[str, str], name: str, default: float) -> float:
-    try:
-        value = float(env.get(name, str(default)))
-    except ValueError as exc:
-        raise ValueError(f"{name} must be numeric") from exc
-    if value <= 0:
-        raise ValueError(f"{name} must be positive")
+def _positive_float(
+    env: Mapping[str, str], canonical_name: str, legacy_name: str, default: float
+) -> float:
+    def parse_positive_float(raw_value: str) -> float:
+        parsed = float(raw_value)
+        if parsed <= 0:
+            raise ValueError("not positive")
+        return parsed
+
+    value = resolve_environment(
+        canonical_name,
+        aliases=(legacy_name,),
+        default=str(default),
+        parser=parse_positive_float,
+        environ=env,
+    )
+    assert isinstance(value, float)
+    return value
+
+
+def _string_setting(
+    env: Mapping[str, str],
+    canonical_name: str,
+    legacy_name: str,
+    default: str,
+) -> str:
+    value = resolve_environment(
+        canonical_name,
+        aliases=(legacy_name,),
+        default=default,
+        environ=env,
+    )
+    assert isinstance(value, str)
     return value
 
 
@@ -74,34 +105,64 @@ class RuntimeLifecycleConfig:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "RuntimeLifecycleConfig":
-        values = os.environ if env is None else env
-        enabled_value = values.get("AION_RUNTIME_AUTO_REGISTER", "false").strip().lower()
+        source = os.environ if env is None else env
+        enabled_value = resolve_environment(
+            "OMERTA_RUNTIME_AUTO_REGISTER",
+            aliases=("AION_RUNTIME_AUTO_REGISTER",),
+            default="false",
+            environ=source,
+        )
+        assert isinstance(enabled_value, str)
+        enabled_value = enabled_value.strip().lower()
         if enabled_value not in {"true", "false", "1", "0"}:
-            raise ValueError("AION_RUNTIME_AUTO_REGISTER must be true or false")
+            raise ValueError("OMERTA_RUNTIME_AUTO_REGISTER must be true or false")
 
-        node_id = values.get("AION_RUNTIME_NODE_ID", "runtime-quickstart-1").strip()
-        endpoint = values.get("AION_RUNTIME_ENDPOINT", "runtime:50051").strip()
+        node_id = _string_setting(
+            source,
+            "OMERTA_RUNTIME_NODE_ID",
+            "AION_RUNTIME_NODE_ID",
+            "runtime-quickstart-1",
+        ).strip()
+        endpoint = _string_setting(
+            source,
+            "OMERTA_RUNTIME_ENDPOINT",
+            "AION_RUNTIME_ENDPOINT",
+            "runtime:50051",
+        ).strip()
         capabilities = _csv(
-            values.get("AION_RUNTIME_CAPABILITIES", "terminal.execute")
+            _string_setting(
+                source,
+                "OMERTA_RUNTIME_CAPABILITIES",
+                "AION_RUNTIME_CAPABILITIES",
+                "terminal.execute",
+            )
         )
         interval = _positive_float(
-            values, "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS", 10.0
+            source,
+            "OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
+            "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
+            10.0,
         )
-        timeout = _positive_float(values, "AION_RUNTIME_PROBE_TIMEOUT_SECONDS", 3.0)
+        timeout = _positive_float(
+            source,
+            "OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS",
+            "AION_RUNTIME_PROBE_TIMEOUT_SECONDS",
+            3.0,
+        )
 
         if not node_id or len(node_id) > 120:
-            raise ValueError("AION_RUNTIME_NODE_ID must contain 1 to 120 characters")
+            raise ValueError("OMERTA_RUNTIME_NODE_ID must contain 1 to 120 characters")
         if not endpoint or len(endpoint) > 255:
-            raise ValueError("AION_RUNTIME_ENDPOINT must contain 1 to 255 characters")
+            raise ValueError("OMERTA_RUNTIME_ENDPOINT must contain 1 to 255 characters")
         if not capabilities:
-            raise ValueError("AION_RUNTIME_CAPABILITIES must not be empty")
+            raise ValueError("OMERTA_RUNTIME_CAPABILITIES must not be empty")
         if interval > 20:
             raise ValueError(
-                "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS must not exceed 20"
+                "OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS must not exceed 20"
             )
         if timeout > interval:
             raise ValueError(
-                "AION_RUNTIME_PROBE_TIMEOUT_SECONDS must not exceed the heartbeat interval"
+                "OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS must not exceed the heartbeat interval"
             )
 
         return cls(
@@ -109,12 +170,25 @@ class RuntimeLifecycleConfig:
             node_id=node_id,
             endpoint=endpoint,
             capabilities=capabilities,
-            tenant_ids=_csv(values.get("AION_RUNTIME_TENANT_IDS", "")),
+            tenant_ids=_csv(
+                _string_setting(
+                    source,
+                    "OMERTA_RUNTIME_TENANT_IDS",
+                    "AION_RUNTIME_TENANT_IDS",
+                    "",
+                )
+            ),
             total_cpu_millis=_positive_int(
-                values, "AION_RUNTIME_TOTAL_CPU_MILLIS", 1000
+                source,
+                "OMERTA_RUNTIME_TOTAL_CPU_MILLIS",
+                "AION_RUNTIME_TOTAL_CPU_MILLIS",
+                1000,
             ),
             total_memory_mb=_positive_int(
-                values, "AION_RUNTIME_TOTAL_MEMORY_MB", 512
+                source,
+                "OMERTA_RUNTIME_TOTAL_MEMORY_MB",
+                "AION_RUNTIME_TOTAL_MEMORY_MB",
+                512,
             ),
             heartbeat_interval_seconds=interval,
             probe_timeout_seconds=timeout,
@@ -124,37 +198,47 @@ class RuntimeLifecycleConfig:
     def all_from_env(
         cls, env: Mapping[str, str] | None = None
     ) -> tuple["RuntimeLifecycleConfig", ...]:
-        values = os.environ if env is None else env
-        fallback = cls.from_env(values)
+        source = os.environ if env is None else env
+        fallback = cls.from_env(source)
         if not fallback.enabled:
             return ()
 
-        raw = values.get("AION_RUNTIME_NODES_JSON", "").strip()
+        raw = _string_setting(
+            source,
+            "OMERTA_RUNTIME_NODES_JSON",
+            "AION_RUNTIME_NODES_JSON",
+            "",
+        ).strip()
         if not raw:
             return (fallback,)
         try:
             nodes = json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise ValueError("AION_RUNTIME_NODES_JSON must be valid JSON") from exc
+            raise ValueError("OMERTA_RUNTIME_NODES_JSON must be valid JSON") from exc
         if not isinstance(nodes, list) or not nodes:
-            raise ValueError("AION_RUNTIME_NODES_JSON must be a non-empty array")
+            raise ValueError("OMERTA_RUNTIME_NODES_JSON must be a non-empty array")
 
-        limit = _positive_int(values, "AION_RUNTIME_MANAGED_NODE_LIMIT", 2)
+        limit = _positive_int(
+            source,
+            "OMERTA_RUNTIME_MANAGED_NODE_LIMIT",
+            "AION_RUNTIME_MANAGED_NODE_LIMIT",
+            2,
+        )
         if limit > MAX_MANAGED_RUNTIME_NODES:
             raise ValueError(
-                f"AION_RUNTIME_MANAGED_NODE_LIMIT must not exceed {MAX_MANAGED_RUNTIME_NODES}"
+                f"OMERTA_RUNTIME_MANAGED_NODE_LIMIT must not exceed {MAX_MANAGED_RUNTIME_NODES}"
             )
         if len(nodes) > limit:
-            raise ValueError("AION_RUNTIME_NODES_JSON exceeds the managed node limit")
+            raise ValueError("OMERTA_RUNTIME_NODES_JSON exceeds the managed node limit")
 
         configs = tuple(
-            cls._from_node_config(values, node, index)
+            cls._from_node_config(source, node, index)
             for index, node in enumerate(nodes)
         )
         if len({config.node_id for config in configs}) != len(configs):
-            raise ValueError("AION_RUNTIME_NODES_JSON contains duplicate node ids")
+            raise ValueError("OMERTA_RUNTIME_NODES_JSON contains duplicate node ids")
         if len({config.endpoint for config in configs}) != len(configs):
-            raise ValueError("AION_RUNTIME_NODES_JSON contains duplicate endpoints")
+            raise ValueError("OMERTA_RUNTIME_NODES_JSON contains duplicate endpoints")
         return configs
 
     @classmethod
@@ -181,11 +265,15 @@ class RuntimeLifecycleConfig:
             )
 
         derived = dict(env)
-        derived["AION_RUNTIME_NODE_ID"] = node_id
-        derived["AION_RUNTIME_ENDPOINT"] = endpoint
-        for field, env_name in (
-            ("capabilities", "AION_RUNTIME_CAPABILITIES"),
-            ("tenant_ids", "AION_RUNTIME_TENANT_IDS"),
+        for canonical_name, legacy_name, value in (
+            ("OMERTA_RUNTIME_NODE_ID", "AION_RUNTIME_NODE_ID", node_id),
+            ("OMERTA_RUNTIME_ENDPOINT", "AION_RUNTIME_ENDPOINT", endpoint),
+        ):
+            derived.pop(legacy_name, None)
+            derived[canonical_name] = value
+        for field, canonical_name, legacy_name in (
+            ("capabilities", "OMERTA_RUNTIME_CAPABILITIES", "AION_RUNTIME_CAPABILITIES"),
+            ("tenant_ids", "OMERTA_RUNTIME_TENANT_IDS", "AION_RUNTIME_TENANT_IDS"),
         ):
             if field not in node:
                 continue
@@ -196,11 +284,20 @@ class RuntimeLifecycleConfig:
                 raise ValueError(
                     f"Runtime node entry {index} field {field} must be a string array"
                 )
-            derived[env_name] = ",".join(items)
+            derived.pop(legacy_name, None)
+            derived[canonical_name] = ",".join(items)
 
-        for field, env_name in (
-            ("total_cpu_millis", "AION_RUNTIME_TOTAL_CPU_MILLIS"),
-            ("total_memory_mb", "AION_RUNTIME_TOTAL_MEMORY_MB"),
+        for field, canonical_name, legacy_name in (
+            (
+                "total_cpu_millis",
+                "OMERTA_RUNTIME_TOTAL_CPU_MILLIS",
+                "AION_RUNTIME_TOTAL_CPU_MILLIS",
+            ),
+            (
+                "total_memory_mb",
+                "OMERTA_RUNTIME_TOTAL_MEMORY_MB",
+                "AION_RUNTIME_TOTAL_MEMORY_MB",
+            ),
         ):
             if field not in node:
                 continue
@@ -209,7 +306,8 @@ class RuntimeLifecycleConfig:
                 raise ValueError(
                     f"Runtime node entry {index} field {field} must be an integer"
                 )
-            derived[env_name] = str(value)
+            derived.pop(legacy_name, None)
+            derived[canonical_name] = str(value)
 
         return cls.from_env(derived)
 

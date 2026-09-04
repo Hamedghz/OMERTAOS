@@ -1,9 +1,10 @@
 """Secret provider backed by HashiCorp Vault."""
 from __future__ import annotations
 
-import os
 from functools import lru_cache
 from typing import Any, Dict, Mapping, Tuple
+
+from shared.config.environment import resolve_environment
 
 try:  # pragma: no cover - optional dependency at runtime
     import hvac  # type: ignore
@@ -33,35 +34,32 @@ class SecretProvider:
             message = (
                 "HashiCorp Vault support requires the optional 'hvac' dependency. "
                 "Install it (e.g. 'pip install hvac' or the 'control' extras) or "
-                "set AION_CONTROL_DISABLE_SECRETS=1 to disable Vault integration."
+                "set OMERTA_CONTROL_DISABLE_SECRETS=1 to disable Vault integration."
             )
             raise SecretProviderError(message) from _IMPORT_ERROR
-        self._url = (
-            vault_addr
-            or os.getenv("AION_VAULT_ADDR")
-            or os.getenv("VAULT_ADDR")
-            or ""
-        ).strip()
-        if not self._url:
-            raise SecretProviderError("AION_VAULT_ADDR must be set to contact Vault")
-
-        self._auth_method = (
-            auth_method
-            or os.getenv("AION_VAULT_AUTH_METHOD")
-            or os.getenv("VAULT_AUTH_METHOD")
-            or "token"
-        ).lower()
-        self._namespace = (
-            namespace
-            or os.getenv("AION_VAULT_NAMESPACE")
-            or os.getenv("VAULT_NAMESPACE")
+        resolved_addr = vault_addr or resolve_environment(
+            "VAULT_ADDR", aliases=("AION_VAULT_ADDR",), default=""
         )
-        self._kv_mount = (
-            kv_mount
-            or os.getenv("AION_VAULT_KV_MOUNT")
-            or os.getenv("VAULT_KV_MOUNT")
-            or "secret"
-        ).strip().strip("/")
+        assert isinstance(resolved_addr, str)
+        self._url = resolved_addr.strip()
+        if not self._url:
+            raise SecretProviderError("VAULT_ADDR must be set to contact Vault")
+
+        resolved_auth_method = auth_method or resolve_environment(
+            "VAULT_AUTH_METHOD", aliases=("AION_VAULT_AUTH_METHOD",), default="token"
+        )
+        resolved_namespace = namespace or resolve_environment(
+            "VAULT_NAMESPACE", aliases=("AION_VAULT_NAMESPACE",)
+        )
+        resolved_kv_mount = kv_mount or resolve_environment(
+            "VAULT_KV_MOUNT", aliases=("AION_VAULT_KV_MOUNT",), default="secret"
+        )
+        assert isinstance(resolved_auth_method, str)
+        assert resolved_namespace is None or isinstance(resolved_namespace, str)
+        assert isinstance(resolved_kv_mount, str)
+        self._auth_method = resolved_auth_method.lower()
+        self._namespace = resolved_namespace
+        self._kv_mount = resolved_kv_mount.strip().strip("/")
         self._client = hvac.Client(url=self._url, namespace=self._namespace)
         self._token: str | None = None
         self._authenticate()
@@ -71,23 +69,26 @@ class SecretProvider:
     # ------------------------------------------------------------------
     def _authenticate(self) -> None:
         if self._auth_method == "token":
-            token = os.getenv("AION_VAULT_TOKEN") or os.getenv("VAULT_TOKEN")
+            token = resolve_environment(
+                "VAULT_TOKEN",
+                aliases=("AION_VAULT_TOKEN",),
+            )
             if not token:
-                raise SecretProviderError(
-                    "AION_VAULT_TOKEN must be set when using token auth"
-                )
+                raise SecretProviderError("VAULT_TOKEN must be set when using token auth")
             self._client.token = token
             self._token = token
         elif self._auth_method == "approle":
-            role_id = os.getenv("AION_VAULT_APPROLE_ROLE_ID") or os.getenv(
-                "VAULT_APPROLE_ROLE_ID"
+            role_id = resolve_environment(
+                "VAULT_APPROLE_ROLE_ID",
+                aliases=("AION_VAULT_APPROLE_ROLE_ID",),
             )
-            secret_id = os.getenv("AION_VAULT_APPROLE_SECRET_ID") or os.getenv(
-                "VAULT_APPROLE_SECRET_ID"
+            secret_id = resolve_environment(
+                "VAULT_APPROLE_SECRET_ID",
+                aliases=("AION_VAULT_APPROLE_SECRET_ID",),
             )
             if not role_id or not secret_id:
                 raise SecretProviderError(
-                    "AION_VAULT_APPROLE_ROLE_ID and AION_VAULT_APPROLE_SECRET_ID are required for approle auth"
+                    "VAULT_APPROLE_ROLE_ID and VAULT_APPROLE_SECRET_ID are required for approle auth"
                 )
             response = self._client.auth.approle.login(role_id=role_id, secret_id=secret_id)
             token = response.get("auth", {}).get("client_token")

@@ -27,6 +27,7 @@ from control.scheduling import (
     SchedulingRequest,
 )
 from control.scheduling.models import RuntimeExecutionLease, RuntimeNode
+from shared.config.environment import EnvironmentConflictError
 
 
 class RecordingExecutor:
@@ -132,6 +133,25 @@ def _dispatcher(
         timeout_seconds=0.5,
         max_retries=max_retries,
     )
+
+
+def test_dispatcher_reads_canonical_runtime_limits_and_rejects_conflicts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OMERTA_RUNTIME_TIMEOUT_SECONDS", "4")
+    monkeypatch.setenv("OMERTA_RUNTIME_MAX_RETRIES", "0")
+    dispatcher = RuntimeTaskDispatcher()
+    assert dispatcher.timeout_seconds == 4.0
+    assert dispatcher.max_retries == 0
+
+    monkeypatch.setenv("AION_RUNTIME_TIMEOUT_SECONDS", "3")
+    with pytest.raises(EnvironmentConflictError) as raised:
+        RuntimeTaskDispatcher()
+    rendered = str(raised.value)
+    assert "OMERTA_RUNTIME_TIMEOUT_SECONDS" in rendered
+    assert "AION_RUNTIME_TIMEOUT_SECONDS" in rendered
+    assert "4" not in rendered
+    assert "3" not in rendered
 
 
 def test_dispatch_executes_allowlisted_command_once_and_replays_cached_result(

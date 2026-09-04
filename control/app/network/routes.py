@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
@@ -9,6 +7,7 @@ from control.app.service_auth import (
     gateway_service_token_matches,
     require_gateway_service_token,
 )
+from shared.config.environment import resolve_environment
 
 from .models import get_db, init_db
 from .schemas import (
@@ -62,7 +61,12 @@ def require_admin(request: Request) -> None:
 def require_view(request: Request, roles: set[str] = Depends(_roles)) -> bool:
     if gateway_service_token_matches(request):
         return "admin" in roles
-    if os.getenv("AION_NETWORK_PROXY_STATUS_PUBLIC") == "1":
+    public_status = resolve_environment(
+        "OMERTA_NETWORK_PROXY_STATUS_PUBLIC",
+        aliases=("AION_NETWORK_PROXY_STATUS_PUBLIC",),
+        default="0",
+    )
+    if public_status == "1":
         return False
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN, detail="Proxy status is not available"

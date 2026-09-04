@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import os
 import threading
 from collections import OrderedDict
 from collections.abc import Callable
@@ -23,6 +22,7 @@ from control.clients.runtime import (
 )
 from control.scheduling import NodeState, RuntimeScheduler, SchedulingRequest
 from control.scheduling.models import RuntimeNode
+from shared.config.environment import integer_parser, resolve_environment
 from shared.telemetry.audit import emit_audit
 
 RUNTIME_ECHO_INTENT = "runtime.echo.v1"
@@ -114,13 +114,25 @@ class RuntimeTaskDispatcher:
     ) -> None:
         resolved_timeout = timeout_seconds
         if resolved_timeout is None:
-            resolved_timeout = float(os.getenv("AION_RUNTIME_TIMEOUT_SECONDS", "5"))
+            resolved_timeout = resolve_environment(
+                "OMERTA_RUNTIME_TIMEOUT_SECONDS",
+                aliases=("AION_RUNTIME_TIMEOUT_SECONDS",),
+                default="5",
+                parser=float,
+            )
+            assert isinstance(resolved_timeout, float)
         if resolved_timeout <= 0 or resolved_timeout > 30:
             raise ValueError("Runtime timeout must be between 0 and 30 seconds")
 
         resolved_retries = max_retries
         if resolved_retries is None:
-            resolved_retries = int(os.getenv("AION_RUNTIME_MAX_RETRIES", "1"))
+            resolved_retries = resolve_environment(
+                "OMERTA_RUNTIME_MAX_RETRIES",
+                aliases=("AION_RUNTIME_MAX_RETRIES",),
+                default="1",
+                parser=integer_parser(),
+            )
+            assert isinstance(resolved_retries, int)
         if resolved_retries < 0 or resolved_retries > 1:
             raise ValueError("Runtime retries must be between 0 and 1")
 

@@ -2,15 +2,31 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from functools import lru_cache
 from typing import Iterable
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as rest
+from shared.config.environment import integer_parser, resolve_environment
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://qdrant:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")
-VECTOR_SIZE = int(os.getenv("AION_RAG_VECTOR_SIZE", "64"))
+
+
+def _vector_size(environ: Mapping[str, str] | None = None) -> int:
+    value = resolve_environment(
+        "OMERTA_RAG_VECTOR_SIZE",
+        aliases=("AION_RAG_VECTOR_SIZE",),
+        default="64",
+        parser=integer_parser(minimum=1),
+        environ=environ,
+    )
+    assert isinstance(value, int)
+    return value
+
+
+VECTOR_SIZE = _vector_size()
 
 
 def _client_kwargs() -> dict[str, str]:

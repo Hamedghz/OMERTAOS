@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from concurrent import futures
 from typing import Iterable
 from uuid import uuid4
@@ -15,6 +14,7 @@ from control.orchestration.runtime_dispatch import (
     RuntimeDispatchResult,
     RuntimeTaskDispatcher,
 )
+from shared.config.environment import resolve_environment
 
 LOGGER = logging.getLogger(__name__)
 
@@ -442,7 +442,13 @@ def create_server(max_workers: int = 2) -> grpc.Server:
 
 
 def serve(endpoint: str | None = None) -> grpc.Server:
-    bind_endpoint = endpoint or os.getenv("AION_CONTROL_GRPC_BIND", "0.0.0.0:50051")
+    configured_endpoint = resolve_environment(
+        "OMERTA_CONTROL_GRPC_BIND",
+        aliases=("AION_CONTROL_GRPC_BIND",),
+        default="0.0.0.0:50051",
+    )
+    assert isinstance(configured_endpoint, str)
+    bind_endpoint = endpoint or configured_endpoint
     server = create_server()
     bound_port = server.add_insecure_port(bind_endpoint)
     if bound_port == 0:
