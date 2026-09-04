@@ -136,8 +136,6 @@ with SessionLocal() as db:
 }
 
 check_quickstart() {
-  for executable in curl jq; do command -v "$executable" >/dev/null || die "$executable is required"; done
-  command -v docker >/dev/null || die 'docker is required for Quickstart readiness'
   [[ -z "$PROJECT_NAME" || "$PROJECT_NAME" =~ ^[a-z0-9][a-z0-9_-]*$ ]] \
     || die 'project name must start with a lowercase letter or digit and contain only lowercase letters, digits, hyphens, or underscores'
   if [[ "$QUICKSTART_COMPOSE_FILE" != /* ]]; then
@@ -147,6 +145,8 @@ check_quickstart() {
   validate_port OMERTA_CONSOLE_HOST_PORT "$CONSOLE_PORT"
   validate_port OMERTA_GATEWAY_HOST_PORT "$GATEWAY_PORT"
   validate_port OMERTA_CONTROL_HOST_PORT "$CONTROL_PORT"
+  for executable in curl jq; do command -v "$executable" >/dev/null || die "$executable is required"; done
+  command -v docker >/dev/null || die 'docker is required for Quickstart readiness'
 
   check_compose_health PostgreSQL postgres
   check_compose_health Redis redis
