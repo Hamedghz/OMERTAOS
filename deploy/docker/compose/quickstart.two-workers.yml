@@ -2,12 +2,11 @@ services:
   runtime-secondary:
     image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}
     environment:
-      AION_RUNTIME_BIND_ADDR: 0.0.0.0:50051
-      AION_RUNTIME_NODE_ID: runtime-quickstart-2
-      AION_RUNTIME_CAPABILITIES: terminal.execute,resource.allocate
-      AION_RUNTIME_MEMORY_MB: "1024"
+      OMERTA_RUNTIME_BIND_ADDR: 0.0.0.0:50051
+      OMERTA_RUNTIME_NODE_ID: runtime-quickstart-2
+      OMERTA_RUNTIME_CAPABILITIES: terminal.execute,resource.allocate
+      OMERTA_RUNTIME_MEMORY_MB: "1024"
       OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS: ${OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS:-${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-120}}
-      AION_RUNTIME_LEASE_MAX_TTL_SECONDS: ${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-}
       OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
       OMERTA_RUNTIME_LEASE_STATE_PATH: /var/lib/omerta/runtime/lease-fence.json
       OMERTA_PROFILE: ${OMERTA_PROFILE:-lite}
@@ -28,8 +27,8 @@ services:
 
   control:
     environment:
-      AION_RUNTIME_MANAGED_NODE_LIMIT: "2"
-      AION_RUNTIME_NODES_JSON: >-
+      OMERTA_RUNTIME_MANAGED_NODE_LIMIT: "2"
+      OMERTA_RUNTIME_NODES_JSON: >-
         [{"node_id":"runtime-quickstart-1","endpoint":"runtime:50051","capabilities":["terminal.execute"],"tenant_ids":["tenant-shared","tenant-primary"],"total_cpu_millis":1000,"total_memory_mb":512},{"node_id":"runtime-quickstart-2","endpoint":"runtime-secondary:50051","capabilities":["terminal.execute","resource.allocate"],"tenant_ids":["tenant-shared","tenant-secondary"],"total_cpu_millis":2000,"total_memory_mb":1024}]
 
 volumes:

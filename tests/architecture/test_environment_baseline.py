@@ -23,7 +23,7 @@ def test_active_environment_example_has_unambiguous_control_defaults() -> None:
     example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
 
     assert example.count("OMERTA_CONTROL_POSTGRES_DSN=") == 1
-    assert example.count("AION_CONTROL_POSTGRES_DSN=") == 1
+    assert "AION_CONTROL_POSTGRES_DSN=" not in example
     assert "OMERTA_CONTROL_GRPC=control:50051" in example
     assert "OMERTA_RATE_LIMIT_PER_IP=30" in example
 

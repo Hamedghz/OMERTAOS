@@ -105,22 +105,22 @@ services:
       context: .
       dockerfile: control/Dockerfile
     environment:
-      AION_DOCKER: "1"
-      AION_CONTROL_DISABLE_SECRETS: "1"
-      AION_CONTROL_LOCAL_SECRET_KEY: ${OMERTA_CONTROL_LOCAL_SECRET_KEY:-${AION_CONTROL_LOCAL_SECRET_KEY:-}}
-      AION_CONTROL_POSTGRES_DSN: postgresql://aion:aion@postgres:5432/aion
-      AION_CONTROL_MONGO_DSN: mongodb://mongo:27017/aion
-      AION_CONTROL_REDIS_URL: redis://redis:6379/0
-      AION_CONTROL_QDRANT_URL: http://qdrant:6333
-      AION_CONTROL_MINIO_ENDPOINT: minio:9000
-      AION_CONTROL_MINIO_ACCESS_KEY: minio
-      AION_CONTROL_MINIO_SECRET_KEY: miniosecret
-      AION_CONTROL_MINIO_BUCKET: aion-raw
-      AION_CONTROL_MINIO_SECURE: "false"
-      AION_CONTROL_MODELS_DIRECTORY: /app/registry/models
-      AION_CONTROL_POLICIES_DIRECTORY: /app/policies
+      OMERTA_DOCKER: "1"
+      OMERTA_CONTROL_DISABLE_SECRETS: "1"
+      OMERTA_CONTROL_LOCAL_SECRET_KEY: ${OMERTA_CONTROL_LOCAL_SECRET_KEY:-${AION_CONTROL_LOCAL_SECRET_KEY:-}}
+      OMERTA_CONTROL_POSTGRES_DSN: postgresql://aion:aion@postgres:5432/aion
+      OMERTA_CONTROL_MONGO_DSN: mongodb://mongo:27017/aion
+      OMERTA_CONTROL_REDIS_URL: redis://redis:6379/0
+      OMERTA_CONTROL_QDRANT_URL: http://qdrant:6333
+      OMERTA_CONTROL_MINIO_ENDPOINT: minio:9000
+      OMERTA_CONTROL_MINIO_ACCESS_KEY: minio
+      OMERTA_CONTROL_MINIO_SECRET_KEY: miniosecret
+      OMERTA_CONTROL_MINIO_BUCKET: aion-raw
+      OMERTA_CONTROL_MINIO_SECURE: "false"
+      OMERTA_CONTROL_MODELS_DIRECTORY: /app/registry/models
+      OMERTA_CONTROL_POLICIES_DIRECTORY: /app/policies
       TENANCY_MODE: single
-      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
+      OMERTA_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
@@ -153,24 +153,24 @@ services:
       context: .
       dockerfile: gateway/Dockerfile
     environment:
-      AION_GATEWAY_PORT: 8080
-      AION_GATEWAY_HOST: 0.0.0.0
-      AION_CONTROL_GRPC: control:50051
-      AION_CONTROL_BASE_URL: http://control:8000
-      AION_CONTROL_API_PREFIX: /v1
-      AION_REDIS_URL: redis://redis:6379/0
-      AION_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-dev-admin-token}}}
-      AION_AUTH_MODE: disabled
+      OMERTA_GATEWAY_PORT: 8080
+      OMERTA_GATEWAY_HOST: 0.0.0.0
+      OMERTA_CONTROL_GRPC: control:50051
+      OMERTA_CONTROL_BASE_URL: http://control:8000
+      OMERTA_CONTROL_API_PREFIX: /v1
+      OMERTA_REDIS_URL: redis://redis:6379/0
+      OMERTA_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-dev-admin-token}}}
+      OMERTA_AUTH_MODE: disabled
       SECRET_PROVIDER_MODE: local
-      AION_SELF_EVOLVING_ENABLED: "false"
-      AION_RATE_LIMIT_MAX: "1000"
-      AION_RATE_LIMIT_PER_IP: "true"
-      AION_RATE_LIMIT_WINDOW: "60"
-      AION_IDEMPOTENCY_TTL: "600"
-      AION_TLS_REQUIRE_MTLS: "false"
-      AION_TLS_REQUIRED: "false"
-      AION_DEV_KERNEL_ENABLED: "false"
-      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
+      OMERTA_SELF_EVOLVING_ENABLED: "false"
+      OMERTA_RATE_LIMIT_MAX: "1000"
+      OMERTA_RATE_LIMIT_PER_IP: "30"
+      OMERTA_RATE_LIMIT_WINDOW: "60"
+      OMERTA_IDEMPOTENCY_TTL: "600"
+      OMERTA_TLS_REQUIRE_MTLS: "false"
+      OMERTA_TLS_REQUIRED: "false"
+      OMERTA_DEV_KERNEL_ENABLED: "false"
+      OMERTA_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
@@ -197,19 +197,19 @@ services:
       context: .
       dockerfile: console/Dockerfile
     environment:
-      AION_DOCKER: "1"
+      OMERTA_DOCKER: "1"
       DOCKER: "true"
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: development-secret
       NEXT_PUBLIC_GATEWAY_URL: http://localhost:8080
       GATEWAY_URL: http://gateway:8080
-      AION_GATEWAY_URL: http://gateway:8080
+      OMERTA_GATEWAY_URL: http://gateway:8080
       DATABASE_URL: postgresql://aion:aion@postgres:5432/aion?schema=public
       SECRET_PROVIDER_MODE: local
-      AION_DEV_ADMIN_TOKEN: ${OMERTA_DEV_ADMIN_TOKEN:-${AION_DEV_ADMIN_TOKEN:-dev-admin-token}}
-      AION_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}}}
+      OMERTA_DEV_ADMIN_TOKEN: ${OMERTA_DEV_ADMIN_TOKEN:-${AION_DEV_ADMIN_TOKEN:-dev-admin-token}}
+      OMERTA_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}}}
       PORT: 3000
-      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
+      OMERTA_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}

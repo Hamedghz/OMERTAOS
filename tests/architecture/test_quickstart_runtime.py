@@ -11,9 +11,9 @@ def test_quickstart_uses_canonical_runtime_daemon() -> None:
     assert "  runtime:\n" in compose
     assert "image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}" in compose
     assert "dockerfile: runtime-daemon/Dockerfile" in compose
-    assert "AION_RUNTIME_BIND_ADDR: 0.0.0.0:50051" in compose
+    assert "OMERTA_RUNTIME_BIND_ADDR: 0.0.0.0:50051" in compose
     assert (
-        "AION_CONTROL_GRPC_BIND: "
+        "OMERTA_CONTROL_GRPC_BIND: "
         "${OMERTA_CONTROL_GRPC_BIND:-${AION_CONTROL_GRPC_BIND:-0.0.0.0:50051}}"
         in compose
     )
@@ -76,7 +76,7 @@ def test_quickstart_gateway_declares_development_api_key_map() -> None:
     compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
 
     assert (
-        "AION_GATEWAY_API_KEYS: "
+        "OMERTA_GATEWAY_API_KEYS: "
         "${OMERTA_GATEWAY_API_KEYS:-${AION_GATEWAY_API_KEYS:-dev-admin-token:admin}}"
         in compose
     )
@@ -140,7 +140,7 @@ def test_quickstart_supports_an_isolated_local_stack() -> None:
         in compose
     )
     assert (
-        "AION_CORS_ORIGINS: "
+        "OMERTA_CORS_ORIGINS: "
         "${OMERTA_CORS_ORIGINS:-${AION_CORS_ORIGINS:-http://localhost:3000}}"
         in compose
     )
@@ -162,27 +162,27 @@ def test_quickstart_enables_bounded_runtime_lifecycle_management() -> None:
     )[0]
 
     assert (
-        "AION_RUNTIME_AUTO_REGISTER: "
+        "OMERTA_RUNTIME_AUTO_REGISTER: "
         "${OMERTA_RUNTIME_AUTO_REGISTER:-${AION_RUNTIME_AUTO_REGISTER:-true}}"
         in control
     )
     assert (
-        "AION_RUNTIME_NODE_ID: "
+        "OMERTA_RUNTIME_NODE_ID: "
         "${OMERTA_RUNTIME_NODE_ID:-${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}}"
         in control
     )
     assert (
-        "AION_RUNTIME_CAPABILITIES: "
+        "OMERTA_RUNTIME_CAPABILITIES: "
         "${OMERTA_RUNTIME_CAPABILITIES:-${AION_RUNTIME_CAPABILITIES:-terminal.execute}}"
         in control
     )
     assert (
-        "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: "
+        "OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: "
         "${OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-"
         "${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}}" in control
     )
     assert (
-        "AION_RUNTIME_MANAGED_NODE_LIMIT: ${OMERTA_RUNTIME_MANAGED_NODE_LIMIT:-"
+        "OMERTA_RUNTIME_MANAGED_NODE_LIMIT: ${OMERTA_RUNTIME_MANAGED_NODE_LIMIT:-"
         "${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}}"
         in control
     )

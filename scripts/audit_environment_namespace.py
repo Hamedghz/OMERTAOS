@@ -104,6 +104,7 @@ CANONICAL_OVERRIDES = {
 IMPLEMENTED_DUAL_READ = {
     "AION_ADMIN_TOKEN",
     "AION_ADMIN_TOKEN_SECRET_PATH",
+    "AION_API_PROVIDER",
     "AION_AUTH_MODE",
     "AION_CONSOLE_ORIGIN",
     "AION_CONTROL_API_PREFIX",
@@ -112,15 +113,31 @@ IMPLEMENTED_DUAL_READ = {
     "AION_CONTROL_CORS_ORIGINS",
     "AION_CONTROL_DATABASE_URL",
     "AION_CONTROL_DATA_DIR",
+    "AION_CONTROL_DISABLE_SECRETS",
     "AION_CONTROL_GRPC",
+    "AION_CONTROL_GRPC_BIND",
     "AION_CONTROL_HTTP_HOST",
     "AION_CONTROL_HTTP_PORT",
     "AION_CONTROL_LOCAL_SECRET_KEY",
+    "AION_CONTROL_MINIO_ACCESS_KEY",
+    "AION_CONTROL_MINIO_BUCKET",
+    "AION_CONTROL_MINIO_ENDPOINT",
+    "AION_CONTROL_MINIO_SECRET_KEY",
+    "AION_CONTROL_MINIO_SECURE",
     "AION_CONTROL_MODELS_DIRECTORY",
+    "AION_CONTROL_MONGO_DSN",
+    "AION_CONTROL_POLICIES_DIRECTORY",
     "AION_CONTROL_POSTGRES_DSN",
+    "AION_CONTROL_QDRANT_URL",
+    "AION_CONTROL_REDIS_URL",
     "AION_CONTROL_SECRET_DIR",
+    "AION_CONTROL_TLS_NAME",
     "AION_CORS_ORIGINS",
     "AION_DEV_BYPASS_AUTH",
+    "AION_DEV_KERNEL_ENABLED",
+    "AION_DEV_KERNEL_PROFILE",
+    "AION_DEV_KERNEL_URL",
+    "AION_DOCKER",
     "AION_ENABLE_PRISMA",
     "AION_ENV",
     "AION_GATEWAY_ADMIN_TOKEN",
@@ -130,17 +147,69 @@ IMPLEMENTED_DUAL_READ = {
     "AION_GATEWAY_HOST",
     "AION_GATEWAY_PORT",
     "AION_GATEWAY_URL",
+    "AION_IDEMPOTENCY_TTL",
     "AION_JWT_PUBLIC_KEY",
     "AION_JWT_SECRET_PATH",
+    "AION_LOCAL_PROVIDER",
+    "AION_MEMORY_URL",
+    "AION_MODEL_REGISTRY_URL",
+    "AION_NETWORK_PROXY_STATUS_PUBLIC",
+    "AION_OTEL_ENABLED",
     "AION_PROFILE",
+    "AION_PROTO_ROOT",
+    "AION_PROXY_SECRET_PREFIX",
+    "AION_RAG_VECTOR_SIZE",
+    "AION_RATE_LIMIT_MAX",
+    "AION_RATE_LIMIT_PER_IP",
+    "AION_RATE_LIMIT_WINDOW",
+    "AION_REDIS_HOST",
     "AION_REDIS_URL",
+    "AION_ROUTER_POLICY",
     "AION_RUNTIME_BIND_ADDR",
+    "AION_RUNTIME_AUTO_REGISTER",
+    "AION_RUNTIME_CAPABILITIES",
     "AION_RUNTIME_ENDPOINT",
     "AION_RUNTIME_HEALTH_ADDR",
+    "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
     "AION_RUNTIME_LEASE_MAX_TTL_SECONDS",
     "AION_RUNTIME_LEASE_STATE_PATH",
     "AION_RUNTIME_LEASE_TTL_SECONDS",
+    "AION_RUNTIME_MANAGED_NODE_LIMIT",
+    "AION_RUNTIME_MAX_RETRIES",
+    "AION_RUNTIME_MEMORY_MB",
+    "AION_RUNTIME_NODES_JSON",
+    "AION_RUNTIME_NODE_ID",
+    "AION_RUNTIME_PROBE_TIMEOUT_SECONDS",
+    "AION_RUNTIME_TENANT_IDS",
+    "AION_RUNTIME_TIMEOUT_SECONDS",
+    "AION_RUNTIME_TOTAL_CPU_MILLIS",
+    "AION_RUNTIME_TOTAL_MEMORY_MB",
+    "AION_SELF_EVOLVING_CHANNEL",
+    "AION_SELF_EVOLVING_ENABLED",
+    "AION_SERVICE_NAME",
+    "AION_TLS_CA_CHAIN",
+    "AION_TLS_CA_PEM",
+    "AION_TLS_CERT",
+    "AION_TLS_CERT_PEM",
+    "AION_TLS_CLIENT_CA_SECRET_PATH",
+    "AION_TLS_KEY",
+    "AION_TLS_KEY_PEM",
+    "AION_TLS_REQUIRED",
+    "AION_TLS_REQUIRE_MTLS",
+    "AION_TLS_SECRET_PATH",
     "AION_TRUST_PROXY",
+    *VAULT_STANDARD_NAMES,
+}
+
+M3_COMPATIBILITY_BOUNDARIES = {
+    "deploy/docker/compose/full.yml",
+    "deploy/docker/compose/local.yml",
+    "deploy/docker/compose/quickstart.two-workers.yml",
+    "deploy/docker/compose/quickstart.yml",
+}
+QUARANTINED_LEGACY_READERS = {
+    ("deploy/docker/compose/catalog.yml", "AION_VAULT_KEY"),
+    ("deploy/docker/compose/catalog.yml", "AION_VAULT_PROVIDER"),
 }
 
 HOST_BOUNDARY_NAMES = {
@@ -485,10 +554,34 @@ def _check_reader_allowlist(readers: list[dict[str, str]]) -> list[str]:
     }
     actual = {(item["path"], item["name"], item["kind"]) for item in readers}
     additions = sorted(actual - allowed)
+    removals = sorted(allowed - actual)
     return [
         f"new direct legacy reader: {path} -> {name} ({kind})"
         for path, name, kind in additions
+    ] + [
+        f"stale legacy reader fixture: {path} -> {name} ({kind})"
+        for path, name, kind in removals
     ]
+
+
+def _check_m3_reader_boundaries(readers: list[dict[str, str]]) -> list[str]:
+    errors: list[str] = []
+    for reader in readers:
+        path = reader["path"]
+        name = reader["name"]
+        kind = reader["kind"]
+        if (
+            path in M3_COMPATIBILITY_BOUNDARIES
+            and kind == "shell-or-compose-expansion"
+        ):
+            continue
+        if (path, name) in QUARANTINED_LEGACY_READERS:
+            continue
+        errors.append(
+            f"legacy reader outside an M3 compatibility boundary: "
+            f"{path} -> {name} ({kind})"
+        )
+    return errors
 
 
 def _check_no_new_legacy_names(inventory: dict[str, Any]) -> list[str]:
@@ -515,23 +608,27 @@ def main() -> int:
     readers = scan_direct_readers()
     if args.write:
         _write_json(INVENTORY_PATH, inventory)
+        _write_json(ALLOWLIST_PATH, {"readers": readers})
         print(
             f"inventory: {inventory['snapshot']['token_count']} tokens, "
             f"{inventory['snapshot']['files_with_tokens']} files, "
-            f"{inventory['snapshot']['occurrences']} occurrences"
+            f"{inventory['snapshot']['occurrences']} occurrences; "
+            f"{len(readers)} reviewed compatibility readers"
         )
         return 0
 
     errors = _check_exact(INVENTORY_PATH, inventory)
     errors.extend(_check_no_new_legacy_names(inventory))
     errors.extend(_check_reader_allowlist(readers))
+    errors.extend(_check_m3_reader_boundaries(readers))
     if errors:
         print("\n".join(errors), file=sys.stderr)
         return 1
     print(
         f"environment namespace gate passed: "
         f"{inventory['snapshot']['token_count']} inventoried tokens; "
-        f"{len(readers)} active direct legacy readers within the M0 allowlist"
+        f"{len(readers)} legacy host-fallback readers confined to reviewed "
+        "compatibility boundaries"
     )
     return 0
 
