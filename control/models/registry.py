@@ -1,13 +1,14 @@
 """Canonical model-profile reader backed by ``registry/models``."""
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock
 from typing import Any
 
 import yaml
+
+from shared.config.environment import resolve_environment
 
 _FORBIDDEN_SECRET_KEYS = {
     "accesskey",
@@ -54,8 +55,12 @@ class ModelProfile:
 
 
 def default_models_directory() -> Path:
-    configured = os.getenv("AION_CONTROL_MODELS_DIRECTORY")
+    configured = resolve_environment(
+        "OMERTA_CONTROL_MODELS_DIRECTORY",
+        aliases=("AION_CONTROL_MODELS_DIRECTORY",),
+    )
     if configured:
+        assert isinstance(configured, str)
         return Path(configured).expanduser().resolve()
     return Path(__file__).resolve().parents[2] / "registry" / "models"
 

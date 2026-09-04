@@ -16,6 +16,7 @@ from control.clients.runtime import (
 )
 from control.clients.runtime import grpc_transport as grpc_transport_module
 from control.clients.runtime.grpc_transport import GrpcRuntimeTransport
+from shared.config.environment import EnvironmentConflictError
 
 
 class RecordingTransport:
@@ -114,6 +115,33 @@ def test_runtime_envelope_rejects_empty_capabilities_and_oversized_metadata() ->
             ("echo",),
             task_id="x" * 256,
         )
+
+
+def test_runtime_client_reads_canonical_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AION_RUNTIME_ENDPOINT", raising=False)
+    monkeypatch.setenv("OMERTA_RUNTIME_ENDPOINT", "runtime-canonical:50051")
+
+    client = RuntimeDaemonClient()
+
+    assert client.endpoint == "runtime-canonical:50051"
+
+
+def test_runtime_client_rejects_conflicting_endpoints(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    canonical_value = "runtime-canonical:50051"
+    legacy_value = "runtime-legacy:50051"
+    monkeypatch.setenv("OMERTA_RUNTIME_ENDPOINT", canonical_value)
+    monkeypatch.setenv("AION_RUNTIME_ENDPOINT", legacy_value)
+
+    with pytest.raises(EnvironmentConflictError) as raised:
+        RuntimeDaemonClient()
+
+    rendered = str(raised.value)
+    assert "OMERTA_RUNTIME_ENDPOINT" in rendered
+    assert "AION_RUNTIME_ENDPOINT" in rendered
+    assert canonical_value not in rendered
+    assert legacy_value not in rendered
 
 
 @pytest.mark.asyncio

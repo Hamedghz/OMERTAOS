@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
 import secrets
 
 from fastapi import HTTPException, Request, status
+from shared.config.environment import resolve_environment
 
 
 def gateway_service_token_matches(request: Request) -> bool:
@@ -11,9 +11,12 @@ def gateway_service_token_matches(request: Request) -> bool:
     if not authorization.startswith("Bearer "):
         return False
     token = authorization.removeprefix("Bearer ")
-    configured = (
-        os.getenv("AION_GATEWAY_ADMIN_TOKEN") or os.getenv("AION_ADMIN_TOKEN") or ""
+    configured = resolve_environment(
+        "OMERTA_GATEWAY_ADMIN_TOKEN",
+        aliases=("AION_GATEWAY_ADMIN_TOKEN", "AION_ADMIN_TOKEN"),
+        default="",
     )
+    assert isinstance(configured, str)
     return bool(configured and secrets.compare_digest(token, configured))
 
 

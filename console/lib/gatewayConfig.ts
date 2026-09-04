@@ -1,7 +1,9 @@
 import { resolveEnvironment } from "./environment";
 
-const isDockerEnv =
-  process.env.AION_DOCKER === "1" || process.env.DOCKER === "true";
+const dockerSetting = resolveEnvironment("OMERTA_DOCKER", {
+  aliases: ["AION_DOCKER"],
+});
+const isDockerEnv = dockerSetting === "1" || process.env.DOCKER === "true";
 const localDefaultGateway = "http://localhost:8080";
 const dockerDefaultGateway = "http://gateway:8080";
 

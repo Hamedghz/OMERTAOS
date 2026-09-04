@@ -5,6 +5,8 @@ use crate::security::lease::LeaseHmacKey;
 
 const LEASE_HMAC_ENV: &str = "OMERTA_RUNTIME_LEASE_HMAC_KEY";
 const LEASE_HMAC_FILE_ENV: &str = "OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE";
+const BIND_ADDR_ENV: &str = "OMERTA_RUNTIME_BIND_ADDR";
+const LEGACY_BIND_ADDR_ENV: &str = "AION_RUNTIME_BIND_ADDR";
 const LEASE_MAX_TTL_ENV: &str = "OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS";
 const LEGACY_LEASE_MAX_TTL_ENV: &str = "AION_RUNTIME_LEASE_MAX_TTL_SECONDS";
 const LEASE_STATE_PATH_ENV: &str = "OMERTA_RUNTIME_LEASE_STATE_PATH";
@@ -64,8 +66,13 @@ pub struct RuntimeConfig {
 impl RuntimeConfig {
     pub fn from_environment() -> anyhow::Result<Self> {
         Ok(Self {
-            bind_addr: std::env::var("AION_RUNTIME_BIND_ADDR")
-                .unwrap_or_else(|_| "127.0.0.1:50051".to_string()),
+            bind_addr: resolve_environment(
+                EnvironmentSpec::new(BIND_ADDR_ENV)
+                    .aliases(&[LEGACY_BIND_ADDR_ENV])
+                    .default("127.0.0.1:50051"),
+                |value| Ok(value.to_owned()),
+            )?
+            .expect("Runtime bind address has a default"),
             profile: std::env::var("OMERTA_PROFILE").unwrap_or_else(|_| "lite".to_string()),
             node_id: std::env::var("AION_RUNTIME_NODE_ID")
                 .unwrap_or_else(|_| "runtime-local-1".to_string()),

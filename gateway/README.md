@@ -47,17 +47,22 @@ JWT signatures, issuer/audience/expiry, API keys where enabled, and optional req
 
 | Variable | Meaning | Typical value |
 |---|---|---|
-| `AION_GATEWAY_HOST`, `AION_GATEWAY_PORT` | Listener | `0.0.0.0`, `8080` |
-| `AION_TRUST_PROXY` | Trust forwarded host/protocol headers | `false` |
-| `AION_CONTROL_GRPC` | Control gRPC target | `control:50051` |
-| `AION_REDIS_URL` | Cache/coordination | `redis://redis:6379/0` |
-| `AION_JWT_PUBLIC_KEY` / `AION_JWT_SECRET_PATH` | JWT verification material | secret-managed |
-| `AION_GATEWAY_API_KEYS` | Development API-key map | unset in production |
+| `OMERTA_GATEWAY_HOST`, `OMERTA_GATEWAY_PORT` | Listener | `0.0.0.0`, `8080` |
+| `OMERTA_TRUST_PROXY` | Trust forwarded host/protocol headers | `false` |
+| `OMERTA_CONTROL_GRPC` | Control gRPC target | `control:50051` |
+| `OMERTA_REDIS_URL` | Cache/coordination | `redis://redis:6379/0` |
+| `OMERTA_JWT_PUBLIC_KEY` / `OMERTA_JWT_SECRET_PATH` | JWT verification material | secret-managed |
+| `OMERTA_GATEWAY_API_KEYS` | Development API-key map | unset in production |
 | `AION_RATE_LIMIT_MAX`, `AION_RATE_LIMIT_WINDOW`, `AION_RATE_LIMIT_PER_IP` | Quotas | deployment-specific |
 | `AION_IDEMPOTENCY_TTL` | Idempotency retention seconds | `900` |
-| `AION_CORS_ORIGINS` | Allowed browser origins | explicit list |
+| `OMERTA_CORS_ORIGINS` | Allowed browser origins | explicit list |
 | `AION_TLS_REQUIRED`, `AION_TLS_REQUIRE_MTLS` | Transport enforcement | `true` in production |
 | `AION_OTEL_ENABLED`, `AION_SERVICE_NAME` | Telemetry | `true`, `omertaos-gateway` |
+
+The listed `OMERTA_*` settings use fail-closed dual-read resolvers; their
+`AION_*` aliases are deprecated. Rate-limit, TLS, telemetry, and self-evolving
+process settings remain on the legacy names shown above until M3 and must not be
+claimed as canonical direct-binary inputs yet.
 
 ## Local Docker run
 

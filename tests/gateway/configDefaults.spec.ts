@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 describe("gateway configuration defaults", () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.stubEnv("OMERTA_GATEWAY_PORT", "");
     vi.stubEnv("AION_GATEWAY_PORT", "");
+    vi.stubEnv("OMERTA_CONSOLE_ORIGIN", "");
     vi.stubEnv("AION_CONSOLE_ORIGIN", "");
+    vi.stubEnv("OMERTA_CORS_ORIGINS", "");
     vi.stubEnv("AION_CORS_ORIGINS", "");
   });
 
@@ -26,6 +29,33 @@ describe("gateway configuration defaults", () => {
     const { gatewayConfig } = await import("../../gateway/src/config.js");
 
     expect(gatewayConfig.profile).toBe("professional");
+  });
+
+  it("uses the canonical Gateway port", async () => {
+    vi.stubEnv("OMERTA_GATEWAY_PORT", "8181");
+    vi.stubEnv("AION_GATEWAY_PORT", "");
+
+    const { gatewayConfig } = await import("../../gateway/src/config.js");
+
+    expect(gatewayConfig.port).toBe(8181);
+  });
+
+  it("rejects conflicting Gateway ports without exposing values", async () => {
+    vi.stubEnv("OMERTA_GATEWAY_PORT", "8181");
+    vi.stubEnv("AION_GATEWAY_PORT", "8282");
+
+    let error: unknown;
+    try {
+      await import("../../gateway/src/config.js");
+    } catch (caught) {
+      error = caught;
+    }
+
+    const rendered = String(error);
+    expect(rendered).toContain("OMERTA_GATEWAY_PORT");
+    expect(rendered).toContain("AION_GATEWAY_PORT");
+    expect(rendered).not.toContain("8181");
+    expect(rendered).not.toContain("8282");
   });
 
   it("rejects conflicting Gateway profile names without exposing values", async () => {

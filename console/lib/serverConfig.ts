@@ -1,5 +1,7 @@
 import { SecretProvider, SecretProviderError } from '@aion/secret-provider';
 
+import { resolveEnvironment } from './environment';
+
 export interface ConsoleSecrets {
   adminToken: string;
 }
@@ -19,12 +21,16 @@ const resolveSecretProviderMode = (raw: string | undefined): string => {
 
 const secretProviderMode = resolveSecretProviderMode(process.env.SECRET_PROVIDER_MODE);
 
-const vaultEnabledRaw =
-  process.env.AION_VAULT_ENABLED ?? process.env.VAULT_ENABLED ?? undefined;
+const vaultEnabledRaw = resolveEnvironment('VAULT_ENABLED', {
+  aliases: ['AION_VAULT_ENABLED'],
+});
+const vaultAddress = resolveEnvironment('VAULT_ADDR', {
+  aliases: ['AION_VAULT_ADDR'],
+});
 const vaultEnabled =
   vaultEnabledRaw !== undefined
     ? normalizeBoolean(vaultEnabledRaw)
-    : Boolean(process.env.AION_VAULT_ADDR || process.env.VAULT_ADDR);
+    : Boolean(vaultAddress);
 
 if (secretProviderMode === 'local') {
   secretProvider = new SecretProvider({ mode: 'local' });
@@ -39,23 +45,31 @@ if (secretProviderMode === 'local') {
   }
 }
 
-const ensureSecretProvider = (path: string): SecretProvider => {
+const ensureSecretProvider = (): SecretProvider => {
   if (!secretProvider) {
     throw new SecretProviderError(
-      `Secret provider is not configured but secret path '${path}' was requested`,
+      'Secret provider is not configured for OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH',
     );
   }
   return secretProvider;
 };
 
 const loadConsoleSecrets = async (): Promise<ConsoleSecrets> => {
-  const secretPath = process.env.AION_ADMIN_TOKEN_SECRET_PATH;
+  const secretPath = resolveEnvironment('OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH', {
+    aliases: [
+      'AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH',
+      'AION_ADMIN_TOKEN_SECRET_PATH',
+    ],
+  });
+  const configuredToken = resolveEnvironment('OMERTA_GATEWAY_ADMIN_TOKEN', {
+    aliases: ['AION_GATEWAY_ADMIN_TOKEN', 'AION_ADMIN_TOKEN'],
+  });
   if (!secretPath) {
     return {
-      adminToken: process.env.AION_ADMIN_TOKEN || process.env.NEXT_PUBLIC_SETUP_TOKEN || '',
+      adminToken: configuredToken || process.env.NEXT_PUBLIC_SETUP_TOKEN || '',
     };
   }
-  const provider = ensureSecretProvider(secretPath);
+  const provider = ensureSecretProvider();
   const payload = await provider.getSecret(secretPath);
   if (typeof payload === 'string') {
     return { adminToken: payload };

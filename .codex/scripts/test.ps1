@@ -55,21 +55,21 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
     if ((Test-Path ".\gateway\package.json") -and (Test-Path ".\tests\gateway")) {
         Invoke-Check "Gateway unit tests" {
             Push-Location ".\gateway"
-            $hadToken = Test-Path Env:AION_GATEWAY_ADMIN_TOKEN
-            $oldToken = $env:AION_GATEWAY_ADMIN_TOKEN
+            $hadToken = Test-Path Env:OMERTA_GATEWAY_ADMIN_TOKEN
+            $oldToken = $env:OMERTA_GATEWAY_ADMIN_TOKEN
             $hadNodeEnv = Test-Path Env:NODE_ENV
             $oldNodeEnv = $env:NODE_ENV
             try {
                 # Use deterministic, non-secret test values and restore the
                 # caller's environment in the finally block.
-                $env:AION_GATEWAY_ADMIN_TOKEN = "test-only-admin-token"
+                $env:OMERTA_GATEWAY_ADMIN_TOKEN = "test-only-admin-token"
                 $env:NODE_ENV = "development"
                 npm exec -- vitest run --root .. tests/gateway
             } finally {
                 if ($hadToken) {
-                    $env:AION_GATEWAY_ADMIN_TOKEN = $oldToken
+                    $env:OMERTA_GATEWAY_ADMIN_TOKEN = $oldToken
                 } else {
-                    Remove-Item Env:AION_GATEWAY_ADMIN_TOKEN -ErrorAction SilentlyContinue
+                    Remove-Item Env:OMERTA_GATEWAY_ADMIN_TOKEN -ErrorAction SilentlyContinue
                 }
                 if ($hadNodeEnv) {
                     $env:NODE_ENV = $oldNodeEnv

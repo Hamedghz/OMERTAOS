@@ -1,4 +1,5 @@
 import { getDatabaseDiagnostics, requirePostgresUrl } from './databaseInfo';
+import { resolveEnvironment } from './environment';
 
 type PrismaClientCtor = new (options?: { log?: string[] }) => PrismaClientLike;
 type PrismaClientLike = {
@@ -17,7 +18,10 @@ try {
 
 const PrismaClient = prismaModule.PrismaClient;
 
-const isDockerEnv = process.env.AION_DOCKER === '1' || process.env.DOCKER === 'true';
+const dockerSetting = resolveEnvironment('OMERTA_DOCKER', {
+  aliases: ['AION_DOCKER'],
+});
+const isDockerEnv = dockerSetting === '1' || process.env.DOCKER === 'true';
 const isProdEnv = process.env.NODE_ENV === 'production';
 const isNextBuild =
   process.env.NEXT_PHASE === 'phase-production-build' ||
@@ -37,7 +41,9 @@ type GlobalWithPrisma = typeof globalThis & {
   prisma?: PrismaClientLike | null;
 };
 
-const prismaEnabledEnv = process.env.AION_ENABLE_PRISMA;
+const prismaEnabledEnv = resolveEnvironment('OMERTA_ENABLE_PRISMA', {
+  aliases: ['AION_ENABLE_PRISMA'],
+});
 const prismaEnabled =
   prismaEnabledEnv === undefined ||
   prismaEnabledEnv === '1' ||

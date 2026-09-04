@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers';
 
 import { GATEWAY_HTTP_URL } from '@/lib/gatewayConfig';
 import { appendGatewayContextHeaders } from '@/lib/gatewayContext';
+import { resolveEnvironment } from '@/lib/environment';
 
 const DEFAULT_GATEWAY = 'http://localhost:3000';
 
@@ -21,7 +22,9 @@ export async function buildGatewayHeaders(initHeaders?: HeadersInit) {
     result.set('authorization', `Bearer ${token}`);
   }
 
-  const internalAdminToken = process.env.AION_ADMIN_TOKEN;
+  const internalAdminToken = resolveEnvironment('OMERTA_GATEWAY_ADMIN_TOKEN', {
+    aliases: ['AION_GATEWAY_ADMIN_TOKEN', 'AION_ADMIN_TOKEN'],
+  });
   if (internalAdminToken && !result.has('x-aion-admin-token')) {
     result.set('x-aion-admin-token', internalAdminToken);
   }

@@ -12,8 +12,10 @@ LOCAL_AES_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
 
 
 def test_local_proxy_secrets_are_encrypted_at_rest(monkeypatch, tmp_path) -> None:
-    monkeypatch.setenv("AION_CONTROL_SECRET_DIR", str(tmp_path))
-    monkeypatch.setenv("AION_CONTROL_LOCAL_SECRET_KEY", LOCAL_AES_KEY)
+    monkeypatch.delenv("AION_CONTROL_SECRET_DIR", raising=False)
+    monkeypatch.delenv("AION_CONTROL_LOCAL_SECRET_KEY", raising=False)
+    monkeypatch.setenv("OMERTA_CONTROL_SECRET_DIR", str(tmp_path))
+    monkeypatch.setenv("OMERTA_CONTROL_LOCAL_SECRET_KEY", LOCAL_AES_KEY)
     provider = LocalSecretProvider()
 
     provider.set_secret("network/profile-1", {"password": "do-not-store-in-plaintext"})

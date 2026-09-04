@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 import { config } from 'dotenv';
 
-import { choiceParser, resolveEnvironment } from './config/environment.js';
+import {
+  choiceParser,
+  integerParser,
+  resolveEnvironment,
+} from './config/environment.js';
 
 type SecretPayload = Record<string, unknown> | string;
 
@@ -150,7 +154,10 @@ const profile = resolveEnvironment<GatewayConfig['profile']>('OMERTA_GATEWAY_PRO
 }) as GatewayConfig['profile'];
 const featureSeal = process.env.FEATURE_SEAL === '1' || profile === 'enterprise-vip';
 
-const defaultConsoleOrigin = process.env.AION_CONSOLE_ORIGIN || 'http://localhost:3000';
+const defaultConsoleOrigin = resolveEnvironment('OMERTA_CONSOLE_ORIGIN', {
+  aliases: ['AION_CONSOLE_ORIGIN'],
+  defaultValue: 'http://localhost:3000',
+}) as string;
 
 const parseCorsOrigins = (raw: string | undefined): string[] => {
   if (!raw) {
@@ -167,7 +174,7 @@ const parseCorsOrigins = (raw: string | undefined): string[] => {
         return parsed.map((item) => String(item).trim()).filter(Boolean);
       }
     } catch (error) {
-      throw new Error(`Invalid JSON list for AION_CORS_ORIGINS: ${(error as Error).message}`);
+      throw new Error(`Invalid JSON list for OMERTA_CORS_ORIGINS: ${(error as Error).message}`);
     }
   }
   return trimmed
@@ -203,7 +210,7 @@ const resolveCorsConfiguration = (
     }
     if (environment === 'production') {
       throw new Error(
-        'Wildcard CORS origins (*) are not permitted in production. Set explicit origins via AION_CORS_ORIGINS.',
+        'Wildcard CORS origins (*) are not permitted in production. Set explicit origins via OMERTA_CORS_ORIGINS.',
       );
     }
     return { origins: ['*'], allowCredentials: false };
@@ -218,12 +225,16 @@ const normaliseSecretProviderMode = (raw: string | undefined): string => {
 
 const secretProviderMode = normaliseSecretProviderMode(process.env.SECRET_PROVIDER_MODE);
 
-const vaultEnabledRaw =
-  process.env.AION_VAULT_ENABLED ?? process.env.VAULT_ENABLED ?? undefined;
+const vaultEnabledRaw = resolveEnvironment('VAULT_ENABLED', {
+  aliases: ['AION_VAULT_ENABLED'],
+});
+const vaultAddress = resolveEnvironment('VAULT_ADDR', {
+  aliases: ['AION_VAULT_ADDR'],
+});
 const vaultEnabled =
   vaultEnabledRaw !== undefined
     ? normalizeBoolean(vaultEnabledRaw)
-    : Boolean(process.env.AION_VAULT_ADDR || process.env.VAULT_ADDR);
+    : Boolean(vaultAddress);
 
 const isModuleNotFoundError = (error: unknown): boolean => {
   return (
@@ -358,22 +369,26 @@ if (vaultEnabled) {
   }
 }
 
-const requireSecretProvider = async (path: string): Promise<SecretProvider> => {
+const requireSecretProvider = async (settingName: string): Promise<SecretProvider> => {
   const provider = await getSecretProvider();
   if (!provider) {
     throw new SecretProviderError(
-      `Secret provider is not configured but secret path '${path}' was requested`,
+      `Secret provider is not configured for ${settingName}`,
     );
   }
   return provider;
 };
 
 const resolveJwtPublicKey = async (): Promise<string | undefined> => {
-  const secretPath = process.env.AION_JWT_SECRET_PATH;
+  const secretPath = resolveEnvironment('OMERTA_JWT_SECRET_PATH', {
+    aliases: ['AION_JWT_SECRET_PATH'],
+  });
   if (!secretPath) {
-    return process.env.AION_JWT_PUBLIC_KEY;
+    return resolveEnvironment('OMERTA_JWT_PUBLIC_KEY', {
+      aliases: ['AION_JWT_PUBLIC_KEY'],
+    });
   }
-  const provider = await requireSecretProvider(secretPath);
+  const provider = await requireSecretProvider('OMERTA_JWT_SECRET_PATH');
   const payload = await provider.getSecret(secretPath);
   if (typeof payload === 'string') {
     return payload;
@@ -387,16 +402,8 @@ const resolveJwtPublicKey = async (): Promise<string | undefined> => {
   return undefined;
 };
 
-const ADMIN_TOKEN_ENV_KEYS = [
-  'AION_GATEWAY_ADMIN_TOKEN',
-  'AION_ADMIN_TOKEN',
-  'AUTH_TOKEN',
-];
-
-const ADMIN_TOKEN_SECRET_PATH_ENV_KEYS = [
-  'AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH',
-  'AION_ADMIN_TOKEN_SECRET_PATH',
-];
+const ADMIN_TOKEN_ENV = 'OMERTA_GATEWAY_ADMIN_TOKEN';
+const ADMIN_TOKEN_SECRET_PATH_ENV = 'OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH';
 
 const takeFirstEnvValue = (keys: string[]): string | undefined => {
   for (const key of keys) {
@@ -425,22 +432,34 @@ const takeAdminTokenFromPayload = (payload: SecretPayload): string | undefined =
 };
 
 const resolveAdminToken = async (): Promise<string> => {
-  const envToken = takeFirstEnvValue(ADMIN_TOKEN_ENV_KEYS);
+  const productToken = resolveEnvironment(ADMIN_TOKEN_ENV, {
+    aliases: ['AION_GATEWAY_ADMIN_TOKEN', 'AION_ADMIN_TOKEN'],
+  });
+  const envToken =
+    (typeof productToken === 'string' && productToken.trim()) ||
+    takeFirstEnvValue(['AUTH_TOKEN']);
   if (envToken) {
     return envToken;
   }
 
-  const secretPath = takeFirstEnvValue(ADMIN_TOKEN_SECRET_PATH_ENV_KEYS);
+  const productSecretPath = resolveEnvironment(ADMIN_TOKEN_SECRET_PATH_ENV, {
+    aliases: [
+      'AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH',
+      'AION_ADMIN_TOKEN_SECRET_PATH',
+    ],
+  });
+  const secretPath =
+    typeof productSecretPath === 'string' ? productSecretPath.trim() : '';
   if (!secretPath) {
     throw new SecretProviderError(
-      `Admin token is not configured. Set ${ADMIN_TOKEN_ENV_KEYS[0]} or provide a secret path via ${ADMIN_TOKEN_SECRET_PATH_ENV_KEYS[0]}.`,
+      `Admin token is not configured. Set ${ADMIN_TOKEN_ENV} or provide ${ADMIN_TOKEN_SECRET_PATH_ENV}.`,
     );
   }
 
   const provider = await getSecretProvider();
   if (!provider) {
     throw new SecretProviderError(
-      `Secret provider is not configured; cannot read admin token from '${secretPath}'. Set ${ADMIN_TOKEN_ENV_KEYS[0]} or configure a secret provider.`,
+      `Secret provider is not configured for ${ADMIN_TOKEN_SECRET_PATH_ENV}; set ${ADMIN_TOKEN_ENV} or configure a provider.`,
     );
   }
 
@@ -451,12 +470,14 @@ const resolveAdminToken = async (): Promise<string> => {
   }
 
   throw new SecretProviderError(
-    `Secret at path '${secretPath}' does not contain an admin token. Populate 'token', 'value', or provide ${ADMIN_TOKEN_ENV_KEYS[0]}.`,
+    `Secret referenced by ${ADMIN_TOKEN_SECRET_PATH_ENV} does not contain an admin token; populate 'token', 'value', or set ${ADMIN_TOKEN_ENV}.`,
   );
 };
 
 const resolveApiKeys = async (): Promise<Record<string, { roles: string[]; tenant?: string }>> => {
-  const envValue = process.env.AION_GATEWAY_API_KEYS;
+  const envValue = resolveEnvironment('OMERTA_GATEWAY_API_KEYS', {
+    aliases: ['AION_GATEWAY_API_KEYS'],
+  });
   if (typeof envValue === 'string' && envValue.trim()) {
     const parsed = parseApiKeysString(envValue);
     if (Object.keys(parsed).length > 0) {
@@ -464,7 +485,9 @@ const resolveApiKeys = async (): Promise<Record<string, { roles: string[]; tenan
     }
   }
 
-  const secretPath = process.env.AION_GATEWAY_API_KEYS_SECRET_PATH;
+  const secretPath = resolveEnvironment('OMERTA_GATEWAY_API_KEYS_SECRET_PATH', {
+    aliases: ['AION_GATEWAY_API_KEYS_SECRET_PATH'],
+  });
   if (!secretPath) {
     return {};
   }
@@ -472,8 +495,8 @@ const resolveApiKeys = async (): Promise<Record<string, { roles: string[]; tenan
   const provider = await getSecretProvider();
   if (!provider) {
     throw new SecretProviderError(
-      `Secret provider is not configured; cannot read gateway API keys from '${secretPath}'. ` +
-        `Set AION_GATEWAY_API_KEYS or configure a secret provider.`,
+      'Secret provider is not configured for OMERTA_GATEWAY_API_KEYS_SECRET_PATH; ' +
+        'set OMERTA_GATEWAY_API_KEYS or configure a provider.',
     );
   }
 
@@ -519,11 +542,11 @@ const resolveTlsMaterials = async (): Promise<{
   let caPem = normalisePemArray(process.env.AION_TLS_CA_PEM || process.env.AION_TLS_CA_CHAIN);
 
   if (secretPath) {
-    const provider = await requireSecretProvider(secretPath);
+    const provider = await requireSecretProvider('AION_TLS_SECRET_PATH');
     const payload = await provider.getSecret(secretPath);
     if (typeof payload === 'string') {
       throw new SecretProviderError(
-        `TLS secret '${secretPath}' must be an object with certificate and private_key fields`,
+        'Secret referenced by AION_TLS_SECRET_PATH must contain certificate and private_key fields',
       );
     }
     certPem =
@@ -540,7 +563,7 @@ const resolveTlsMaterials = async (): Promise<{
   }
 
   if (clientCaSecretPath) {
-    const provider = await requireSecretProvider(clientCaSecretPath);
+    const provider = await requireSecretProvider('AION_TLS_CLIENT_CA_SECRET_PATH');
     const payload = await provider.getSecret(clientCaSecretPath);
     if (typeof payload === 'string') {
       caPem = normalisePemArray(payload) || caPem;
@@ -570,8 +593,15 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
     resolveTlsMaterials(),
   ]);
 
-  const environment = (process.env.AION_ENV || process.env.NODE_ENV || 'development') as GatewayEnvironment;
-  const cors = resolveCorsConfiguration(process.env.AION_CORS_ORIGINS, environment);
+  const environment = resolveEnvironment<GatewayEnvironment>('OMERTA_ENV', {
+    aliases: ['AION_ENV'],
+    defaultValue: process.env.NODE_ENV || 'development',
+    parse: (value) => value as GatewayEnvironment,
+  }) as GatewayEnvironment;
+  const corsOrigins = resolveEnvironment('OMERTA_CORS_ORIGINS', {
+    aliases: ['AION_CORS_ORIGINS'],
+  });
+  const cors = resolveCorsConfiguration(corsOrigins, environment);
 
   const requireMtls =
     process.env.AION_TLS_REQUIRE_MTLS === '1' ||
@@ -587,15 +617,27 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
     process.env.AION_TLS_REQUIRED === 'yes' ||
     process.env.AION_TLS_REQUIRED === 'on';
 
-  const controlBase = process.env.AION_CONTROL_BASE_URL || process.env.AION_CONTROL_BASE || 'http://localhost:8000';
-  const apiPrefix = (process.env.AION_CONTROL_API_PREFIX || '/v1').startsWith('/')
-    ? process.env.AION_CONTROL_API_PREFIX || '/v1'
-    : `/${process.env.AION_CONTROL_API_PREFIX || 'v1'}`;
+  const controlBase =
+    resolveEnvironment('OMERTA_CONTROL_BASE_URL', {
+      aliases: ['AION_CONTROL_BASE_URL'],
+    }) ||
+    resolveEnvironment('OMERTA_CONTROL_BASE', {
+      aliases: ['AION_CONTROL_BASE'],
+    }) ||
+    'http://localhost:8000';
+  const rawApiPrefix = resolveEnvironment('OMERTA_CONTROL_API_PREFIX', {
+    aliases: ['AION_CONTROL_API_PREFIX'],
+    defaultValue: '/v1',
+  }) as string;
+  const apiPrefix = rawApiPrefix.startsWith('/') ? rawApiPrefix : `/${rawApiPrefix}`;
   const trimmedControlBase = controlBase.replace(/\/$/, '');
 
   const redisUrl = (() => {
-    if (process.env.AION_REDIS_URL && process.env.AION_REDIS_URL.trim().length > 0) {
-      return process.env.AION_REDIS_URL;
+    const configured = resolveEnvironment('OMERTA_REDIS_URL', {
+      aliases: ['AION_REDIS_URL'],
+    });
+    if (configured && configured.trim().length > 0) {
+      return configured;
     }
 
     const isDocker =
@@ -611,9 +653,19 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
   })();
 
   return {
-    port: Number(process.env.AION_GATEWAY_PORT || 8080),
-    host: process.env.AION_GATEWAY_HOST || '0.0.0.0',
-    controlGrpcEndpoint: process.env.AION_CONTROL_GRPC || 'control:50051',
+    port: resolveEnvironment('OMERTA_GATEWAY_PORT', {
+      aliases: ['AION_GATEWAY_PORT'],
+      defaultValue: '8080',
+      parse: integerParser({ minimum: 1, maximum: 65535 }),
+    }) as number,
+    host: resolveEnvironment('OMERTA_GATEWAY_HOST', {
+      aliases: ['AION_GATEWAY_HOST'],
+      defaultValue: '0.0.0.0',
+    }) as string,
+    controlGrpcEndpoint: resolveEnvironment('OMERTA_CONTROL_GRPC', {
+      aliases: ['AION_CONTROL_GRPC'],
+      defaultValue: 'control:50051',
+    }) as string,
     controlBaseUrl: `${trimmedControlBase}${apiPrefix}`,
     redisUrl,
     selfEvolving: {

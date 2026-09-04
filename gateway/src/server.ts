@@ -43,10 +43,16 @@ import {
 import { createHttpError } from './httpErrors.js';
 import { logInteraction, resolveModelForAgent } from './services/selfEvolving.js';
 import { buildControlMetadata } from './requestMetadata.js';
+import { resolveEnvironment } from './config/environment.js';
+
+const trustProxy = resolveEnvironment('OMERTA_TRUST_PROXY', {
+  aliases: ['AION_TRUST_PROXY'],
+  defaultValue: 'false',
+}) === 'true';
 
 const app = Fastify({
   logger: true,
-  trustProxy: process.env.AION_TRUST_PROXY === 'true',
+  trustProxy,
   genReqId: () => randomUUID(),
 });
 

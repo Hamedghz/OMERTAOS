@@ -55,15 +55,21 @@ docker compose --project-directory . -f deploy/docker/compose/quickstart.yml up 
 curl http://localhost:8000/health
 ```
 
-Important configuration includes `AION_CONTROL_POSTGRES_DSN`, `AION_CONTROL_MONGO_DSN`, `AION_CONTROL_REDIS_URL`, `AION_CONTROL_QDRANT_URL`, `AION_CONTROL_MINIO_*`, `AION_CONTROL_MODELS_DIRECTORY`, `AION_CONTROL_POLICIES_DIRECTORY`, `TENANCY_MODE`, the Runtime gRPC endpoint, and `AION_GATEWAY_ADMIN_TOKEN` for authenticated Gateway-owned admin calls. Production credentials must come from the configured secret provider.
+Important canonical configuration includes `OMERTA_CONTROL_POSTGRES_DSN`,
+`OMERTA_CONTROL_MODELS_DIRECTORY`, `OMERTA_RUNTIME_ENDPOINT`, and
+`OMERTA_GATEWAY_ADMIN_TOKEN` for authenticated Gateway-owned admin calls.
+Supported Compose files also accept canonical host inputs for MongoDB, Redis,
+Qdrant, MinIO, and policy paths while their remaining process-side readers are
+migrated in M3. Production credentials must come from the configured secret
+provider.
 
 When the development-only local proxy-secret fallback is explicitly enabled,
-set `AION_CONTROL_LOCAL_SECRET_KEY` to a base64-encoded AES key. Local proxy
+set `OMERTA_CONTROL_LOCAL_SECRET_KEY` to a base64-encoded AES key. Local proxy
 secrets are encrypted and authenticated on disk; the fallback fails closed when
 this key is absent. Production should use the configured external secret
 provider instead.
 
-The Runtime client reads `AION_RUNTIME_ENDPOINT` (default
+The Runtime client reads `OMERTA_RUNTIME_ENDPOINT` (default
 `127.0.0.1:50051`) and uses the generated gRPC transport. The canonical facade
 is fail-closed: transport errors are reported as `RuntimeTransportUnavailable`,
 every request has a positive timeout, and Control never executes the command

@@ -29,11 +29,17 @@ pub mod security {
 pub mod server;
 
 use config::RuntimeConfig;
+use environment::{resolve_environment, EnvironmentSpec};
 
 pub async fn run() -> anyhow::Result<()> {
     if std::env::args().any(|arg| arg == "--healthcheck") {
-        let address = std::env::var("AION_RUNTIME_HEALTH_ADDR")
-            .unwrap_or_else(|_| "127.0.0.1:50051".to_string());
+        let address = resolve_environment(
+            EnvironmentSpec::new("OMERTA_RUNTIME_HEALTH_ADDR")
+                .aliases(&["AION_RUNTIME_HEALTH_ADDR"])
+                .default("127.0.0.1:50051"),
+            |value| Ok(value.to_owned()),
+        )?
+        .expect("Runtime health address has a default");
         tokio::net::TcpStream::connect(address).await?;
         return Ok(());
     }

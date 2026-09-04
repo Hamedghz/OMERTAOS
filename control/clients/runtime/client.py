@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from dataclasses import dataclass, field
 from typing import Protocol
 
 import grpc
+
+from shared.config.environment import resolve_environment
 
 from .grpc_transport import GrpcRuntimeTransport
 
@@ -91,9 +92,13 @@ class RuntimeDaemonClient:
         transport: RuntimeTransport | None = None,
         timeout_seconds: float = 10.0,
     ) -> None:
-        resolved_endpoint = endpoint or os.getenv(
-            "AION_RUNTIME_ENDPOINT", "127.0.0.1:50051"
+        configured_endpoint = resolve_environment(
+            "OMERTA_RUNTIME_ENDPOINT",
+            aliases=("AION_RUNTIME_ENDPOINT",),
+            default="127.0.0.1:50051",
         )
+        assert isinstance(configured_endpoint, str)
+        resolved_endpoint = endpoint or configured_endpoint
         if not resolved_endpoint.strip():
             raise ValueError("Runtime endpoint is required")
         if timeout_seconds <= 0:

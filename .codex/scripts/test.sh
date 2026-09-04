@@ -44,7 +44,7 @@ if command -v npm >/dev/null 2>&1; then
     echo "==> Gateway unit tests"
     if (
       cd gateway
-      AION_GATEWAY_ADMIN_TOKEN="test-only-admin-token" \
+      OMERTA_GATEWAY_ADMIN_TOKEN="test-only-admin-token" \
         NODE_ENV="development" \
         npm exec -- vitest run --root .. tests/gateway
     ); then

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from shared.config.environment import resolve_environment
 
 
 class Base(DeclarativeBase):
@@ -45,14 +46,26 @@ class ProxyProfile(Base):
 
 
 def _default_sqlite_url() -> str:
-    data_dir = Path(os.getenv("AION_CONTROL_DATA_DIR", ".aion"))
+    configured = resolve_environment(
+        "OMERTA_CONTROL_DATA_DIR",
+        aliases=("AION_CONTROL_DATA_DIR",),
+        default=".aion",
+    )
+    assert isinstance(configured, str)
+    data_dir = Path(configured)
     data_dir.mkdir(parents=True, exist_ok=True)
     return f"sqlite:///{data_dir / 'control.db'}"
 
 
 DATABASE_URL = (
-    os.getenv("AION_CONTROL_DATABASE_URL")
-    or os.getenv("AION_CONTROL_POSTGRES_DSN")
+    resolve_environment(
+        "OMERTA_CONTROL_DATABASE_URL",
+        aliases=("AION_CONTROL_DATABASE_URL",),
+    )
+    or resolve_environment(
+        "OMERTA_CONTROL_POSTGRES_DSN",
+        aliases=("AION_CONTROL_POSTGRES_DSN",),
+    )
     or os.getenv("DATABASE_URL")
     or _default_sqlite_url()
 )
@@ -73,4 +86,3 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
-

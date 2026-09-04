@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from control.app.main import app
+from shared.config.environment import EnvironmentConflictError
 
 
 def admin_headers() -> dict[str, str]:
@@ -16,7 +18,9 @@ def admin_headers() -> dict[str, str]:
 
 
 def test_configuration_propose_apply_and_revert(monkeypatch):
-    monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", "test-admin-token")
+    monkeypatch.delenv("AION_GATEWAY_ADMIN_TOKEN", raising=False)
+    monkeypatch.delenv("AION_ADMIN_TOKEN", raising=False)
+    monkeypatch.setenv("OMERTA_GATEWAY_ADMIN_TOKEN", "test-admin-token")
     local_provider = f"local-{uuid4()}"
 
     with TestClient(app) as client:
@@ -50,6 +54,8 @@ def test_configuration_propose_apply_and_revert(monkeypatch):
 
 
 def test_configuration_requires_trusted_gateway_token(monkeypatch):
+    monkeypatch.delenv("OMERTA_GATEWAY_ADMIN_TOKEN", raising=False)
+    monkeypatch.delenv("AION_ADMIN_TOKEN", raising=False)
     monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", "test-admin-token")
     with TestClient(app) as client:
         user_role = client.get(
@@ -76,3 +82,21 @@ def test_configuration_requires_trusted_gateway_token(monkeypatch):
     assert forged_admin.status_code == 403
     assert wrong_token.status_code == 403
     assert raw_token.status_code == 403
+
+
+def test_configuration_rejects_conflicting_gateway_tokens(monkeypatch):
+    canonical_value = "canonical-test-token"
+    legacy_value = "legacy-test-token"
+    monkeypatch.setenv("OMERTA_GATEWAY_ADMIN_TOKEN", canonical_value)
+    monkeypatch.setenv("AION_GATEWAY_ADMIN_TOKEN", legacy_value)
+    monkeypatch.delenv("AION_ADMIN_TOKEN", raising=False)
+
+    with TestClient(app) as client:
+        with pytest.raises(EnvironmentConflictError) as raised:
+            client.get("/v1/config/status", headers=admin_headers())
+
+    rendered = str(raised.value)
+    assert "OMERTA_GATEWAY_ADMIN_TOKEN" in rendered
+    assert "AION_GATEWAY_ADMIN_TOKEN" in rendered
+    assert canonical_value not in rendered
+    assert legacy_value not in rendered

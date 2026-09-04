@@ -3,6 +3,7 @@ import createError from 'http-errors';
 import jwt from 'jsonwebtoken';
 import { timingSafeEqual } from 'node:crypto';
 import { gatewayConfig } from '../config.js';
+import { resolveEnvironment } from '../config/environment.js';
 import { resolveTenant } from './claims.js';
 
 export interface RequestContext {
@@ -39,10 +40,19 @@ const matchesInternalAdminToken = (candidate: unknown): boolean => {
   return actual.length === received.length && timingSafeEqual(actual, received);
 };
 
-const devBypassAuth = process.env.AION_ENV === 'dev' || process.env.AION_DEV_BYPASS_AUTH === '1';
+const environmentName = resolveEnvironment('OMERTA_ENV', {
+  aliases: ['AION_ENV'],
+});
+const devBypassSetting = resolveEnvironment('OMERTA_DEV_BYPASS_AUTH', {
+  aliases: ['AION_DEV_BYPASS_AUTH'],
+});
+const authMode = resolveEnvironment('OMERTA_AUTH_MODE', {
+  aliases: ['AION_AUTH_MODE'],
+});
+const devBypassAuth = environmentName === 'dev' || devBypassSetting === '1';
 
 const isDevMode =
-  devBypassAuth || process.env.AION_AUTH_MODE === 'disabled' || process.env.NODE_ENV === 'development';
+  devBypassAuth || authMode === 'disabled' || process.env.NODE_ENV === 'development';
 
 const isDevAuthMode = gatewayConfig.environment === 'development' || isDevMode;
 
@@ -77,7 +87,7 @@ const decodeJwt = (token: string, request: FastifyRequest) => {
     if (devBypassAuth && isPublicSetupRoute(request)) {
       throw createError(401, 'Authentication required');
     }
-    throw createError(503, 'JWT public key not configured. Set AION_JWT_PUBLIC_KEY or enable dev bypass.');
+    throw createError(503, 'JWT public key not configured. Set OMERTA_JWT_PUBLIC_KEY or enable dev bypass.');
   }
   return jwt.verify(token, publicKey, { algorithms: ['RS256'] });
 };

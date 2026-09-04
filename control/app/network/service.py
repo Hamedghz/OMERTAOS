@@ -12,6 +12,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 from Crypto.Cipher import AES  # nosec B413
 
+from shared.config.environment import resolve_environment
 from shared.secret_store.provider import SecretProviderError, get_secret_provider
 from shared.telemetry.audit import emit_audit
 
@@ -25,16 +26,27 @@ SENSITIVE_FIELDS = ("uuid", "password", "private_key", "public_key", "short_id")
 
 class LocalSecretProvider:
     def __init__(self) -> None:
-        root = Path(os.getenv("AION_CONTROL_SECRET_DIR", ".aion/secrets"))
+        configured_root = resolve_environment(
+            "OMERTA_CONTROL_SECRET_DIR",
+            aliases=("AION_CONTROL_SECRET_DIR",),
+            default=".aion/secrets",
+        )
+        assert isinstance(configured_root, str)
+        root = Path(configured_root)
         root.mkdir(parents=True, exist_ok=True)
         self.root = root
-        raw_key = os.getenv("AION_CONTROL_LOCAL_SECRET_KEY", "")
+        raw_key = resolve_environment(
+            "OMERTA_CONTROL_LOCAL_SECRET_KEY",
+            aliases=("AION_CONTROL_LOCAL_SECRET_KEY",),
+            default="",
+        )
+        assert isinstance(raw_key, str)
         try:
             self.key = base64.urlsafe_b64decode(raw_key.encode("ascii"))
         except (ValueError, UnicodeEncodeError):
             self.key = b""
         if len(self.key) not in {16, 24, 32}:
-            raise SecretProviderError("AION_CONTROL_LOCAL_SECRET_KEY must be a base64 AES key")
+            raise SecretProviderError("OMERTA_CONTROL_LOCAL_SECRET_KEY must be a base64 AES key")
 
     def _file(self, path: str) -> Path:
         safe = path.strip("/").replace("/", "__")
