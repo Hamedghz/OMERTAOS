@@ -535,18 +535,40 @@ const resolveTlsMaterials = async (): Promise<{
   keyPem?: string;
   caPem?: string[];
 }> => {
-  const secretPath = process.env.AION_TLS_SECRET_PATH;
-  const clientCaSecretPath = process.env.AION_TLS_CLIENT_CA_SECRET_PATH;
-  let certPem = takeString(process.env.AION_TLS_CERT_PEM || process.env.AION_TLS_CERT);
-  let keyPem = takeString(process.env.AION_TLS_KEY_PEM || process.env.AION_TLS_KEY);
-  let caPem = normalisePemArray(process.env.AION_TLS_CA_PEM || process.env.AION_TLS_CA_CHAIN);
+  const secretPath = resolveEnvironment('OMERTA_TLS_SECRET_PATH', {
+    aliases: ['AION_TLS_SECRET_PATH'],
+  });
+  const clientCaSecretPath = resolveEnvironment('OMERTA_TLS_CLIENT_CA_SECRET_PATH', {
+    aliases: ['AION_TLS_CLIENT_CA_SECRET_PATH'],
+  });
+  let certPem =
+    takeString(resolveEnvironment('OMERTA_TLS_CERT_PEM', {
+      aliases: ['AION_TLS_CERT_PEM'],
+    })) ||
+    takeString(resolveEnvironment('OMERTA_TLS_CERT', {
+      aliases: ['AION_TLS_CERT'],
+    }));
+  let keyPem =
+    takeString(resolveEnvironment('OMERTA_TLS_KEY_PEM', {
+      aliases: ['AION_TLS_KEY_PEM'],
+    })) ||
+    takeString(resolveEnvironment('OMERTA_TLS_KEY', {
+      aliases: ['AION_TLS_KEY'],
+    }));
+  let caPem =
+    normalisePemArray(resolveEnvironment('OMERTA_TLS_CA_PEM', {
+      aliases: ['AION_TLS_CA_PEM'],
+    })) ||
+    normalisePemArray(resolveEnvironment('OMERTA_TLS_CA_CHAIN', {
+      aliases: ['AION_TLS_CA_CHAIN'],
+    }));
 
   if (secretPath) {
-    const provider = await requireSecretProvider('AION_TLS_SECRET_PATH');
+    const provider = await requireSecretProvider('OMERTA_TLS_SECRET_PATH');
     const payload = await provider.getSecret(secretPath);
     if (typeof payload === 'string') {
       throw new SecretProviderError(
-        'Secret referenced by AION_TLS_SECRET_PATH must contain certificate and private_key fields',
+        'Secret referenced by OMERTA_TLS_SECRET_PATH must contain certificate and private_key fields',
       );
     }
     certPem =
@@ -563,7 +585,7 @@ const resolveTlsMaterials = async (): Promise<{
   }
 
   if (clientCaSecretPath) {
-    const provider = await requireSecretProvider('AION_TLS_CLIENT_CA_SECRET_PATH');
+    const provider = await requireSecretProvider('OMERTA_TLS_CLIENT_CA_SECRET_PATH');
     const payload = await provider.getSecret(clientCaSecretPath);
     if (typeof payload === 'string') {
       caPem = normalisePemArray(payload) || caPem;
@@ -603,19 +625,20 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
   });
   const cors = resolveCorsConfiguration(corsOrigins, environment);
 
+  const requireMtlsSetting = resolveEnvironment('OMERTA_TLS_REQUIRE_MTLS', {
+    aliases: ['AION_TLS_REQUIRE_MTLS'],
+    defaultValue: 'false',
+  });
   const requireMtls =
-    process.env.AION_TLS_REQUIRE_MTLS === '1' ||
-    process.env.AION_TLS_REQUIRE_MTLS === 'true' ||
-    process.env.AION_TLS_REQUIRE_MTLS === 'yes' ||
-    process.env.AION_TLS_REQUIRE_MTLS === 'on' ||
+    ['1', 'true', 'yes', 'on'].includes(requireMtlsSetting as string) ||
     profile === 'enterprise-vip';
 
+  const requireTlsSetting = resolveEnvironment('OMERTA_TLS_REQUIRED', {
+    aliases: ['AION_TLS_REQUIRED'],
+    defaultValue: 'false',
+  });
   const requireTls =
-    requireMtls ||
-    process.env.AION_TLS_REQUIRED === '1' ||
-    process.env.AION_TLS_REQUIRED === 'true' ||
-    process.env.AION_TLS_REQUIRED === 'yes' ||
-    process.env.AION_TLS_REQUIRED === 'on';
+    requireMtls || ['1', 'true', 'yes', 'on'].includes(requireTlsSetting as string);
 
   const controlBase =
     resolveEnvironment('OMERTA_CONTROL_BASE_URL', {
@@ -669,23 +692,50 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
     controlBaseUrl: `${trimmedControlBase}${apiPrefix}`,
     redisUrl,
     selfEvolving: {
-      enabled:
-        process.env.AION_SELF_EVOLVING_ENABLED !== 'false' &&
-        process.env.AION_SELF_EVOLVING_ENABLED !== '0',
-      modelRegistryUrl: process.env.AION_MODEL_REGISTRY_URL || 'http://aion-model-registry:8081',
-      memoryUrl: process.env.AION_MEMORY_URL || 'http://aion-memory:8080',
-      defaultChannel: process.env.AION_SELF_EVOLVING_CHANNEL || 'enterprise',
+      enabled: !['false', '0'].includes(
+        resolveEnvironment('OMERTA_SELF_EVOLVING_ENABLED', {
+          aliases: ['AION_SELF_EVOLVING_ENABLED'],
+          defaultValue: 'true',
+        }) as string,
+      ),
+      modelRegistryUrl: resolveEnvironment('OMERTA_MODEL_REGISTRY_URL', {
+        aliases: ['AION_MODEL_REGISTRY_URL'],
+        defaultValue: 'http://aion-model-registry:8081',
+      }) as string,
+      memoryUrl: resolveEnvironment('OMERTA_MEMORY_URL', {
+        aliases: ['AION_MEMORY_URL'],
+        defaultValue: 'http://aion-memory:8080',
+      }) as string,
+      defaultChannel: resolveEnvironment('OMERTA_SELF_EVOLVING_CHANNEL', {
+        aliases: ['AION_SELF_EVOLVING_CHANNEL'],
+        defaultValue: 'enterprise',
+      }) as string,
     },
     apiKeys,
     jwtPublicKey,
     corsOrigins: cors.origins,
     corsAllowCredentials: cors.allowCredentials,
     rateLimit: {
-      max: Number(process.env.AION_RATE_LIMIT_MAX || 60),
-      timeWindow: process.env.AION_RATE_LIMIT_WINDOW || '1 minute',
-      perIp: Number(process.env.AION_RATE_LIMIT_PER_IP || 30),
+      max: resolveEnvironment('OMERTA_RATE_LIMIT_MAX', {
+        aliases: ['AION_RATE_LIMIT_MAX'],
+        defaultValue: '60',
+        parse: integerParser({ minimum: 1 }),
+      }) as number,
+      timeWindow: resolveEnvironment('OMERTA_RATE_LIMIT_WINDOW', {
+        aliases: ['AION_RATE_LIMIT_WINDOW'],
+        defaultValue: '1 minute',
+      }) as string,
+      perIp: resolveEnvironment('OMERTA_RATE_LIMIT_PER_IP', {
+        aliases: ['AION_RATE_LIMIT_PER_IP'],
+        defaultValue: '30',
+        parse: integerParser({ minimum: 1 }),
+      }) as number,
     },
-    idempotencyTtlSeconds: Number(process.env.AION_IDEMPOTENCY_TTL || 900),
+    idempotencyTtlSeconds: resolveEnvironment('OMERTA_IDEMPOTENCY_TTL', {
+      aliases: ['AION_IDEMPOTENCY_TTL'],
+      defaultValue: '900',
+      parse: integerParser({ minimum: 1 }),
+    }) as number,
     environment,
     tls: {
       requireMtls,
@@ -697,16 +747,31 @@ export async function buildGatewayConfig(): Promise<GatewayConfig> {
       caPem: tlsMaterials.caPem,
     },
     telemetry: {
-      enabled: process.env.AION_OTEL_ENABLED === 'true',
-      serviceName: process.env.AION_SERVICE_NAME || 'aion-gateway',
+      enabled: resolveEnvironment('OMERTA_OTEL_ENABLED', {
+        aliases: ['AION_OTEL_ENABLED'],
+        defaultValue: 'false',
+      }) === 'true',
+      serviceName: resolveEnvironment('OMERTA_SERVICE_NAME', {
+        aliases: ['AION_SERVICE_NAME'],
+        defaultValue: 'aion-gateway',
+      }) as string,
     },
     profile,
     featureSeal,
     adminToken,
     devKernel: {
-      enabled: process.env.AION_DEV_KERNEL_ENABLED !== 'false',
-      url: process.env.AION_DEV_KERNEL_URL || 'http://dev-kernel:9100/kernel',
-      profile: process.env.AION_DEV_KERNEL_PROFILE || 'dev-qwen-coder',
+      enabled: resolveEnvironment('OMERTA_DEV_KERNEL_ENABLED', {
+        aliases: ['AION_DEV_KERNEL_ENABLED'],
+        defaultValue: 'true',
+      }) !== 'false',
+      url: resolveEnvironment('OMERTA_DEV_KERNEL_URL', {
+        aliases: ['AION_DEV_KERNEL_URL'],
+        defaultValue: 'http://dev-kernel:9100/kernel',
+      }) as string,
+      profile: resolveEnvironment('OMERTA_DEV_KERNEL_PROFILE', {
+        aliases: ['AION_DEV_KERNEL_PROFILE'],
+        defaultValue: 'dev-qwen-coder',
+      }) as string,
     },
   };
 }

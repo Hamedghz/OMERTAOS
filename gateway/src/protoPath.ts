@@ -1,8 +1,12 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
+import { resolveEnvironment } from './config/environment.js';
+
 export const resolveProtoPath = (relativePath: string): string => {
-  const configured = process.env.AION_PROTO_ROOT?.trim();
+  const configured = resolveEnvironment('OMERTA_PROTO_ROOT', {
+    aliases: ['AION_PROTO_ROOT'],
+  })?.trim();
   const roots = [
     configured,
     path.resolve(process.cwd(), '../schemas/v1/protos'),

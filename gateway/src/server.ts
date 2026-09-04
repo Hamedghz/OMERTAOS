@@ -454,7 +454,10 @@ app.setErrorHandler((error, request, reply) => {
 });
 
 export const start = async () => {
-  const telemetryEnabled = await startTelemetry(gatewayConfig.telemetry.serviceName);
+  const telemetryEnabled = await startTelemetry(
+    gatewayConfig.telemetry.serviceName,
+    gatewayConfig.telemetry.enabled,
+  );
   app.addHook('onClose', async () => {
     await closeRedis();
     controlClient.close?.();

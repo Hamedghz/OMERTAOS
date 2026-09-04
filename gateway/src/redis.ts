@@ -1,8 +1,12 @@
 ﻿import dns from 'node:dns/promises';
 import { Redis } from 'ioredis';
 import { gatewayConfig } from './config.js';
+import { resolveEnvironment } from './config/environment.js';
 
-const redisHostFromEnv = process.env.AION_REDIS_HOST || 'redis';
+const redisHostFromEnv = resolveEnvironment('OMERTA_REDIS_HOST', {
+  aliases: ['AION_REDIS_HOST'],
+  defaultValue: 'redis',
+}) as string;
 
 const normalizeRedisUrl = (rawUrl: string) => {
   try {
@@ -144,5 +148,4 @@ export const withRateLimitCounter = async (
 export const closeRedis = async () => {
   await redis.quit();
 };
-
 

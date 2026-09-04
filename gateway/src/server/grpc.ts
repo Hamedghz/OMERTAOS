@@ -1,5 +1,6 @@
 import { credentials, loadPackageDefinition } from '@grpc/grpc-js';
 import { loadSync } from '@grpc/proto-loader';
+import { resolveEnvironment } from '../config/environment.js';
 import { loadTlsArtifacts } from '../config/tls.js';
 import { gatewayConfig } from '../config.js';
 import { resolveProtoPath } from '../protoPath.js';
@@ -27,8 +28,12 @@ export const createControlClient = () => {
   if (tls.enabled) {
     const rootCerts = tls.ca?.length ? Buffer.concat(tls.ca) : undefined;
     const secureCreds = credentials.createSsl(rootCerts, tls.key, tls.cert);
+    const tlsName = resolveEnvironment('OMERTA_CONTROL_TLS_NAME', {
+      aliases: ['AION_CONTROL_TLS_NAME'],
+      defaultValue: 'control.aion.local',
+    }) as string;
     const options = tls.requestClientCert
-      ? { 'grpc.ssl_target_name_override': process.env.AION_CONTROL_TLS_NAME || 'control.aion.local' }
+      ? { 'grpc.ssl_target_name_override': tlsName }
       : undefined;
     return new loaded.aion.v1.AionTasks(controlGrpcEndpoint, secureCreds, options);
   }

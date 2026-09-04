@@ -22,7 +22,7 @@ export const loadTlsArtifacts = (): TlsArtifacts => {
       );
     }
     console.warn(
-      '[gateway] TLS key/cert missing; continuing with an insecure gRPC client (set AION_TLS_REQUIRED=1 or provide certs to enable TLS)',
+      '[gateway] TLS key/cert missing; continuing with an insecure gRPC client (set OMERTA_TLS_REQUIRED=1 or provide certs to enable TLS)',
     );
     return { enabled: false, requestClientCert: false };
   }

@@ -6,8 +6,10 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 let sdk: NodeSDK | undefined;
 
-export const startTelemetry = async (serviceName: string): Promise<boolean> => {
-  const enabled = process.env.AION_OTEL_ENABLED === 'true';
+export const startTelemetry = async (
+  serviceName: string,
+  enabled: boolean,
+): Promise<boolean> => {
   if (!enabled) {
     return false;
   }
