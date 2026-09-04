@@ -11,6 +11,8 @@ const LEASE_MAX_TTL_ENV: &str = "OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS";
 const LEGACY_LEASE_MAX_TTL_ENV: &str = "AION_RUNTIME_LEASE_MAX_TTL_SECONDS";
 const LEASE_STATE_PATH_ENV: &str = "OMERTA_RUNTIME_LEASE_STATE_PATH";
 const LEGACY_LEASE_STATE_PATH_ENV: &str = "AION_RUNTIME_LEASE_STATE_PATH";
+const NODE_ID_ENV: &str = "OMERTA_RUNTIME_NODE_ID";
+const LEGACY_NODE_ID_ENV: &str = "AION_RUNTIME_NODE_ID";
 const MAX_ENCODED_KEY_FILE_BYTES: usize = 256;
 
 fn lease_max_ttl_from_environment() -> anyhow::Result<u64> {
@@ -74,8 +76,13 @@ impl RuntimeConfig {
             )?
             .expect("Runtime bind address has a default"),
             profile: std::env::var("OMERTA_PROFILE").unwrap_or_else(|_| "lite".to_string()),
-            node_id: std::env::var("AION_RUNTIME_NODE_ID")
-                .unwrap_or_else(|_| "runtime-local-1".to_string()),
+            node_id: resolve_environment(
+                EnvironmentSpec::new(NODE_ID_ENV)
+                    .aliases(&[LEGACY_NODE_ID_ENV])
+                    .default("runtime-local-1"),
+                |value| Ok(value.to_owned()),
+            )?
+            .expect("Runtime node id has a default"),
             lease_max_ttl_seconds: lease_max_ttl_from_environment()?,
             lease_hmac_key: lease_hmac_key_from_environment(),
             lease_state_path: resolve_environment(

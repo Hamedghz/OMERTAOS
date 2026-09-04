@@ -80,7 +80,7 @@ where
     resolve_from_source(spec, |name| std::env::var(name).ok(), parser)
 }
 
-fn resolve_from_source<T, Source, Parser>(
+pub(crate) fn resolve_from_source<T, Source, Parser>(
     spec: EnvironmentSpec<'_>,
     source: Source,
     parser: Parser,
