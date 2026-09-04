@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 
 import { requireApiAccess } from "@/lib/apiAccess";
 import { getDatabaseDiagnostics } from "@/lib/databaseInfo";
+import { isDockerEnvironment } from "@/lib/gatewayConfig";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
-
-const isDockerEnv =
-  process.env.AION_DOCKER === "1" || process.env.DOCKER === "true";
-const isProdEnv = process.env.NODE_ENV === "production";
 
 export async function GET() {
   const denied = await requireApiAccess("ADMIN");
@@ -16,7 +13,7 @@ export async function GET() {
 
   const diagnostics = getDatabaseDiagnostics(
     process.env.DATABASE_URL,
-    isDockerEnv || isProdEnv,
+    isDockerEnvironment() || process.env.NODE_ENV === "production",
   );
 
   return NextResponse.json({

@@ -1,9 +1,16 @@
 import { resolveEnvironment } from "./environment";
 
-const dockerSetting = resolveEnvironment("OMERTA_DOCKER", {
-  aliases: ["AION_DOCKER"],
-});
-const isDockerEnv = dockerSetting === "1" || process.env.DOCKER === "true";
+export const isDockerEnvironment = (
+  env: Record<string, string | undefined> = process.env,
+): boolean => {
+  const productSetting = resolveEnvironment("OMERTA_DOCKER", {
+    aliases: ["AION_DOCKER"],
+    env,
+  });
+  return productSetting === "1" || env.DOCKER === "true";
+};
+
+const isDockerEnv = isDockerEnvironment();
 const localDefaultGateway = "http://localhost:8080";
 const dockerDefaultGateway = "http://gateway:8080";
 

@@ -15,7 +15,6 @@ const stripTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 const gatewayBase = () =>
   stripTrailingSlash(
     process.env.GATEWAY_URL ||
-      process.env.AION_GATEWAY_URL ||
       resolveGatewayBase() ||
       "http://gateway:8080",
   );
