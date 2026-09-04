@@ -14,7 +14,8 @@ def main() -> None:
         host = os.getenv("CONTROL_HOST") or resolve_environment(
             "OMERTA_CONTROL_HTTP_HOST",
             aliases=("AION_CONTROL_HTTP_HOST",),
-            default="0.0.0.0",
+            # Container peers require the HTTP service on every container interface.
+            default="0.0.0.0",  # nosec B104
         )
         port = resolve_environment(
             "OMERTA_CONTROL_HTTP_PORT",
@@ -26,8 +27,7 @@ def main() -> None:
         assert isinstance(port, int)
         uvicorn.run(
             "control.app.main:app",
-            # Container peers require the HTTP service on every container interface.
-            host=host,  # nosec B104
+            host=host,
             port=port,
         )
     finally:

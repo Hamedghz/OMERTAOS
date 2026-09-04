@@ -1,7 +1,7 @@
 # برنامه مهاجرت namespace تنظیمات از AION به OMERTA
 
-**وضعیت:** M0، M1 و M2 تکمیل و به‌صورت static ولیدیت شدند؛ M3 نیازمند تأیید
-جداگانه است و پذیرش زنده Docker برای M4 باقی مانده است
+**وضعیت:** M0 تا M3 و زیرمرحله M3.1 تکمیل و به‌صورت static/کانتینری ولیدیت
+شدند؛ catalog قدیمی در M3.2 قرنطینه و پذیرش زنده Docker برای M4 باقی مانده است
 **مبنای M2:** branch `Radin/omerta-env-namespace`، checkpoint
 `4e1b89e3c36770dc7d06919b1f401ce526e1345c`
 **تاریخ inventory:** 2026-09-04
@@ -178,10 +178,60 @@ Compose فقط render شده است و این نتیجه شواهد پذیرش �
 
 ### M3 ـ مصرف‌کنندگان canonical-only در داخل process
 
-- Compose و systemd فقط `OMERTA_*` را به process تزریق کنند.
-- alias قدیمی فقط در resolver ورودی یا installer باقی بماند.
-- warning telemetry باید فقط key name، component و source alias را ثبت کند.
-- یک run کامل old-only و یک run کامل new-only انجام شود.
+- [x] چهار Compose canonical و templateهای فعال فقط `OMERTA_*` را به process
+  تزریق یا منتشر می‌کنند؛ fallback میزبان قدیمی در مرز Compose حفظ شده است.
+- [x] alias قدیمی در readerهای اجرایی فقط از resolver مشترک خوانده می‌شود و
+  scan مستقیم Python/TypeScript/Rust صفر است.
+- [x] warning و conflict فقط نام کلید canonical/legacy را ثبت می‌کنند و value
+  در diagnostic ظاهر نمی‌شود.
+- [x] preflightهای canonical-only، old-only، equal، conflict و malformed در
+  validation image اجرا شدند؛ اجرای زنده old-only/new-only جزو M4 است.
+
+#### M3.1 ـ محیط validation کانتینری
+
+- [x] Python `3.11.14`، dependencyهای Python و ابزارهای `pytest`، `ruff`،
+  `mypy` و `bandit` با hash در `control/requirements.validation.lock` قفل شدند.
+- [x] validation image مستقل، non-root و شامل `git`، `curl` و `jq` است؛ image
+  تولیدی Control با ابزارهای توسعه مخلوط نشد.
+- [x] تولید lock، build، تست و lint از Makefile و بدون نصب ابزار روی host قابل
+  اجرا هستند.
+- [x] fake module موقت Qdrant حذف شد و تست با `qdrant-client` واقعی اجرا شد.
+- [x] ترتیب smoke طوری اصلاح شد که port نامعتبر پیش از dependency check رد شود.
+
+در شروع M3.1 سه workaround قبلی ثبت شد: نصب موقت و غیرقفل‌شده pytest در
+کانتینر موجود، نبودن `qdrant-client` و جعل ماژول آن در تست، و اجرای دستی
+`prisma:generate` خارج از پروتکل reproducibility. هر سه تعمیر شدند: ابزار Python
+از lock/image رسمی می‌آید، Qdrant واقعی import می‌شود، و مرحله Prisma در سند و
+CI صریح است. نصب اولیه lock با `pip-compile` در backtracking طولانی متوقف شد و
+اولین اجرای Make target نیز به‌علت timeout شبکه exit 2 داشت؛ retry با timeout
+صریح پاس شد.
+
+#### شواهد اجرایی M3
+
+- inventory: تعداد ثابت 164 token، برابر 527 رخداد در 80 فایل و 93 fallback
+  قدیمی که همگی به مرزهای Compose بازبینی‌شده محدود شده‌اند.
+- چهار render canonical شامل quickstart یک Runtime، override دو Runtime، full و
+  local با exit 0 پاس شدند؛ بررسی JSON مؤثر نیز صفر کلید process با `AION_*`
+  نشان داد. این نتیجه پذیرش زنده نیست.
+- Python کامل در validation image: `297 passed`، `3 skipped` و 9 warning؛ تست
+  concurrency PostgreSQL که در suite عمومی به DSN وابسته است جداگانه روی
+  PostgreSQL موقت و بدون volume اجرا شد و `1 passed` بود.
+- دو skip باقیمانده مربوط به Agent Catalog و stream service قدیمی و از قبل
+  رسماً قرنطینه هستند؛ بازیابی آن namespaceها جزو این migration نیست.
+- Ruff کامل exit 0 و Bandit production exit 0 بدون finding پاس شدند.
+- Gateway: 25 تست در 8 فایل، build و lint پاس؛ `npm ci` دو advisory حل‌نشده
+  شامل یک moderate و یک high گزارش کرد و هیچ `audit fix` خودکاری اجرا نشد.
+- Console: 30 تست در 13 فایل و production build پس از Prisma generate پاس شد.
+- Runtime: format پاس و 23 تست شامل 19 unit و 4 integration پاس شد؛ این نتیجه
+  اثبات موفقیت isolation لینوکس نیست.
+
+### M3.2 ـ catalog قدیمی
+
+`deploy/docker/compose/catalog.yml` همچنان به دو Dockerfile حذف‌شده اشاره دارد و
+سه قرارداد قدیمی اختصاصی دارد. این فایل از مجموعه Compose canonical جدا و در
+M0 قرنطینه شده است؛ تا تعیین مالکیت worker و topology جدید، render/build آن یک
+gate پاس‌شده محسوب نمی‌شود و نباید برای ادعای «تمام Composeها سالم‌اند» استفاده
+شود.
 
 ### M4 ـ پذیرش و deprecation gate
 
@@ -243,19 +293,19 @@ docker compose -p compose --project-directory . \
 
 ## چک‌لیست بازبینی دستی
 
-- [ ] هیچ `os.getenv`, `process.env` یا `std::env::var` مستقیم خارج از resolver
+- [x] هیچ `os.getenv`, `process.env` یا `std::env::var` مستقیم خارج از resolver
   مجاز باقی نمانده است.
-- [ ] هر secret قدیمی دقیقاً یک mapping جدید دارد و value در log/diff نیست.
-- [ ] تمام templateها، validators، Compose و service managerها نام یکسان دارند.
-- [ ] healthcheckها همان port/bind جدید را می‌خوانند.
-- [ ] Console هنوز مستقیم Control/Runtime را صدا نمی‌زند.
-- [ ] Runtime key فقط بین Control و Runtime است و credential مدیریتی نیست.
-- [ ] نام‌های protocol، header، protobuf و HMAC domain separator تصادفی عوض نشده‌اند.
-- [ ] هیچ volume/path/database/bucket قدیمی حذف یا orphan نشده است.
+- [x] هر secret قدیمی دقیقاً یک mapping جدید دارد و value در log/diff نیست.
+- [x] templateها، validators و چهار Compose canonical نام process یکسان دارند.
+- [x] healthcheckهای canonical همان port/bind جدید را می‌خوانند.
+- [x] Console هنوز مستقیم Control/Runtime را صدا نمی‌زند.
+- [x] Runtime key فقط بین Control و Runtime است و credential مدیریتی نیست.
+- [x] نام‌های protocol، header، protobuf و HMAC domain separator تصادفی عوض نشده‌اند.
+- [x] هیچ volume/path/database/bucket قدیمی حذف یا orphan نشده است.
 - [ ] old-only و new-only هر دو executable evidence دارند.
-- [ ] conflict و malformed configuration واقعاً non-zero/fail-closed هستند.
+- [x] conflict و malformed configuration واقعاً non-zero/fail-closed هستند.
 - [ ] Windows PowerShell، Linux shell، Docker و native static gates پوشش دارند.
-- [ ] grep نهایی فقط compatibility allowlist و historical evidence را نشان می‌دهد.
+- [x] grep نهایی فقط compatibility boundary و historical evidence را نشان می‌دهد.
 
 ## rollback
 

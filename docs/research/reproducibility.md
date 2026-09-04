@@ -27,6 +27,22 @@ reproducible artifact because it can move.
 Pin dependency lockfiles and report any dependency-resolution failure. Do not
 substitute a static check for a blocked compilation or runtime test.
 
+On hosts without the reference Python tools, use the repository validation
+image. It installs the hash-pinned dependency graph from
+`control/requirements.validation.lock` and runs as an unprivileged user:
+
+```bash
+make python-validation-test
+make python-validation-lint
+```
+
+Regenerate the lock only as a reviewed dependency update. The target runs the
+resolver in Docker and does not install `uv` on the host:
+
+```bash
+make python-validation-lock
+```
+
 ## Validation sequence
 
 ### 1. Repository architecture
@@ -54,6 +70,7 @@ may be required for a fresh dependency install.
 ```bash
 corepack enable
 pnpm --dir console install --frozen-lockfile
+pnpm --dir console prisma:generate
 pnpm --dir console test -- --config vitest.config.mts
 pnpm --dir console build
 ```

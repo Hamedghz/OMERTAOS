@@ -18,10 +18,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install test deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        run: python -m pip install --require-hashes --requirement control/requirements.validation.lock
       - name: Enforce canonical ownership and migration gate
         run: python -m pytest tests/architecture -q
 
@@ -41,10 +38,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install python deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff==0.15.20 bandit pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        run: python -m pip install --require-hashes --requirement control/requirements.validation.lock
       - name: Python lint
         run: ruff check .
       - name: Rust lint
@@ -64,10 +58,7 @@ jobs:
           python-version: '3.11'
       - uses: dtolnay/rust-toolchain@stable
       - name: Install test deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        run: python -m pip install --require-hashes --requirement control/requirements.validation.lock
       - name: Unit and architecture tests
         run: pytest -q tests/
       - name: Rust tests
@@ -133,10 +124,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install integration dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        run: python -m pip install --require-hashes --requirement control/requirements.validation.lock
       - name: Integration test placeholder
         run: |
           if [ -d tests/integration ]; then
@@ -159,9 +147,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Bandit
         run: |
-          python -m pip install --upgrade pip
-          pip install bandit
-          bandit -r . -x tests -s B101,B105
+          python -m pip install --require-hashes --requirement control/requirements.validation.lock
+          bandit -r . -x ./tests -s B101,B105
       - name: Cargo audit
         working-directory: runtime-daemon
         run: |

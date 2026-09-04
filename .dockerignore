@@ -20,4 +20,6 @@ console/.turbo
 console/dist
 .env
 .env.*
+!.env.example
+!.env.schema
 !app/**

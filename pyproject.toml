@@ -50,7 +50,14 @@ kernel = [
     "uvicorn[standard]>=0.30",
     "requests>=2.32",
 ]
-dev = ["pytest", "pytest-asyncio", "pytest-cov", "ruff==0.15.20", "mypy"]
+dev = [
+    "bandit==1.8.6",
+    "mypy==2.3.1",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "ruff==0.15.20",
+]
 ci-training = [
     "numpy>=1.26,<2.0",
     "pandas>=2.2,<3.0",

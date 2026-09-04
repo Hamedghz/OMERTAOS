@@ -2,7 +2,8 @@
 	setup train train-ci guard model-all run-user run-pro run-ent install-deps \
 	lint verify structure-audit env-preflight compose-config compose-up compose-down \
 	compose-clean build-image bootstrap claude-install claude-bootstrap \
-	claude-status desktop-dev desktop-build
+	claude-status desktop-dev desktop-build python-validation-image \
+	python-validation-test python-validation-lint python-validation-lock
 
 PY ?= python3
 CLI = $(PY) -m aion_core.cli
@@ -10,6 +11,8 @@ COMPOSE_FILE ?= deploy/docker/compose/quickstart.yml
 COMPOSE = docker compose --project-directory . -f $(COMPOSE_FILE)
 ENV_FILE_ARG = $(if $(wildcard .env),--env-file .env,)
 ENV_PREFLIGHT = $(PY) scripts/validate_environment_aliases.py $(ENV_FILE_ARG)
+PYTHON_VALIDATION_IMAGE ?= omertaos-python-validation:local
+PYTHON_VALIDATION_BASE ?= python:3.11.14-slim-bookworm
 
 dev-control:
 	PYTHONPATH=$(CURDIR) uvicorn control.app.main:app --reload --port 8000
@@ -114,6 +117,22 @@ compose-clean:
 
 build-image:
 	$(COMPOSE) build
+
+python-validation-image:
+	docker build --file deploy/docker/validation/python.Dockerfile --tag $(PYTHON_VALIDATION_IMAGE) .
+
+python-validation-test: python-validation-image
+	docker run --rm $(PYTHON_VALIDATION_IMAGE) python -m pytest tests -q
+
+python-validation-lint: python-validation-image
+	docker run --rm $(PYTHON_VALIDATION_IMAGE) python -m ruff check .
+
+python-validation-lock:
+	docker run --rm --user "$(shell id -u):$(shell id -g)" \
+		-e HOME=/tmp -e PIP_INDEX_URL=https://pypi.org/simple \
+		-e PIP_DEFAULT_TIMEOUT=120 -e PIP_RETRIES=10 \
+		-v "$(CURDIR):/workspace" -w /workspace $(PYTHON_VALIDATION_BASE) \
+		sh -lc 'python -m venv /tmp/uv-venv && /tmp/uv-venv/bin/pip install --quiet uv==0.8.17 && /tmp/uv-venv/bin/uv pip compile pyproject.toml --extra control --extra kernel --extra dev --extra ci-training --python-version 3.11 --generate-hashes --no-emit-index-url --output-file control/requirements.validation.lock'
 
 bootstrap:
 	./quick-install.sh
