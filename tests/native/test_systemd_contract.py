@@ -61,8 +61,7 @@ def test_install_precedes_runtime_control_gateway_console() -> None:
 
 def test_units_use_built_artifacts_not_package_managers() -> None:
     assert "ExecStart=/opt/omertaos/current/bin/runtime-daemon" in _unit("omertaos-runtime.service")
-    assert "/opt/omertaos/current/.venv/control/bin/python -m uvicorn" in _unit("omertaos-control.service")
-    assert "control.app.main:app" in _unit("omertaos-control.service")
+    assert "/opt/omertaos/current/.venv/control/bin/python -m control.app.serve" in _unit("omertaos-control.service")
     assert "ExecStart=/usr/bin/node dist/server.js" in _unit("omertaos-gateway.service")
     assert "node_modules/next/dist/bin/next start" in _unit("omertaos-console.service")
     combined = "\n".join(_unit(f"omertaos-{name}.service") for name in SERVICES)

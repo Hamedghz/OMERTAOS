@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import stat
@@ -16,10 +17,13 @@ else:  # pragma: no cover - Linux ownership validation is exercised on target ho
     grp = None  # type: ignore[assignment]
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from validate import PLACEHOLDERS, parse_env
+from validate import PLACEHOLDERS, _effective_values, parse_env
 
 
 IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]*$")
+CONTRACT = json.loads(
+    (Path(__file__).resolve().parent / "contract.json").read_text(encoding="utf-8")
+)
 
 
 def _check_permissions(path: Path, mode: int, group: str | None, errors: list[str]) -> None:
@@ -73,6 +77,13 @@ def validate_data_environment(
     except (OSError, ValueError) as exc:
         return [str(exc)]
 
+    control, alias_errors = _effective_values(
+        control,
+        CONTRACT["deprecated_aliases"],
+        allow_legacy=not examples,
+    )
+    errors.extend(f"{control_path.name}: {error}" for error in alias_errors)
+
     required = {
         "OMERTAOS_POSTGRES_ROLE",
         "OMERTAOS_POSTGRES_DATABASE",
@@ -114,17 +125,17 @@ def validate_data_environment(
         if password == console_password:
             errors.append("Control and Console PostgreSQL passwords must be distinct")
 
-    control_parts = _postgres_parts(control.get("AION_CONTROL_POSTGRES_DSN", ""),
-                                    "AION_CONTROL_POSTGRES_DSN", errors)
+    control_parts = _postgres_parts(control.get("OMERTA_CONTROL_POSTGRES_DSN", ""),
+                                    "OMERTA_CONTROL_POSTGRES_DSN", errors)
     console_parts = _postgres_parts(console.get("DATABASE_URL", ""), "DATABASE_URL", errors)
     if control_parts and control_parts != (role, password, database):
         errors.append("Control PostgreSQL DSN does not match installer credentials")
     if console_parts and console_parts != (console_role, console_password, console_database):
         errors.append("Console PostgreSQL DSN does not match installer credentials")
 
-    redis = urlparse(control.get("AION_CONTROL_REDIS_URL", ""))
+    redis = urlparse(control.get("OMERTA_CONTROL_REDIS_URL", ""))
     if redis.scheme != "redis" or redis.hostname != "127.0.0.1" or (redis.port or 6379) != 6379:
-        errors.append("AION_CONTROL_REDIS_URL: Native Redis must use 127.0.0.1:6379")
+        errors.append("OMERTA_CONTROL_REDIS_URL: Native Redis must use 127.0.0.1:6379")
 
     if not examples and check_permissions:
         _check_permissions(installer_path, 0o600, None, errors)

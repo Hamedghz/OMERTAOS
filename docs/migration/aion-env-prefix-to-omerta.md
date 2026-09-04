@@ -1,8 +1,9 @@
 # برنامه مهاجرت namespace تنظیمات از AION به OMERTA
 
-**وضعیت:** M0 و M1 تکمیل و ولیدیت شدند؛ اجرای M2 نیازمند تأیید جداگانه است
-**مبنای بررسی:** branch `Radin/omerta-env-namespace`، checkpoint
-`a8c9b14b9f41dda49e7255fed0906472585acfbf`
+**وضعیت:** M0، M1 و M2 تکمیل و به‌صورت static ولیدیت شدند؛ M3 نیازمند تأیید
+جداگانه است و پذیرش زنده Docker برای M4 باقی مانده است
+**مبنای M2:** branch `Radin/omerta-env-namespace`، checkpoint
+`4e1b89e3c36770dc7d06919b1f401ce526e1345c`
 **تاریخ inventory:** 2026-09-04
 
 ## تصمیم نام‌گذاری
@@ -12,8 +13,8 @@ edition/branch هستند و نباید namespace عمومی تنظیمات runt
 بنابراین مقصد تنظیمات اختصاصی محصول `OMERTA_*` است، نه `AION_*`.
 
 این تغییر باید migration سازگار باشد، نه جایگزینی سراسری متن. baseline قابل
-بازتولید M0 با کنار گذاشتن شواهد تاریخی `docs/migration/evidence/**` شامل 926
-رخداد، 164 token متمایز و 99 فایل درگیر است. جزئیات owner، نوع، default policy،
+بازتولید M2 با کنار گذاشتن شواهد تاریخی `docs/migration/evidence/**` شامل 840
+رخداد، 164 token متمایز و 82 فایل درگیر است. جزئیات owner، نوع، default policy،
 secret classification و مسیرهای شواهد در
 [`aion-env-inventory.json`](./aion-env-inventory.json) ثبت شده و با
 `scripts/audit_environment_namespace.py` بازتولید می‌شود.
@@ -131,19 +132,49 @@ both-conflicting پذیرفته شود. برای blank باید تصمیم هر 
 
 پیاده‌سازی‌های M1 در `shared/config/environment.py`،
 `gateway/src/config/environment.ts`، `console/lib/environment.ts` و
-`runtime-daemon/src/environment.rs` قرار دارند. این milestone فقط resolver و دو
-نمونه مصرف TypeScript را اضافه کرده است؛ تغییر writerهای deployment عمداً برای
-M2 باقی مانده است.
+`runtime-daemon/src/environment.rs` قرار دارند. M1 خود resolverها و مصرف‌های بذر
+را اضافه کرد؛ writerهای deployment و مصرف‌کنندگان لازم برای مسیر canonical در
+M2 مهاجرت داده شدند.
 
 ### M2 ـ deployment writers
 
-- `.env.example`, `dev.env`, Compose، install scripts و bundle envها به نام جدید
-  بنویسند ولی ورودی قدیمی را در مرز host بپذیرند.
-- `deploy/native/env/contract.json` با schema version جدید منتشر شود؛ بخش‌های
-  `required`, `secret_keys`, `credential_url_keys`, `loopback_keys` و `port_keys`
-  هم‌زمان تغییر کنند.
-- systemd، Kubernetes Secret/ConfigMap و CI secrets با dual-name rollout هماهنگ
-  شوند. secret واقعی هرگز خودکار کپی یا چاپ نشود.
+- [x] `.env.example`، `dev.env`، installerها و bundle envها نام canonical را
+  منتشر می‌کنند. Compose ورودی canonical/قدیمی host را می‌پذیرد و برای readerهای
+  باقیمانده تا M3 همان نام قدیمی process را bridge می‌کند.
+- [x] `deploy/native/env/contract.json` و `.env.schema` با schema version جدید و
+  نگاشت deprecated alias منتشر شدند.
+- [x] systemd، Kubernetes، CAPO و CI wrapperهای درگیر با rollout دو نام هماهنگ
+  شدند؛ هیچ شناسه persistent، volume، database، bucket، wire header یا RPC
+  rename نشد.
+- [x] preflight و migrator اتمیک، conflict را fail-closed و فقط با نام کلید گزارش
+  می‌کنند؛ secret قدیمی بدون مقدار canonical برابر، خودکار کپی یا بازنویسی نمی‌شود.
+- [x] مصرف‌کنندگان لازم در Console، Gateway، Control و Runtime dual-read شدند تا
+  writerهای canonical باعث قطع مسیر اصلی نشوند. خواننده‌های باقیمانده برای M3
+  در allowlist بازبینی‌شده نگه داشته شده‌اند.
+- [x] dependency HTTP مربوط به تست و اجرای Control در image به‌طور صریح قفل شد.
+- [x] تست‌های معماری، Python، Gateway، Console و Runtime و render سه Compose
+  پیکربندی به‌صورت sequential اجرا شدند.
+- [ ] imageهای برنامه rebuild و stack زنده اجرا نشده‌اند؛ این‌ها gateهای M4 هستند.
+
+PowerShell روی host فعلی در دسترس نبود. قرارداد فایل‌های PowerShell با تست‌های
+static مخزن بررسی شد، اما اجرای مستقیم `pwsh` به‌عنوان gate unavailable ثبت می‌شود.
+Compose فقط render شده است و این نتیجه شواهد پذیرش زنده Docker نیست.
+
+#### شواهد اجرایی M2
+
+- audit نهایی: 164 token، 840 رخداد در 82 فایل و 154 direct reader قدیمی در
+  allowlist بازبینی‌شده؛ gate بدون drift پاس شد.
+- preflight: حالت canonical-only، old-only و equal پاس شدند؛ conflict با exit
+  code برابر 1 و diagnostic فقط شامل نام کلیدها رد شد.
+- Python: معماری 97 passed و یک completion gate عمدی deselected؛ Control برابر
+  103 passed و 1 skipped؛ native برابر 75 passed؛ resolver مشترک 6 passed.
+- Gateway: build و lint پاس؛ 7 فایل تست و 21 تست پاس.
+- Console: 12 فایل تست و 28 تست پاس؛ production build کامل پاس.
+- Runtime: `cargo fmt --check` پاس و 21 تست `--all-targets --locked` پاس.
+- Compose: پیکربندی quickstart یک worker، override دو worker، full و local فقط
+  با `config --quiet` render شدند.
+- lint رسمی Python با `ruff 0.15.20` پاس شد. اجرای مستقیم PowerShell unavailable
+  بود و هیچ image یا stack زنده‌ای در M2 ساخته یا اجرا نشد.
 
 ### M3 ـ مصرف‌کنندگان canonical-only در داخل process
 

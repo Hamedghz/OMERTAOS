@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: ${AION_DB_USER:-aion}
-      POSTGRES_PASSWORD: ${AION_DB_PASSWORD:-password}
-      POSTGRES_DB: ${AION_DB_NAME:-omerta_db}
+      POSTGRES_USER: ${OMERTA_DB_USER:-${AION_DB_USER:-aion}}
+      POSTGRES_PASSWORD: ${OMERTA_DB_PASSWORD:-${AION_DB_PASSWORD:-password}}
+      POSTGRES_DB: ${OMERTA_DB_NAME:-${AION_DB_NAME:-omerta_db}}
     ports: []
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -12,7 +12,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${AION_DB_USER:-aion} -d ${AION_DB_NAME:-omerta_db} || exit 1",
+          "pg_isready -U ${OMERTA_DB_USER:-${AION_DB_USER:-aion}} -d ${OMERTA_DB_NAME:-${AION_DB_NAME:-omerta_db}} || exit 1",
         ]
       interval: 5s
       timeout: 3s
@@ -39,8 +39,8 @@ services:
   minio:
     image: minio/minio:latest
     environment:
-      MINIO_ROOT_USER: ${AION_CONTROL_MINIO_ACCESS_KEY:-minio}
-      MINIO_ROOT_PASSWORD: ${AION_CONTROL_MINIO_SECRET_KEY:-miniosecret}
+      MINIO_ROOT_USER: ${OMERTA_CONTROL_MINIO_ACCESS_KEY:-${AION_CONTROL_MINIO_ACCESS_KEY:-minio}}
+      MINIO_ROOT_PASSWORD: ${OMERTA_CONTROL_MINIO_SECRET_KEY:-${AION_CONTROL_MINIO_SECRET_KEY:-miniosecret}}
     command: server /data --console-address ":9001"
     ports: []
     volumes:
@@ -72,15 +72,15 @@ services:
       - runtime-lease-secret:/target
     restart: "no"
   runtime:
-    image: ${AION_RUNTIME_IMAGE:-omertaos-runtime}
+    image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}
     build:
       context: .
       dockerfile: runtime-daemon/Dockerfile
     environment:
       AION_RUNTIME_BIND_ADDR: 0.0.0.0:50051
-      AION_RUNTIME_NODE_ID: ${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}
-      AION_RUNTIME_CAPABILITIES: ${AION_RUNTIME_CAPABILITIES:-terminal.execute}
-      AION_RUNTIME_MEMORY_MB: ${AION_RUNTIME_TOTAL_MEMORY_MB:-512}
+      AION_RUNTIME_NODE_ID: ${OMERTA_RUNTIME_NODE_ID:-${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}}
+      AION_RUNTIME_CAPABILITIES: ${OMERTA_RUNTIME_CAPABILITIES:-${AION_RUNTIME_CAPABILITIES:-terminal.execute}}
+      AION_RUNTIME_MEMORY_MB: ${OMERTA_RUNTIME_TOTAL_MEMORY_MB:-${AION_RUNTIME_TOTAL_MEMORY_MB:-512}}
       OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS: ${OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS:-${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-120}}
       AION_RUNTIME_LEASE_MAX_TTL_SECONDS: ${AION_RUNTIME_LEASE_MAX_TTL_SECONDS:-}
       OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
@@ -94,7 +94,7 @@ services:
       runtime-lease-secret-init:
         condition: service_completed_successfully
     ports:
-      - "127.0.0.1:${AION_RUNTIME_HOST_PORT:-50051}:50051"
+      - "127.0.0.1:${OMERTA_RUNTIME_HOST_PORT:-${AION_RUNTIME_HOST_PORT:-50051}}:50051"
     healthcheck:
       test: ["CMD", "/usr/local/bin/runtime-daemon", "--healthcheck"]
       interval: 5s
@@ -106,37 +106,37 @@ services:
       context: .
       dockerfile: control/Dockerfile
     environment:
-      AION_CONTROL_LOCAL_SECRET_KEY: ${AION_CONTROL_LOCAL_SECRET_KEY:-}
-      AION_GATEWAY_ADMIN_TOKEN: ${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}
+      AION_CONTROL_LOCAL_SECRET_KEY: ${OMERTA_CONTROL_LOCAL_SECRET_KEY:-${AION_CONTROL_LOCAL_SECRET_KEY:-}}
+      AION_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-dev-admin-token}}}
       AION_DOCKER: "1"
-      AION_CONTROL_POSTGRES_DSN: ${AION_CONTROL_POSTGRES_DSN:-postgresql://aion:password@postgres:5432/omerta_db}
-      AION_CONTROL_MONGO_DSN: ${AION_CONTROL_MONGO_DSN:-mongodb://mongo:27017/omerta}
-      AION_CONTROL_REDIS_URL: ${AION_CONTROL_REDIS_URL:-redis://redis:6379/0}
-      AION_CONTROL_QDRANT_URL: ${AION_CONTROL_QDRANT_URL:-http://qdrant:6333}
-      AION_CONTROL_MINIO_ENDPOINT: ${AION_CONTROL_MINIO_ENDPOINT:-minio:9000}
-      AION_CONTROL_MINIO_ACCESS_KEY: ${AION_CONTROL_MINIO_ACCESS_KEY:-minio}
-      AION_CONTROL_MINIO_SECRET_KEY: ${AION_CONTROL_MINIO_SECRET_KEY:-miniosecret}
-      AION_CONTROL_MINIO_BUCKET: ${AION_CONTROL_MINIO_BUCKET:-omerta}
-      AION_CONTROL_MINIO_SECURE: ${AION_CONTROL_MINIO_SECURE:-false}
-      AION_CONTROL_GRPC_BIND: ${AION_CONTROL_GRPC_BIND:-0.0.0.0:50051}
-      AION_CONTROL_MODELS_DIRECTORY: ${AION_CONTROL_MODELS_DIRECTORY:-/app/registry/models}
-      AION_CONTROL_POLICIES_DIRECTORY: ${AION_CONTROL_POLICIES_DIRECTORY:-/app/policies}
-      AION_RUNTIME_ENDPOINT: ${AION_RUNTIME_ENDPOINT:-runtime:50051}
-      AION_RUNTIME_AUTO_REGISTER: ${AION_RUNTIME_AUTO_REGISTER:-true}
-      AION_RUNTIME_NODE_ID: ${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}
-      AION_RUNTIME_CAPABILITIES: ${AION_RUNTIME_CAPABILITIES:-terminal.execute}
-      AION_RUNTIME_TENANT_IDS: ${AION_RUNTIME_TENANT_IDS:-}
-      AION_RUNTIME_TOTAL_CPU_MILLIS: ${AION_RUNTIME_TOTAL_CPU_MILLIS:-1000}
-      AION_RUNTIME_TOTAL_MEMORY_MB: ${AION_RUNTIME_TOTAL_MEMORY_MB:-512}
-      AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: ${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}
-      AION_RUNTIME_PROBE_TIMEOUT_SECONDS: ${AION_RUNTIME_PROBE_TIMEOUT_SECONDS:-3}
+      AION_CONTROL_POSTGRES_DSN: ${OMERTA_CONTROL_POSTGRES_DSN:-${AION_CONTROL_POSTGRES_DSN:-postgresql://aion:password@postgres:5432/omerta_db}}
+      AION_CONTROL_MONGO_DSN: ${OMERTA_CONTROL_MONGO_DSN:-${AION_CONTROL_MONGO_DSN:-mongodb://mongo:27017/omerta}}
+      AION_CONTROL_REDIS_URL: ${OMERTA_CONTROL_REDIS_URL:-${AION_CONTROL_REDIS_URL:-redis://redis:6379/0}}
+      AION_CONTROL_QDRANT_URL: ${OMERTA_CONTROL_QDRANT_URL:-${AION_CONTROL_QDRANT_URL:-http://qdrant:6333}}
+      AION_CONTROL_MINIO_ENDPOINT: ${OMERTA_CONTROL_MINIO_ENDPOINT:-${AION_CONTROL_MINIO_ENDPOINT:-minio:9000}}
+      AION_CONTROL_MINIO_ACCESS_KEY: ${OMERTA_CONTROL_MINIO_ACCESS_KEY:-${AION_CONTROL_MINIO_ACCESS_KEY:-minio}}
+      AION_CONTROL_MINIO_SECRET_KEY: ${OMERTA_CONTROL_MINIO_SECRET_KEY:-${AION_CONTROL_MINIO_SECRET_KEY:-miniosecret}}
+      AION_CONTROL_MINIO_BUCKET: ${OMERTA_CONTROL_MINIO_BUCKET:-${AION_CONTROL_MINIO_BUCKET:-omerta}}
+      AION_CONTROL_MINIO_SECURE: ${OMERTA_CONTROL_MINIO_SECURE:-${AION_CONTROL_MINIO_SECURE:-false}}
+      AION_CONTROL_GRPC_BIND: ${OMERTA_CONTROL_GRPC_BIND:-${AION_CONTROL_GRPC_BIND:-0.0.0.0:50051}}
+      AION_CONTROL_MODELS_DIRECTORY: ${OMERTA_CONTROL_MODELS_DIRECTORY:-${AION_CONTROL_MODELS_DIRECTORY:-/app/registry/models}}
+      AION_CONTROL_POLICIES_DIRECTORY: ${OMERTA_CONTROL_POLICIES_DIRECTORY:-${AION_CONTROL_POLICIES_DIRECTORY:-/app/policies}}
+      AION_RUNTIME_ENDPOINT: ${OMERTA_RUNTIME_ENDPOINT:-${AION_RUNTIME_ENDPOINT:-runtime:50051}}
+      AION_RUNTIME_AUTO_REGISTER: ${OMERTA_RUNTIME_AUTO_REGISTER:-${AION_RUNTIME_AUTO_REGISTER:-true}}
+      AION_RUNTIME_NODE_ID: ${OMERTA_RUNTIME_NODE_ID:-${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}}
+      AION_RUNTIME_CAPABILITIES: ${OMERTA_RUNTIME_CAPABILITIES:-${AION_RUNTIME_CAPABILITIES:-terminal.execute}}
+      AION_RUNTIME_TENANT_IDS: ${OMERTA_RUNTIME_TENANT_IDS:-${AION_RUNTIME_TENANT_IDS:-}}
+      AION_RUNTIME_TOTAL_CPU_MILLIS: ${OMERTA_RUNTIME_TOTAL_CPU_MILLIS:-${AION_RUNTIME_TOTAL_CPU_MILLIS:-1000}}
+      AION_RUNTIME_TOTAL_MEMORY_MB: ${OMERTA_RUNTIME_TOTAL_MEMORY_MB:-${AION_RUNTIME_TOTAL_MEMORY_MB:-512}}
+      AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: ${OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}}
+      AION_RUNTIME_PROBE_TIMEOUT_SECONDS: ${OMERTA_RUNTIME_PROBE_TIMEOUT_SECONDS:-${AION_RUNTIME_PROBE_TIMEOUT_SECONDS:-3}}
       OMERTA_RUNTIME_LEASE_TTL_SECONDS: ${OMERTA_RUNTIME_LEASE_TTL_SECONDS:-${AION_RUNTIME_LEASE_TTL_SECONDS:-45}}
       AION_RUNTIME_LEASE_TTL_SECONDS: ${AION_RUNTIME_LEASE_TTL_SECONDS:-}
       OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE: /run/secrets/runtime-lease-hmac-key
-      AION_RUNTIME_NODES_JSON: ${AION_RUNTIME_NODES_JSON:-}
-      AION_RUNTIME_MANAGED_NODE_LIMIT: ${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}
+      AION_RUNTIME_NODES_JSON: ${OMERTA_RUNTIME_NODES_JSON:-${AION_RUNTIME_NODES_JSON:-}}
+      AION_RUNTIME_MANAGED_NODE_LIMIT: ${OMERTA_RUNTIME_MANAGED_NODE_LIMIT:-${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}}
       TENANCY_MODE: ${TENANCY_MODE:-single}
-      AION_ENV: ${AION_ENV:-dev}
+      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
@@ -159,7 +159,7 @@ services:
       runtime:
         condition: service_healthy
     ports:
-      - "127.0.0.1:${AION_CONTROL_HOST_PORT:-8000}:8000"
+      - "127.0.0.1:${OMERTA_CONTROL_HOST_PORT:-${AION_CONTROL_HOST_PORT:-8000}}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
       interval: 5s
@@ -173,8 +173,8 @@ services:
     environment:
       CONTROL_URL: http://control:8000
       SECRET_PROVIDER_MODE: local
-      AION_GATEWAY_ADMIN_TOKEN: ${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}
-      AION_GATEWAY_API_KEYS: ${AION_GATEWAY_API_KEYS:-dev-admin-token:admin}
+      AION_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-dev-admin-token}}}
+      AION_GATEWAY_API_KEYS: ${OMERTA_GATEWAY_API_KEYS:-${AION_GATEWAY_API_KEYS:-dev-admin-token:admin}}
       AION_ENV: dev
       AION_AUTH_MODE: disabled
       AION_DOCKER: "1"
@@ -184,7 +184,7 @@ services:
       AION_CONTROL_API_PREFIX: /v1
       AION_CONTROL_GRPC: control:50051
       AION_REDIS_URL: redis://redis:6379/0
-      AION_CORS_ORIGINS: ${AION_CORS_ORIGINS:-http://localhost:3000}
+      AION_CORS_ORIGINS: ${OMERTA_CORS_ORIGINS:-${AION_CORS_ORIGINS:-http://localhost:3000}}
       AION_SELF_EVOLVING_ENABLED: "false"
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
@@ -196,7 +196,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "${AION_GATEWAY_HOST_PORT:-8080}:8080"
+      - "${OMERTA_GATEWAY_HOST_PORT:-${AION_GATEWAY_HOST_PORT:-8080}}:8080"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 5s
@@ -204,7 +204,7 @@ services:
       retries: 30
     restart: unless-stopped
   install:
-    image: ${AION_CONSOLE_IMAGE:-omertaos-console}
+    image: ${OMERTA_CONSOLE_IMAGE:-${AION_CONSOLE_IMAGE:-omertaos-console}}
     environment:
       CONSOLE_ADMIN_EMAIL: ${CONSOLE_ADMIN_EMAIL:?CONSOLE_ADMIN_EMAIL is required}
       CONSOLE_ADMIN_PASSWORD: ${CONSOLE_ADMIN_PASSWORD:?CONSOLE_ADMIN_PASSWORD is required}
@@ -216,14 +216,14 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: quickstart-nextauth-secret
       GATEWAY_URL: http://gateway:8080
-      AION_GATEWAY_URL: http://gateway:8080
+      OMERTA_GATEWAY_URL: http://gateway:8080
     depends_on:
       postgres:
         condition: service_healthy
     restart: "no"
     entrypoint: ["sh", "./scripts/install.sh"]
   console:
-    image: ${AION_CONSOLE_IMAGE:-omertaos-console}
+    image: ${OMERTA_CONSOLE_IMAGE:-${AION_CONSOLE_IMAGE:-omertaos-console}}
     build:
       context: .
       dockerfile: console/Dockerfile
@@ -234,10 +234,10 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-quickstart-nextauth-secret}
       NEXT_PUBLIC_GATEWAY_URL: ${NEXT_PUBLIC_GATEWAY_URL:-http://localhost:8080}
       GATEWAY_URL: http://gateway:8080
-      AION_GATEWAY_URL: http://gateway:8080
+      OMERTA_GATEWAY_URL: http://gateway:8080
       SECRET_PROVIDER_MODE: local
-      AION_DEV_ADMIN_TOKEN: ${AION_DEV_ADMIN_TOKEN:-dev-admin-token}
-      AION_ADMIN_TOKEN: ${AION_ADMIN_TOKEN:-dev-admin-token}
+      AION_DEV_ADMIN_TOKEN: ${OMERTA_DEV_ADMIN_TOKEN:-${AION_DEV_ADMIN_TOKEN:-dev-admin-token}}
+      AION_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}}}
       DATABASE_URL: ${DATABASE_URL:-postgresql://aion:password@postgres:5432/omerta_db?schema=public}
       PORT: 3000
       HTTP_PROXY: ${HTTP_PROXY:-}
@@ -252,7 +252,7 @@ services:
       install:
         condition: service_completed_successfully
     ports:
-      - "${AION_CONSOLE_HOST_PORT:-3000}:3000"
+      - "${OMERTA_CONSOLE_HOST_PORT:-${AION_CONSOLE_HOST_PORT:-3000}}:3000"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:3000/"]
       interval: 5s
@@ -273,5 +273,5 @@ secrets:
 
 networks:
   default:
-    name: ${AION_DOCKER_NETWORK:-omerta-net}
+    name: ${OMERTA_DOCKER_NETWORK:-${AION_DOCKER_NETWORK:-omerta-net}}
     driver: bridge

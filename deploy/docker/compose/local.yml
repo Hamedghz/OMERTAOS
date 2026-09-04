@@ -2,7 +2,7 @@ services:
   vault:
     image: hashicorp/vault:1.16
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ${AION_VAULT_TOKEN:-dev-root-token}
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_TOKEN:-${AION_VAULT_TOKEN:-dev-root-token}}
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     command: server -dev
     profiles: ["vault"]
@@ -107,7 +107,7 @@ services:
     environment:
       AION_DOCKER: "1"
       AION_CONTROL_DISABLE_SECRETS: "1"
-      AION_CONTROL_LOCAL_SECRET_KEY: ${AION_CONTROL_LOCAL_SECRET_KEY:-}
+      AION_CONTROL_LOCAL_SECRET_KEY: ${OMERTA_CONTROL_LOCAL_SECRET_KEY:-${AION_CONTROL_LOCAL_SECRET_KEY:-}}
       AION_CONTROL_POSTGRES_DSN: postgresql://aion:aion@postgres:5432/aion
       AION_CONTROL_MONGO_DSN: mongodb://mongo:27017/aion
       AION_CONTROL_REDIS_URL: redis://redis:6379/0
@@ -120,7 +120,7 @@ services:
       AION_CONTROL_MODELS_DIRECTORY: /app/registry/models
       AION_CONTROL_POLICIES_DIRECTORY: /app/policies
       TENANCY_MODE: single
-      AION_ENV: ${AION_ENV:-dev}
+      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
@@ -159,7 +159,7 @@ services:
       AION_CONTROL_BASE_URL: http://control:8000
       AION_CONTROL_API_PREFIX: /v1
       AION_REDIS_URL: redis://redis:6379/0
-      AION_GATEWAY_ADMIN_TOKEN: ${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}
+      AION_GATEWAY_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-dev-admin-token}}}
       AION_AUTH_MODE: disabled
       SECRET_PROVIDER_MODE: local
       AION_SELF_EVOLVING_ENABLED: "false"
@@ -170,7 +170,7 @@ services:
       AION_TLS_REQUIRE_MTLS: "false"
       AION_TLS_REQUIRED: "false"
       AION_DEV_KERNEL_ENABLED: "false"
-      AION_ENV: ${AION_ENV:-dev}
+      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}
@@ -206,10 +206,10 @@ services:
       AION_GATEWAY_URL: http://gateway:8080
       DATABASE_URL: postgresql://aion:aion@postgres:5432/aion?schema=public
       SECRET_PROVIDER_MODE: local
-      AION_DEV_ADMIN_TOKEN: ${AION_DEV_ADMIN_TOKEN:-dev-admin-token}
-      AION_ADMIN_TOKEN: ${AION_ADMIN_TOKEN:-dev-admin-token}
+      AION_DEV_ADMIN_TOKEN: ${OMERTA_DEV_ADMIN_TOKEN:-${AION_DEV_ADMIN_TOKEN:-dev-admin-token}}
+      AION_ADMIN_TOKEN: ${OMERTA_GATEWAY_ADMIN_TOKEN:-${AION_ADMIN_TOKEN:-${AION_GATEWAY_ADMIN_TOKEN:-dev-admin-token}}}
       PORT: 3000
-      AION_ENV: ${AION_ENV:-dev}
+      AION_ENV: ${OMERTA_ENV:-${AION_ENV:-dev}}
       HTTP_PROXY: ${HTTP_PROXY:-}
       HTTPS_PROXY: ${HTTPS_PROXY:-}
       ALL_PROXY: ${ALL_PROXY:-}

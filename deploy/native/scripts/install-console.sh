@@ -33,9 +33,9 @@ if ! "$CHECK_ONLY"; then
   native_prepare_dir /var/lib/omertaos/cache/pnpm
   native_run_service env COREPACK_HOME=/var/lib/omertaos/cache/corepack PNPM_HOME=/var/lib/omertaos/cache/pnpm \
     corepack pnpm --dir "$SERVICE" install --frozen-lockfile
-  native_run_service env DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build AION_ENABLE_PRISMA=0 \
+  native_run_service env DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build OMERTA_ENABLE_PRISMA=0 \
     corepack pnpm --dir "$SERVICE" run prisma:generate
-  native_run_service env DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build AION_ENABLE_PRISMA=0 \
+  native_run_service env DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build OMERTA_ENABLE_PRISMA=0 \
     NEXT_PUBLIC_GATEWAY_URL=http://127.0.0.1:8080 NEXTAUTH_URL=http://127.0.0.1:3000 \
     NEXTAUTH_SECRET=n4-build-only-placeholder corepack pnpm --dir "$SERVICE" run build
   native_run_service corepack pnpm --dir "$SERVICE" exec tsc --project scripts/tsconfig.json

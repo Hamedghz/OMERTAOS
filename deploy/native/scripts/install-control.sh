@@ -40,7 +40,7 @@ else
 fi
 
 if ! "$DRY_RUN"; then
-  native_run_service env AION_CONTROL_DATA_DIR=/var/lib/omertaos/control PYTHONPATH="$ROOT" \
+  native_run_service env OMERTA_CONTROL_DATA_DIR=/var/lib/omertaos/control PYTHONPATH="$ROOT" \
     "$VENV/bin/python" -c 'from control.app.main import app; assert app is not None'
   native_run_service "$VENV/bin/python" -m pip check
 fi

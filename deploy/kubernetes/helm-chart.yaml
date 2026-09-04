@@ -25,7 +25,7 @@ spec:
         - name: gateway
           image: aion/gateway:latest
           env:
-            - name: AION_CONTROL_GRPC
+            - name: OMERTA_CONTROL_GRPC
               value: aion-control:50051
           ports:
             - containerPort: 8080

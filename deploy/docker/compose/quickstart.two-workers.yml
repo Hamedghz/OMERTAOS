@@ -1,6 +1,6 @@
 services:
   runtime-secondary:
-    image: ${AION_RUNTIME_IMAGE:-omertaos-runtime}
+    image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}
     environment:
       AION_RUNTIME_BIND_ADDR: 0.0.0.0:50051
       AION_RUNTIME_NODE_ID: runtime-quickstart-2

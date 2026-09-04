@@ -6,10 +6,10 @@ TIMEOUT=5
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-}"
-QUICKSTART_COMPOSE_FILE="${AION_QUICKSTART_COMPOSE_FILE:-deploy/docker/compose/quickstart.yml}"
-CONSOLE_PORT="${AION_CONSOLE_HOST_PORT:-3000}"
-GATEWAY_PORT="${AION_GATEWAY_HOST_PORT:-8080}"
-CONTROL_PORT="${AION_CONTROL_HOST_PORT:-8000}"
+QUICKSTART_COMPOSE_FILE=
+CONSOLE_PORT=
+GATEWAY_PORT=
+CONTROL_PORT=
 
 usage() {
   cat <<'EOF'
@@ -19,7 +19,7 @@ Usage: smoke-test.sh [--mode native|quickstart] [--timeout SECONDS]
 Read-only N7 acceptance checks. Native mode verifies data services, the N5
 one-shot result, all N6 units, Runtime's binary healthcheck, listeners, HTTP
 payloads, the Console-to-Gateway-to-Control chain, restart state, and journald.
-Quickstart mode honors the AION_*_HOST_PORT variables and checks the selected
+Quickstart mode honors the OMERTA_*_HOST_PORT variables and checks the selected
 Compose project. It never starts, stops, reloads, migrates, bootstraps, or
 modifies a service.
 EOF
@@ -27,6 +27,27 @@ EOF
 
 die() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
 pass() { printf 'PASS: %s\n' "$*"; }
+
+resolve_host_alias() {
+  local canonical_name="$1" legacy_name="$2" default_value="$3"
+  local canonical_value="${!canonical_name-}" legacy_value="${!legacy_name-}"
+  if [[ -n "$canonical_value" && -n "$legacy_value" && "$canonical_value" != "$legacy_value" ]]; then
+    die "conflicting environment aliases: $canonical_name, $legacy_name"
+  fi
+  if [[ -n "$canonical_value" ]]; then
+    printf '%s' "$canonical_value"
+  elif [[ -n "$legacy_value" ]]; then
+    printf 'WARNING: deprecated environment alias %s; use %s\n' "$legacy_name" "$canonical_name" >&2
+    printf '%s' "$legacy_value"
+  else
+    printf '%s' "$default_value"
+  fi
+}
+
+QUICKSTART_COMPOSE_FILE="$(resolve_host_alias OMERTA_QUICKSTART_COMPOSE_FILE AION_QUICKSTART_COMPOSE_FILE deploy/docker/compose/quickstart.yml)"
+CONSOLE_PORT="$(resolve_host_alias OMERTA_CONSOLE_HOST_PORT AION_CONSOLE_HOST_PORT 3000)"
+GATEWAY_PORT="$(resolve_host_alias OMERTA_GATEWAY_HOST_PORT AION_GATEWAY_HOST_PORT 8080)"
+CONTROL_PORT="$(resolve_host_alias OMERTA_CONTROL_HOST_PORT AION_CONTROL_HOST_PORT 8000)"
 
 while (($#)); do
   case "$1" in
@@ -123,9 +144,9 @@ check_quickstart() {
     QUICKSTART_COMPOSE_FILE="$REPO_ROOT/$QUICKSTART_COMPOSE_FILE"
   fi
   [[ -f "$QUICKSTART_COMPOSE_FILE" ]] || die 'Quickstart Compose file is missing'
-  validate_port AION_CONSOLE_HOST_PORT "$CONSOLE_PORT"
-  validate_port AION_GATEWAY_HOST_PORT "$GATEWAY_PORT"
-  validate_port AION_CONTROL_HOST_PORT "$CONTROL_PORT"
+  validate_port OMERTA_CONSOLE_HOST_PORT "$CONSOLE_PORT"
+  validate_port OMERTA_GATEWAY_HOST_PORT "$GATEWAY_PORT"
+  validate_port OMERTA_CONTROL_HOST_PORT "$CONTROL_PORT"
 
   check_compose_health PostgreSQL postgres
   check_compose_health Redis redis
@@ -213,7 +234,7 @@ check_native() {
 
   [[ -L /opt/omertaos/current ]] || die 'active release symlink is missing'
   [[ -x /opt/omertaos/current/bin/runtime-daemon ]] || die 'Runtime binary is missing'
-  AION_RUNTIME_HEALTH_ADDR=127.0.0.1:50051 \
+  OMERTA_RUNTIME_HEALTH_ADDR=127.0.0.1:50051 \
     /opt/omertaos/current/bin/runtime-daemon --healthcheck \
     || die 'Runtime binary healthcheck failed'
   pass 'Runtime binary healthcheck'

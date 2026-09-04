@@ -20,11 +20,11 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: AION_GATEWAY_PORT
+            - name: OMERTA_GATEWAY_PORT
               value: "8080"
-            - name: AION_CONTROL_GRPC
+            - name: OMERTA_CONTROL_GRPC
               value: "aion-control:50051"
-            - name: AION_REDIS_URL
+            - name: OMERTA_REDIS_URL
               value: "redis://aion-redis:6379"
           readinessProbe:
             httpGet:

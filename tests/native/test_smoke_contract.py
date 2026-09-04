@@ -116,9 +116,9 @@ esac
         "PATH": f"{bin_dir}:{os.environ['PATH']}",
         "SMOKE_DOCKER_LOG": str(docker_log),
         "SMOKE_CURL_LOG": str(curl_log),
-        "AION_CONSOLE_HOST_PORT": "13000",
-        "AION_GATEWAY_HOST_PORT": "18080",
-        "AION_CONTROL_HOST_PORT": "18000",
+        "OMERTA_CONSOLE_HOST_PORT": "13000",
+        "OMERTA_GATEWAY_HOST_PORT": "18080",
+        "OMERTA_CONTROL_HOST_PORT": "18000",
     }
     result = subprocess.run(
         ["bash", str(SMOKE), "--mode", "quickstart", "--project-name", "omertaos-test"],
@@ -148,11 +148,51 @@ def test_quickstart_smoke_rejects_invalid_isolated_port(tmp_path: Path) -> None:
     result = subprocess.run(
         ["bash", str(SMOKE), "--mode", "quickstart", "--project-name", "omertaos-test"],
         cwd=tmp_path,
-        env={**os.environ, "AION_CONSOLE_HOST_PORT": "0"},
+        env={**os.environ, "OMERTA_CONSOLE_HOST_PORT": "0"},
         text=True,
         capture_output=True,
         check=False,
     )
 
     assert result.returncode == 1
-    assert "AION_CONSOLE_HOST_PORT must be an integer between 1 and 65535" in result.stderr
+    assert "OMERTA_CONSOLE_HOST_PORT must be an integer between 1 and 65535" in result.stderr
+
+
+def test_quickstart_smoke_accepts_legacy_host_port_with_names_only_warning(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        ["bash", str(SMOKE), "--help"],
+        cwd=tmp_path,
+        env={**os.environ, "AION_CONSOLE_HOST_PORT": "13000"},
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert (
+        "deprecated environment alias AION_CONSOLE_HOST_PORT; "
+        "use OMERTA_CONSOLE_HOST_PORT" in result.stderr
+    )
+
+
+def test_quickstart_smoke_rejects_conflicting_host_ports(tmp_path: Path) -> None:
+    result = subprocess.run(
+        ["bash", str(SMOKE), "--help"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "OMERTA_CONSOLE_HOST_PORT": "13000",
+            "AION_CONSOLE_HOST_PORT": "13001",
+        },
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert (
+        "conflicting environment aliases: "
+        "OMERTA_CONSOLE_HOST_PORT, AION_CONSOLE_HOST_PORT" in result.stderr
+    )

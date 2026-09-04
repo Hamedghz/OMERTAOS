@@ -43,10 +43,45 @@ def _is_loopback(value: str) -> bool:
     return host in {"127.0.0.1", "localhost", "::1"}
 
 
+def _effective_values(
+    values: dict[str, str],
+    aliases: dict[str, str],
+    *,
+    allow_legacy: bool,
+) -> tuple[dict[str, str], list[str]]:
+    effective = dict(values)
+    errors: list[str] = []
+    for legacy_name, canonical_name in aliases.items():
+        legacy_value = values.get(legacy_name)
+        canonical_value = values.get(canonical_name)
+        if legacy_value is None:
+            continue
+        if not allow_legacy:
+            errors.append(
+                f"deprecated environment key {legacy_name}; use {canonical_name}"
+            )
+            continue
+        if (
+            legacy_value
+            and canonical_value
+            and legacy_value != canonical_value
+        ):
+            errors.append(
+                f"conflicting environment aliases: {canonical_name}, {legacy_name}"
+            )
+            continue
+        if not canonical_value:
+            effective[canonical_name] = legacy_value
+    return effective, errors
+
+
 def validate_directory(env_dir: Path, *, strict: bool = False) -> list[str]:
     contract = json.loads((env_dir / "contract.json").read_text(encoding="utf-8"))
     errors: list[str] = []
     parsed: dict[str, dict[str, str]] = {}
+    aliases = contract.get("deprecated_aliases", {})
+    if contract.get("version") != 2:
+        errors.append("native environment contract version must be 2")
 
     for filename, rules in contract["templates"].items():
         path = env_dir / (filename.removesuffix(".example") if strict else filename)
@@ -58,8 +93,14 @@ def validate_directory(env_dir: Path, *, strict: bool = False) -> list[str]:
         except ValueError as exc:
             errors.append(str(exc))
             continue
-        parsed[filename] = values
-        missing = sorted(set(rules["required"]) - set(values))
+        effective, alias_errors = _effective_values(
+            values,
+            aliases,
+            allow_legacy=strict,
+        )
+        errors.extend(f"{path.name}: {error}" for error in alias_errors)
+        parsed[filename] = effective
+        missing = sorted(set(rules["required"]) - set(effective))
         if missing:
             errors.append(f"{path.name}: missing keys {', '.join(missing)}")
         for prefix in rules.get("forbidden_prefixes", []):
@@ -106,9 +147,9 @@ def validate_directory(env_dir: Path, *, strict: bool = False) -> list[str]:
         if value is not None and not _is_loopback(value):
             errors.append(f"{key}: Native internal boundary must be loopback-only")
 
-    grpc = combined.get("AION_CONTROL_GRPC", "")
+    grpc = combined.get("OMERTA_CONTROL_GRPC", "")
     if "://" in grpc:
-        errors.append("AION_CONTROL_GRPC: expected host:port without URL scheme")
+        errors.append("OMERTA_CONTROL_GRPC: expected host:port without URL scheme")
 
     for profile in contract["profiles"]:
         path = env_dir / "profiles" / f"{profile}.env"
@@ -122,6 +163,12 @@ def validate_directory(env_dir: Path, *, strict: bool = False) -> list[str]:
             continue
         if values.get("OMERTA_PROFILE") != profile:
             errors.append(f"{path.name}: OMERTA_PROFILE must be {profile}")
+        expected_gateway_profile = contract["gateway_profiles"][profile]
+        if values.get("OMERTA_GATEWAY_PROFILE") != expected_gateway_profile:
+            errors.append(
+                f"{path.name}: OMERTA_GATEWAY_PROFILE must be "
+                f"{expected_gateway_profile}"
+            )
 
     return errors
 

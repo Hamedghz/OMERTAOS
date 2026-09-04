@@ -102,11 +102,45 @@ CANONICAL_OVERRIDES = {
 }
 
 IMPLEMENTED_DUAL_READ = {
+    "AION_ADMIN_TOKEN",
+    "AION_ADMIN_TOKEN_SECRET_PATH",
+    "AION_AUTH_MODE",
+    "AION_CONSOLE_ORIGIN",
+    "AION_CONTROL_API_PREFIX",
+    "AION_CONTROL_BASE",
+    "AION_CONTROL_BASE_URL",
+    "AION_CONTROL_CORS_ORIGINS",
+    "AION_CONTROL_DATABASE_URL",
+    "AION_CONTROL_DATA_DIR",
+    "AION_CONTROL_GRPC",
+    "AION_CONTROL_HTTP_HOST",
+    "AION_CONTROL_HTTP_PORT",
+    "AION_CONTROL_LOCAL_SECRET_KEY",
+    "AION_CONTROL_MODELS_DIRECTORY",
+    "AION_CONTROL_POSTGRES_DSN",
+    "AION_CONTROL_SECRET_DIR",
+    "AION_CORS_ORIGINS",
+    "AION_DEV_BYPASS_AUTH",
+    "AION_ENABLE_PRISMA",
+    "AION_ENV",
+    "AION_GATEWAY_ADMIN_TOKEN",
+    "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+    "AION_GATEWAY_API_KEYS",
+    "AION_GATEWAY_API_KEYS_SECRET_PATH",
+    "AION_GATEWAY_HOST",
+    "AION_GATEWAY_PORT",
     "AION_GATEWAY_URL",
+    "AION_JWT_PUBLIC_KEY",
+    "AION_JWT_SECRET_PATH",
     "AION_PROFILE",
+    "AION_REDIS_URL",
+    "AION_RUNTIME_BIND_ADDR",
+    "AION_RUNTIME_ENDPOINT",
+    "AION_RUNTIME_HEALTH_ADDR",
     "AION_RUNTIME_LEASE_MAX_TTL_SECONDS",
     "AION_RUNTIME_LEASE_STATE_PATH",
     "AION_RUNTIME_LEASE_TTL_SECONDS",
+    "AION_TRUST_PROXY",
 }
 
 HOST_BOUNDARY_NAMES = {
@@ -273,16 +307,10 @@ def _migration_state(name: str) -> tuple[str, str]:
             "migrated-no-alias",
             "R6.15 accepted the canonical HMAC key without a legacy alias.",
         )
-    if name in IMPLEMENTED_DUAL_READ:
-        return "dual-read-implemented", "Canonical and legacy conflicts fail closed."
-    if name in VAULT_STANDARD_NAMES:
-        return "pending-ecosystem-alias", "Canonical target is the standard VAULT namespace."
-    if name in HOST_BOUNDARY_NAMES:
-        return "pending-host-preflight", "Requires host-side conflict validation."
     if name == "AION_PROFILE":
         return (
-            "mapping-decided",
-            "Maps to OMERTA_GATEWAY_PROFILE; OMERTA_PROFILE is the Runtime edition profile.",
+            "dual-read-implemented",
+            "Maps to OMERTA_GATEWAY_PROFILE; OMERTA_PROFILE remains the Runtime edition profile.",
         )
     if name in {
         "AION_ADMIN_TOKEN",
@@ -291,8 +319,17 @@ def _migration_state(name: str) -> tuple[str, str]:
         "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
     }:
         return (
-            "mapping-decided",
-            "Compatibility group maps to the Gateway internal-admin credential contract.",
+            "dual-read-implemented",
+            "Gateway internal-admin compatibility group fails closed on conflicts.",
+        )
+    if name in IMPLEMENTED_DUAL_READ:
+        return "dual-read-implemented", "Canonical and legacy conflicts fail closed."
+    if name in VAULT_STANDARD_NAMES:
+        return "pending-ecosystem-alias", "Canonical target is the standard VAULT namespace."
+    if name in HOST_BOUNDARY_NAMES:
+        return (
+            "host-preflight-implemented",
+            "Compose resolves canonical-first and host conflicts fail before rendering.",
         )
     if name in {"AION_CONTROL_API", "AION_VAULT_KEY", "AION_VAULT_PROVIDER"}:
         return "quarantined-stale", "Belongs to the non-canonical catalog Compose definition."
@@ -301,11 +338,17 @@ def _migration_state(name: str) -> tuple[str, str]:
 
 def _schema_contracts(root: Path) -> dict[str, dict[str, Any]]:
     payload = json.loads((root / ".env.schema").read_text(encoding="utf-8"))
-    return {
-        variable["name"]: variable
-        for variable in payload.get("variables", [])
-        if isinstance(variable, dict) and isinstance(variable.get("name"), str)
-    }
+    contracts: dict[str, dict[str, Any]] = {}
+    for variable in payload.get("variables", []):
+        if not isinstance(variable, dict) or not isinstance(
+            variable.get("name"), str
+        ):
+            continue
+        contracts[variable["name"]] = variable
+        for alias in variable.get("deprecated_aliases", []):
+            if isinstance(alias, str):
+                contracts[alias] = variable
+    return contracts
 
 
 def _origin_names(root: Path) -> set[str]:

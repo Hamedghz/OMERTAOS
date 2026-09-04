@@ -41,7 +41,15 @@ command -v corepack >/dev/null || native_die 'corepack is required for Console m
 declare -A CONTROL_CONFIG=() CONSOLE_CONFIG=()
 native_load_env_file "$CONTROL_ENV" CONTROL_CONFIG
 native_load_env_file "$CONSOLE_ENV" CONSOLE_CONFIG
-control_dsn="${CONTROL_CONFIG[AION_CONTROL_POSTGRES_DSN]:-}"
+canonical_control_dsn="${CONTROL_CONFIG[OMERTA_CONTROL_POSTGRES_DSN]:-}"
+legacy_control_dsn="${CONTROL_CONFIG[AION_CONTROL_POSTGRES_DSN]:-}"
+if [[ -n "$canonical_control_dsn" && -n "$legacy_control_dsn" && "$canonical_control_dsn" != "$legacy_control_dsn" ]]; then
+  native_die 'conflicting environment aliases: OMERTA_CONTROL_POSTGRES_DSN, AION_CONTROL_POSTGRES_DSN'
+fi
+control_dsn="${canonical_control_dsn:-$legacy_control_dsn}"
+if [[ -z "$canonical_control_dsn" && -n "$legacy_control_dsn" ]]; then
+  printf 'WARNING: deprecated environment alias AION_CONTROL_POSTGRES_DSN; use OMERTA_CONTROL_POSTGRES_DSN\n' >&2
+fi
 console_dsn="${CONSOLE_CONFIG[DATABASE_URL]:-}"
 for dsn in "$control_dsn" "$console_dsn"; do
   [[ "$dsn" == postgresql://* || "$dsn" == postgres://* ]] || native_die 'N5 requires PostgreSQL service DSNs'
@@ -58,9 +66,9 @@ run_control() {
   local -a args=(-m control.app.network.migrate)
   "$CHECK_ONLY" && args+=(--check)
   if "$DRY_RUN"; then
-    printf 'DRY-RUN: run Control migration as omertaos with AION_CONTROL_POSTGRES_DSN=<redacted>\n'
+    printf 'DRY-RUN: run Control migration as omertaos with OMERTA_CONTROL_POSTGRES_DSN=<redacted>\n'
   else
-    native_run_service env AION_CONTROL_POSTGRES_DSN="$control_dsn" PYTHONPATH="$ROOT" "$VENV/bin/python" "${args[@]}"
+    native_run_service env OMERTA_CONTROL_POSTGRES_DSN="$control_dsn" PYTHONPATH="$ROOT" "$VENV/bin/python" "${args[@]}"
   fi
 }
 run_console() {

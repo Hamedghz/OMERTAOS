@@ -10,10 +10,10 @@
   },
   "snapshot": {
     "token_count": 164,
-    "active_token_count": 163,
-    "retired_token_count": 1,
-    "files_with_tokens": 106,
-    "occurrences": 940
+    "active_token_count": 157,
+    "retired_token_count": 7,
+    "files_with_tokens": 82,
+    "occurrences": 840
   },
   "policy": {
     "canonical_product_prefix": "OMERTA_",
@@ -33,7 +33,8 @@
         "docker-deployment",
         "gateway",
         "native-deployment",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "string",
       "required": false,
@@ -41,7 +42,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "mapping-decided",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_ADMIN_TOKEN",
       "source_files": [
         ".env.example",
@@ -52,14 +53,14 @@
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
-        "deploy/native/env/console.env.example",
         "deploy/native/env/contract.json",
         "dev.env",
-        "gateway/src/config.ts"
+        "gateway/src/config.ts",
+        "tests/architecture/test_environment_alias_preflight.py",
+        "tests/control/test_configuration_api.py"
       ],
-      "occurrences": 20,
-      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+      "occurrences": 24,
+      "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
       "legacy_name": "AION_ADMIN_TOKEN_SECRET_PATH",
@@ -77,7 +78,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "mapping-decided",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_ADMIN_TOKEN_SECRET_PATH",
       "source_files": [
         ".env.example",
@@ -87,8 +88,8 @@
         "dev.env",
         "gateway/src/config.ts"
       ],
-      "occurrences": 9,
-      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+      "occurrences": 8,
+      "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
       "legacy_name": "AION_AGENT_CATALOG_DIR",
@@ -168,7 +169,7 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_AUTH_MODE",
       "source_files": [
         "deploy/docker/compose/local.yml",
@@ -176,7 +177,7 @@
         "gateway/src/auth/index.ts"
       ],
       "occurrences": 3,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_BACKUP_DIR",
@@ -271,9 +272,7 @@
       "canonical_name": "OMERTA_CONSOLE_HOST_PORT",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "native-deployment",
         "tests"
       ],
@@ -283,19 +282,16 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_CONSOLE_HOST_PORT",
       "source_files": [
-        "deploy/CAPO/tests/contract-tests.ps1",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/scripts/smoke-test.sh",
-        "docs/capo/validation-recovery.md",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py",
         "tests/native/test_smoke_contract.py"
       ],
-      "occurrences": 10,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 7,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_CONSOLE_IMAGE",
@@ -303,7 +299,6 @@
       "classification": "product-environment",
       "owners": [
         "docker-deployment",
-        "documentation",
         "tests"
       ],
       "value_type": "string",
@@ -312,15 +307,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_CONSOLE_IMAGE",
       "source_files": [
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 4,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 3,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_CONSOLE_ORIGIN",
@@ -338,26 +332,23 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONSOLE_ORIGIN",
       "source_files": [
         "control/config.py",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
         "gateway/src/config.ts",
         "tests/control/test_config_cors.py",
         "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 5,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONSOLE_PORT",
       "canonical_name": "OMERTA_CONSOLE_PORT",
       "classification": "product-environment",
-      "owners": [
-        "deploy"
-      ],
+      "owners": [],
       "value_type": "integer",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -366,10 +357,8 @@
       "secret": false,
       "migration_state": "pending-dual-read",
       "legacy_alias": "AION_CONSOLE_PORT",
-      "source_files": [
-        "deploy/bundles/example/my-config/env/aion.env.example"
-      ],
-      "occurrences": 1,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -431,7 +420,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_API_PREFIX",
       "source_files": [
         ".env.example",
@@ -442,8 +431,8 @@
         "dev.env",
         "gateway/src/config.ts"
       ],
-      "occurrences": 10,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 8,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_BASE",
@@ -459,23 +448,21 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_BASE",
       "source_files": [
         ".env.schema",
         "gateway/src/config.ts"
       ],
       "occurrences": 2,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_BASE_URL",
       "canonical_name": "OMERTA_CONTROL_BASE_URL",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "gateway",
         "native-deployment",
         "repository-configuration",
@@ -487,33 +474,27 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_BASE_URL",
       "source_files": [
         ".env.example",
-        "deploy/CAPO/CAPO.env.example",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
         "dev.env",
-        "docs/capo/validation-recovery.md",
         "gateway/scripts/run-tests.mjs",
         "gateway/src/config.ts",
-        "tests/architecture/test_deployment_consolidation.py",
-        "tests/native/test_environment_contract.py"
+        "tests/architecture/test_deployment_consolidation.py"
       ],
-      "occurrences": 15,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 10,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_BIND",
       "canonical_name": "OMERTA_CONTROL_BIND",
       "classification": "product-environment",
-      "owners": [
-        "deploy"
-      ],
+      "owners": [],
       "value_type": "string",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -522,10 +503,8 @@
       "secret": false,
       "migration_state": "pending-dual-read",
       "legacy_alias": "AION_CONTROL_BIND",
-      "source_files": [
-        "deploy/bundles/example/my-config/env/aion.env.example"
-      ],
-      "occurrences": 1,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -544,16 +523,16 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_CORS_ORIGINS",
       "source_files": [
         ".env.example",
         "control/config.py",
-        "deploy/native/env/control.env.example",
+        "deploy/native/env/contract.json",
         "tests/control/test_config_cors.py"
       ],
       "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_DATABASE_URL",
@@ -568,13 +547,13 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_DATABASE_URL",
       "source_files": [
         "control/app/network/models.py"
       ],
       "occurrences": 1,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_DATA_DIR",
@@ -590,16 +569,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_DATA_DIR",
       "source_files": [
         "control/app/network/models.py",
-        "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "deploy/native/scripts/install-control.sh"
+        "deploy/native/env/contract.json"
       ],
-      "occurrences": 4,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 2,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_DISABLE_SECRETS",
@@ -640,10 +617,8 @@
       "canonical_name": "OMERTA_CONTROL_GRPC",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
         "gateway",
-        "kubernetes-deployment",
         "native-deployment",
         "repository-configuration",
         "tests"
@@ -654,27 +629,20 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_GRPC",
       "source_files": [
         ".env.example",
         ".env.schema",
-        "deploy/CAPO/CAPO.env.example",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/kubernetes/gateway-deployment.yaml",
-        "deploy/kubernetes/helm-chart.yaml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
-        "deploy/native/env/validate.py",
-        "gateway/README.md",
         "gateway/src/config.ts",
-        "tests/architecture/test_environment_baseline.py",
-        "tests/native/test_environment_contract.py"
+        "tests/architecture/test_environment_baseline.py"
       ],
-      "occurrences": 18,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 9,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_GRPC_BIND",
@@ -728,9 +696,7 @@
       "canonical_name": "OMERTA_CONTROL_HOST_PORT",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "native-deployment",
         "tests"
       ],
@@ -740,19 +706,15 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_CONTROL_HOST_PORT",
       "source_files": [
-        "deploy/CAPO/tests/contract-tests.ps1",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/scripts/smoke-test.sh",
-        "docs/capo/validation-recovery.md",
-        "docs/local-quickstart.md",
-        "tests/architecture/test_quickstart_runtime.py",
-        "tests/native/test_smoke_contract.py"
+        "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 8,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 3,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_CONTROL_HTTP_HOST",
@@ -768,14 +730,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_HTTP_HOST",
       "source_files": [
         ".env.example",
         "control/app/serve.py"
       ],
       "occurrences": 2,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_HTTP_PORT",
@@ -783,7 +745,6 @@
       "classification": "product-environment",
       "owners": [
         "control",
-        "deploy",
         "native-deployment",
         "repository-configuration"
       ],
@@ -793,19 +754,15 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_HTTP_PORT",
       "source_files": [
         ".env.example",
         "control/app/serve.py",
-        "deploy/CAPO/CAPO.env.example",
-        "deploy/CAPO/systemd/omertaos-control.service",
-        "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "deploy/native/systemd/omertaos-control.service"
+        "deploy/native/env/contract.json"
       ],
-      "occurrences": 8,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 3,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_LOCAL_SECRET_KEY",
@@ -824,31 +781,27 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_LOCAL_SECRET_KEY",
       "source_files": [
         ".env.example",
-        "control/README.md",
         "control/app/network/service.py",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
         "dev.env",
         "tests/control/test_network_proxies_api.py",
         "tests/control/test_network_proxy_secrets.py"
       ],
-      "occurrences": 18,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 14,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_MINIO_",
       "canonical_name": null,
       "classification": "prefix-pattern",
-      "owners": [
-        "control"
-      ],
+      "owners": [],
       "value_type": "prefix-pattern",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -857,10 +810,8 @@
       "secret": false,
       "migration_state": "excluded",
       "legacy_alias": null,
-      "source_files": [
-        "control/README.md"
-      ],
-      "occurrences": 1,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Prefix pattern, not a concrete environment key."
     },
     {
@@ -1001,8 +952,7 @@
         "control",
         "docker-deployment",
         "native-deployment",
-        "repository-configuration",
-        "tests"
+        "repository-configuration"
       ],
       "value_type": "filesystem-path",
       "required": false,
@@ -1010,30 +960,26 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_MODELS_DIRECTORY",
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "control/models/registry.py",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "dev.env",
-        "tests/native/test_environment_contract.py"
+        "dev.env"
       ],
-      "occurrences": 13,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 10,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_MONGO_DSN",
       "canonical_name": "OMERTA_CONTROL_MONGO_DSN",
       "classification": "product-environment",
       "owners": [
-        "control",
         "docker-deployment",
         "repository-configuration"
       ],
@@ -1048,13 +994,12 @@
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "dev.env"
       ],
-      "occurrences": 9,
+      "occurrences": 8,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1062,11 +1007,9 @@
       "canonical_name": "OMERTA_CONTROL_POLICIES_DIRECTORY",
       "classification": "product-environment",
       "owners": [
-        "control",
         "docker-deployment",
         "native-deployment",
-        "repository-configuration",
-        "tests"
+        "repository-configuration"
       ],
       "value_type": "filesystem-path",
       "required": false,
@@ -1079,16 +1022,13 @@
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "dev.env",
-        "tests/native/test_environment_contract.py"
+        "dev.env"
       ],
-      "occurrences": 13,
+      "occurrences": 10,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1098,7 +1038,6 @@
       "owners": [
         "control",
         "docker-deployment",
-        "kubernetes-deployment",
         "native-deployment",
         "repository-configuration",
         "tests"
@@ -1109,35 +1048,29 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_POSTGRES_DSN",
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "control/app/network/models.py",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
-        "deploy/kubernetes/control-deployment.yaml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "deploy/native/env/validate_data_env.py",
         "deploy/native/scripts/backup.sh",
         "deploy/native/scripts/migrate-database.sh",
         "dev.env",
         "tests/architecture/test_environment_baseline.py"
       ],
-      "occurrences": 22,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 15,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_QDRANT_URL",
       "canonical_name": "OMERTA_CONTROL_QDRANT_URL",
       "classification": "product-environment",
       "owners": [
-        "control",
         "docker-deployment",
         "repository-configuration"
       ],
@@ -1152,13 +1085,12 @@
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "dev.env"
       ],
-      "occurrences": 9,
+      "occurrences": 8,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1166,9 +1098,7 @@
       "canonical_name": "OMERTA_CONTROL_REDIS_URL",
       "classification": "product-environment",
       "owners": [
-        "control",
         "docker-deployment",
-        "kubernetes-deployment",
         "native-deployment",
         "repository-configuration"
       ],
@@ -1183,17 +1113,13 @@
       "source_files": [
         ".env.example",
         ".env.schema",
-        "control/README.md",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/kubernetes/control-deployment.yaml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "deploy/native/env/validate_data_env.py",
         "dev.env"
       ],
-      "occurrences": 14,
+      "occurrences": 9,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1211,16 +1137,15 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CONTROL_SECRET_DIR",
       "source_files": [
         "control/app/network/service.py",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
         "tests/control/test_network_proxy_secrets.py"
       ],
-      "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 5,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_CONTROL_TLS_NAME",
@@ -1272,7 +1197,6 @@
       "owners": [
         "control",
         "docker-deployment",
-        "documentation",
         "gateway",
         "repository-configuration",
         "tests"
@@ -1283,21 +1207,19 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_CORS_ORIGINS",
       "source_files": [
         ".env.example",
         "control/config.py",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
-        "gateway/README.md",
         "gateway/src/config.ts",
         "tests/architecture/test_quickstart_runtime.py",
         "tests/control/test_config_cors.py",
         "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 13,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 9,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_DATASET_REGISTRY",
@@ -1388,10 +1310,9 @@
         ".env.example",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
         "dev.env"
       ],
-      "occurrences": 5,
+      "occurrences": 4,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1482,10 +1403,9 @@
       "legacy_alias": "AION_DEV_ADMIN_TOKEN",
       "source_files": [
         "deploy/docker/compose/local.yml",
-        "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh"
+        "deploy/docker/compose/quickstart.yml"
       ],
-      "occurrences": 8,
+      "occurrences": 4,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1501,13 +1421,13 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_DEV_BYPASS_AUTH",
       "source_files": [
         "gateway/src/auth/index.ts"
       ],
       "occurrences": 1,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_DEV_KERNEL_ENABLED",
@@ -1617,10 +1537,9 @@
         "console/lib/prisma.ts",
         "console/tests/unit/gateway-config-env.test.tsx",
         "deploy/docker/compose/local.yml",
-        "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh"
+        "deploy/docker/compose/quickstart.yml"
       ],
-      "occurrences": 10,
+      "occurrences": 9,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -1636,23 +1555,21 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_DOCKER_COMPOSE_FILE",
       "source_files": [
         ".env.example",
         ".env.schema"
       ],
       "occurrences": 2,
-      "note": "Requires host-side conflict validation."
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_DOCKER_NETWORK",
       "canonical_name": "OMERTA_DOCKER_NETWORK",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "tests"
       ],
       "value_type": "string",
@@ -1661,16 +1578,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_DOCKER_NETWORK",
       "source_files": [
-        "deploy/CAPO/tests/contract-tests.ps1",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 4,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 2,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_ENABLE_PRISMA",
@@ -1678,6 +1593,7 @@
       "classification": "product-environment",
       "owners": [
         "console",
+        "docker-deployment",
         "native-deployment",
         "repository-configuration"
       ],
@@ -1687,18 +1603,17 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_ENABLE_PRISMA",
       "source_files": [
         ".env.example",
         "console/lib/prisma.ts",
-        "deploy/native/env/console.env.example",
+        "deploy/docker/compose/full.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/scripts/install-console.sh",
         "dev.env"
       ],
-      "occurrences": 7,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 6,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_ENV",
@@ -1716,27 +1631,27 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_ENV",
       "source_files": [
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/native/env/gateway.env.example",
+        "deploy/native/env/contract.json",
         "dev.env",
         "gateway/scripts/run-tests.mjs",
         "gateway/src/auth/index.ts",
         "gateway/src/config.ts"
       ],
-      "occurrences": 22,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 21,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_GATEWAY_ADMIN_TOKEN",
       "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN",
       "classification": "product-environment",
       "owners": [
-        "ci-tooling",
+        "console",
         "control",
         "docker-deployment",
         "gateway",
@@ -1745,61 +1660,62 @@
         "tests"
       ],
       "value_type": "string",
-      "required": "owner-defined",
-      "default_state": "owner-defined",
-      "contract_source": "owning-reader-or-deployment",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "mapping-decided",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_ADMIN_TOKEN",
       "source_files": [
-        ".codex/scripts/test.ps1",
-        ".codex/scripts/test.sh",
         ".env.example",
-        "control/README.md",
+        ".env.schema",
+        "console/lib/gatewayClient.ts",
+        "console/lib/serverConfig.ts",
         "control/app/service_auth.py",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
-        "deploy/native/env/gateway.env.example",
         "dev.env",
         "gateway/scripts/run-tests.mjs",
         "gateway/src/config.ts",
+        "tests/architecture/test_environment_alias_preflight.py",
         "tests/control/test_configuration_api.py",
         "tests/control/test_network_proxies_api.py",
         "tests/control/test_runtime_node_routes.py"
       ],
-      "occurrences": 39,
-      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+      "occurrences": 42,
+      "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
       "legacy_name": "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
       "canonical_name": "OMERTA_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
       "classification": "product-environment",
       "owners": [
+        "console",
         "docker-deployment",
         "gateway",
         "repository-configuration"
       ],
       "value_type": "filesystem-path",
-      "required": "owner-defined",
-      "default_state": "owner-defined",
-      "contract_source": "owning-reader-or-deployment",
+      "required": false,
+      "default_state": "declared-redacted",
+      "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "mapping-decided",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
       "source_files": [
         ".env.example",
+        ".env.schema",
+        "console/lib/serverConfig.ts",
         "deploy/docker/compose/full.yml",
         "dev.env",
         "gateway/src/config.ts"
       ],
-      "occurrences": 5,
-      "note": "Compatibility group maps to the Gateway internal-admin credential contract."
+      "occurrences": 8,
+      "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
       "legacy_name": "AION_GATEWAY_API_KEYS",
@@ -1817,21 +1733,20 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_API_KEYS",
       "source_files": [
         ".env.example",
         ".env.schema",
+        "deploy/docker/compose/full.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
         "dev.env",
-        "gateway/README.md",
         "gateway/scripts/run-tests.mjs",
         "gateway/src/config.ts",
         "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 14,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 11,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_GATEWAY_API_KEYS_SECRET_PATH",
@@ -1848,7 +1763,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_API_KEYS_SECRET_PATH",
       "source_files": [
         ".env.example",
@@ -1858,7 +1773,7 @@
         "gateway/src/config.ts"
       ],
       "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_GATEWAY_HEALTH_URL",
@@ -1898,7 +1813,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_HOST",
       "source_files": [
         ".env.example",
@@ -1907,22 +1822,18 @@
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
         "dev.env",
-        "gateway/README.md",
         "gateway/src/config.ts"
       ],
-      "occurrences": 11,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 9,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_GATEWAY_HOST_PORT",
       "canonical_name": "OMERTA_GATEWAY_HOST_PORT",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "native-deployment",
         "tests"
       ],
@@ -1932,29 +1843,23 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_GATEWAY_HOST_PORT",
       "source_files": [
-        "deploy/CAPO/tests/contract-tests.ps1",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/scripts/smoke-test.sh",
-        "docs/capo/validation-recovery.md",
-        "docs/local-quickstart.md",
-        "tests/architecture/test_quickstart_runtime.py",
-        "tests/native/test_smoke_contract.py"
+        "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 8,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 3,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_GATEWAY_PORT",
       "canonical_name": "OMERTA_GATEWAY_PORT",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
         "gateway",
-        "kubernetes-deployment",
         "native-deployment",
         "repository-configuration",
         "tests"
@@ -1965,27 +1870,23 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_GATEWAY_PORT",
       "source_files": [
         ".env.example",
         ".env.schema",
-        "deploy/CAPO/CAPO.env.example",
-        "deploy/bundles/example/my-config/env/aion.env.example",
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
-        "deploy/kubernetes/gateway-deployment.yaml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
         "dev.env",
-        "gateway/README.md",
         "gateway/src/config.ts",
+        "tests/architecture/test_environment_alias_preflight.py",
+        "tests/architecture/test_environment_baseline.py",
         "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 20,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 22,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_GATEWAY_URL",
@@ -2011,12 +1912,11 @@
         "console/app/api/system/health/route.ts",
         "console/lib/gatewayConfig.ts",
         "console/tests/unit/gateway-config-env.test.tsx",
+        "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
-        "deploy/docker/compose/quickstart.yml",
-        "deploy/docker/scripts/install.sh",
         "dev.env"
       ],
-      "occurrences": 15,
+      "occurrences": 14,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -2061,18 +1961,16 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_JWT_PUBLIC_KEY",
       "source_files": [
         ".env.example",
         ".env.schema",
         "dev.env",
-        "gateway/README.md",
-        "gateway/src/auth/index.ts",
         "gateway/src/config.ts"
       ],
-      "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 4,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_JWT_SECRET_PATH",
@@ -2089,18 +1987,17 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_JWT_SECRET_PATH",
       "source_files": [
         ".env.example",
         ".env.schema",
         "deploy/docker/compose/full.yml",
         "dev.env",
-        "gateway/README.md",
         "gateway/src/config.ts"
       ],
-      "occurrences": 7,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 6,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_KERNEL_HEALTH_URL",
@@ -2195,9 +2092,7 @@
       "legacy_name": "AION_LOG_LEVEL",
       "canonical_name": "OMERTA_LOG_LEVEL",
       "classification": "product-environment",
-      "owners": [
-        "deploy"
-      ],
+      "owners": [],
       "value_type": "string",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -2206,10 +2101,8 @@
       "secret": false,
       "migration_state": "pending-dual-read",
       "legacy_alias": "AION_LOG_LEVEL",
-      "source_files": [
-        "deploy/headless-bundle/env/aion.env.example"
-      ],
-      "occurrences": 1,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -2460,7 +2353,7 @@
       "canonical_name": "OMERTA_GATEWAY_PROFILE",
       "classification": "product-environment",
       "owners": [
-        "developer-tooling",
+        "docker-deployment",
         "gateway",
         "native-deployment",
         "repository-configuration",
@@ -2476,19 +2369,14 @@
       "legacy_alias": "AION_PROFILE",
       "source_files": [
         ".env.schema",
-        "Makefile",
+        "deploy/docker/compose/full.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
-        "deploy/native/env/profiles/enterprise.env",
-        "deploy/native/env/profiles/full.env",
-        "deploy/native/env/profiles/lite.env",
         "dev.env",
         "gateway/src/config.ts",
-        "tests/architecture/test_environment_baseline.py",
         "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 15,
-      "note": "Canonical and legacy conflicts fail closed."
+      "occurrences": 9,
+      "note": "Maps to OMERTA_GATEWAY_PROFILE; OMERTA_PROFILE remains the Runtime edition profile."
     },
     {
       "legacy_name": "AION_PROTO_ROOT",
@@ -2551,13 +2439,13 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_QUICKSTART_COMPOSE_FILE",
       "source_files": [
         "deploy/native/scripts/smoke-test.sh"
       ],
       "occurrences": 1,
-      "note": "Requires host-side conflict validation."
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_RAG_COLLECTION",
@@ -2656,7 +2544,7 @@
         "gateway/src/config.ts",
         "tests/architecture/test_environment_baseline.py"
       ],
-      "occurrences": 9,
+      "occurrences": 8,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -2715,7 +2603,6 @@
       "owners": [
         "docker-deployment",
         "gateway",
-        "kubernetes-deployment",
         "native-deployment",
         "repository-configuration"
       ],
@@ -2725,7 +2612,7 @@
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_REDIS_URL",
       "source_files": [
         ".env.example",
@@ -2733,15 +2620,12 @@
         "deploy/docker/compose/full.yml",
         "deploy/docker/compose/local.yml",
         "deploy/docker/compose/quickstart.yml",
-        "deploy/kubernetes/gateway-deployment.yaml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/gateway.env.example",
         "dev.env",
-        "gateway/README.md",
         "gateway/src/config.ts"
       ],
-      "occurrences": 14,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 9,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_ROUTER_POLICY",
@@ -2769,7 +2653,6 @@
       "canonical_name": null,
       "classification": "prefix-pattern",
       "owners": [
-        "documentation",
         "native-deployment",
         "tests"
       ],
@@ -2783,10 +2666,9 @@
       "legacy_alias": null,
       "source_files": [
         "deploy/native/env/contract.json",
-        "docs/local-quickstart.md",
         "tests/native/test_environment_contract.py"
       ],
-      "occurrences": 3,
+      "occurrences": 2,
       "note": "Prefix pattern, not a concrete environment key."
     },
     {
@@ -2822,7 +2704,6 @@
       "canonical_name": "OMERTA_RUNTIME_BIND_ADDR",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
         "documentation",
         "native-deployment",
@@ -2835,14 +2716,12 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_RUNTIME_BIND_ADDR",
       "source_files": [
-        "deploy/CAPO/CAPO.env.example",
         "deploy/docker/compose/quickstart.two-workers.yml",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/runtime.env.example",
         "docs/capo/repository-audit.md",
         "docs/migration/control-plane-to-control.md",
         "runtime-daemon/README.md",
@@ -2850,8 +2729,8 @@
         "tests/architecture/test_quickstart_runtime.py",
         "tests/native/test_environment_contract.py"
       ],
-      "occurrences": 12,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 11,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_RUNTIME_CAPABILITIES",
@@ -2890,7 +2769,6 @@
       "classification": "product-environment",
       "owners": [
         "control",
-        "deploy",
         "docker-deployment",
         "documentation",
         "native-deployment",
@@ -2903,22 +2781,20 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_RUNTIME_ENDPOINT",
       "source_files": [
         ".env.example",
-        "control/README.md",
         "control/app/runtime_nodes/lifecycle.py",
         "control/clients/runtime/client.py",
-        "deploy/CAPO/CAPO.env.example",
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
-        "deploy/native/env/control.env.example",
         "docs/migration/control-plane-to-control.md",
+        "tests/control/test_runtime_client.py",
         "tests/control/test_runtime_lifecycle.py"
       ],
-      "occurrences": 14,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 13,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_RUNTIME_HEALTH_ADDR",
@@ -2935,17 +2811,15 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_RUNTIME_HEALTH_ADDR",
       "source_files": [
         "deploy/native/env/contract.json",
-        "deploy/native/env/runtime.env.example",
-        "deploy/native/scripts/smoke-test.sh",
         "docs/capo/capo-r4-validation-report.md",
         "runtime-daemon/src/lib.rs"
       ],
-      "occurrences": 6,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 3,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS",
@@ -2980,9 +2854,7 @@
       "canonical_name": "OMERTA_RUNTIME_HOST_PORT",
       "classification": "product-environment",
       "owners": [
-        "deploy",
         "docker-deployment",
-        "documentation",
         "tests"
       ],
       "value_type": "integer",
@@ -2991,16 +2863,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_RUNTIME_HOST_PORT",
       "source_files": [
-        "deploy/CAPO/tests/contract-tests.ps1",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 4,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 2,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_RUNTIME_IMAGE",
@@ -3008,7 +2878,6 @@
       "classification": "product-environment",
       "owners": [
         "docker-deployment",
-        "documentation",
         "repository-configuration",
         "tests"
       ],
@@ -3018,17 +2887,16 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-host-preflight",
+      "migration_state": "host-preflight-implemented",
       "legacy_alias": "AION_RUNTIME_IMAGE",
       "source_files": [
         ".env.example",
         "deploy/docker/compose/quickstart.two-workers.yml",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py"
       ],
-      "occurrences": 7,
-      "note": "Requires host-side conflict validation."
+      "occurrences": 5,
+      "note": "Compose resolves canonical-first and host conflicts fail before rendering."
     },
     {
       "legacy_name": "AION_RUNTIME_LEASE_HMAC_KEY",
@@ -3048,9 +2916,10 @@
       "legacy_alias": null,
       "source_files": [
         "docs/adr/0002-omerta-configuration-namespace.md",
+        "tests/architecture/test_environment_alias_preflight.py",
         "tests/control/test_runtime_lease_signing.py"
       ],
-      "occurrences": 2,
+      "occurrences": 6,
       "note": "R6.15 accepted the canonical HMAC key without a legacy alias."
     },
     {
@@ -3156,7 +3025,6 @@
       "owners": [
         "control",
         "docker-deployment",
-        "documentation",
         "repository-configuration",
         "tests"
       ],
@@ -3173,11 +3041,10 @@
         "control/app/runtime_nodes/lifecycle.py",
         "deploy/docker/compose/quickstart.two-workers.yml",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/architecture/test_quickstart_runtime.py",
         "tests/control/test_runtime_lifecycle.py"
       ],
-      "occurrences": 12,
+      "occurrences": 11,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3232,7 +3099,6 @@
       "owners": [
         "control",
         "docker-deployment",
-        "documentation",
         "repository-configuration",
         "tests"
       ],
@@ -3249,10 +3115,9 @@
         "control/app/runtime_nodes/lifecycle.py",
         "deploy/docker/compose/quickstart.two-workers.yml",
         "deploy/docker/compose/quickstart.yml",
-        "docs/local-quickstart.md",
         "tests/control/test_runtime_lifecycle.py"
       ],
-      "occurrences": 14,
+      "occurrences": 13,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3572,7 +3437,7 @@
         ".env.schema",
         "dev.env"
       ],
-      "occurrences": 5,
+      "occurrences": 3,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3741,7 +3606,7 @@
       "source_files": [
         "gateway/src/config.ts"
       ],
-      "occurrences": 1,
+      "occurrences": 2,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3860,16 +3725,14 @@
       "source_files": [
         "gateway/src/config.ts"
       ],
-      "occurrences": 1,
+      "occurrences": 3,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
       "legacy_name": "AION_TOKEN_TTL",
       "canonical_name": "OMERTA_TOKEN_TTL",
       "classification": "product-environment",
-      "owners": [
-        "deploy"
-      ],
+      "owners": [],
       "value_type": "integer",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -3878,10 +3741,8 @@
       "secret": false,
       "migration_state": "pending-dual-read",
       "legacy_alias": "AION_TOKEN_TTL",
-      "source_files": [
-        "deploy/bundles/example/my-config/env/aion.env.example"
-      ],
-      "occurrences": 1,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Preserve the current behavior until its owner migrates."
     },
     {
@@ -3898,15 +3759,14 @@
       "contract_source": "owning-reader-or-deployment",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
-      "migration_state": "pending-dual-read",
+      "migration_state": "dual-read-implemented",
       "legacy_alias": "AION_TRUST_PROXY",
       "source_files": [
-        "deploy/native/env/gateway.env.example",
-        "gateway/README.md",
+        "deploy/native/env/contract.json",
         "gateway/src/server.ts"
       ],
-      "occurrences": 3,
-      "note": "Preserve the current behavior until its owner migrates."
+      "occurrences": 2,
+      "note": "Canonical and legacy conflicts fail closed."
     },
     {
       "legacy_name": "AION_UPDATE_FEED_URL",
@@ -4061,21 +3921,23 @@
       "classification": "third-party-compatibility",
       "owners": [
         "console",
-        "gateway"
+        "gateway",
+        "repository-configuration"
       ],
       "value_type": "boolean",
-      "required": "owner-defined",
-      "default_state": "owner-defined",
-      "contract_source": "owning-reader-or-deployment",
+      "required": false,
+      "default_state": "declared",
+      "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": false,
       "migration_state": "pending-ecosystem-alias",
       "legacy_alias": "AION_VAULT_ENABLED",
       "source_files": [
+        ".env.schema",
         "console/lib/serverConfig.ts",
         "gateway/src/config.ts"
       ],
-      "occurrences": 2,
+      "occurrences": 3,
       "note": "Canonical target is the standard VAULT namespace."
     },
     {
@@ -4180,11 +4042,12 @@
         "documentation",
         "policies",
         "repository-configuration",
-        "shared"
+        "shared",
+        "tests"
       ],
       "value_type": "string",
       "required": false,
-      "default_state": "declared-redacted",
+      "default_state": "none-declared",
       "contract_source": ".env.schema",
       "migration_contract": "preserve-existing-required-and-default-behavior",
       "secret": true,
@@ -4198,18 +4061,17 @@
         "dev.env",
         "docs/migration/s2-gate-report.md",
         "policies/provider.py",
-        "shared/secret_store/provider.py"
+        "shared/secret_store/provider.py",
+        "tests/architecture/test_environment_alias_preflight.py"
       ],
-      "occurrences": 17,
+      "occurrences": 18,
       "note": "Canonical target is the standard VAULT namespace."
     },
     {
       "legacy_name": "AION_WORKDIR",
       "canonical_name": "OMERTA_WORKDIR",
       "classification": "product-environment",
-      "owners": [
-        "deploy"
-      ],
+      "owners": [],
       "value_type": "string",
       "required": "owner-defined",
       "default_state": "owner-defined",
@@ -4218,10 +4080,8 @@
       "secret": false,
       "migration_state": "pending-dual-read",
       "legacy_alias": "AION_WORKDIR",
-      "source_files": [
-        "deploy/bundles/example/my-config/modules/summarize-rs/aip.yaml"
-      ],
-      "occurrences": 2,
+      "source_files": [],
+      "occurrences": 0,
       "note": "Preserve the current behavior until its owner migrates."
     }
   ]

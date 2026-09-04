@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import stat
 from pathlib import Path
 
 import pytest
@@ -107,3 +108,100 @@ def test_environment_file_parser_reports_names_but_not_values(tmp_path: Path) ->
     assert "OMERTA_GATEWAY_ADMIN_TOKEN" in rendered
     assert "first-sensitive-value" not in rendered
     assert "second-sensitive-value" not in rendered
+
+
+def test_environment_file_migration_is_atomic_and_preserves_mode(tmp_path: Path) -> None:
+    path = tmp_path / "migration.env"
+    path.write_text(
+        "# retained comment\n"
+        "AION_GATEWAY_PORT=8080\n"
+        "OMERTA_GATEWAY_ADMIN_TOKEN=equal-sensitive-value\n"
+        "AION_GATEWAY_ADMIN_TOKEN=equal-sensitive-value\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o600)
+    groups, unsupported = PREFLIGHT.load_alias_contract()
+
+    renamed, removed = PREFLIGHT.migrate_environment_file(
+        path, groups, unsupported
+    )
+
+    rendered = path.read_text(encoding="utf-8")
+    assert "# retained comment" in rendered
+    assert "OMERTA_GATEWAY_PORT=8080" in rendered
+    assert "AION_GATEWAY_PORT" not in rendered
+    assert "OMERTA_GATEWAY_ADMIN_TOKEN=equal-sensitive-value" in rendered
+    assert "AION_GATEWAY_ADMIN_TOKEN" not in rendered
+    assert renamed == ("AION_GATEWAY_PORT",)
+    assert removed == ("AION_GATEWAY_ADMIN_TOKEN",)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+def test_environment_file_migration_refuses_legacy_only_secret_without_rewrite(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "migration.env"
+    secret = "legacy-sensitive-value"
+    original = f"AION_GATEWAY_ADMIN_TOKEN={secret}\n"
+    path.write_text(original, encoding="utf-8")
+    groups, unsupported = PREFLIGHT.load_alias_contract()
+
+    with pytest.raises(PREFLIGHT.EnvironmentFileError) as raised:
+        PREFLIGHT.migrate_environment_file(path, groups, unsupported)
+
+    rendered = str(raised.value)
+    assert "AION_GATEWAY_ADMIN_TOKEN" in rendered
+    assert "OMERTA_GATEWAY_ADMIN_TOKEN" in rendered
+    assert secret not in rendered
+    assert path.read_text(encoding="utf-8") == original
+
+
+def test_preflight_rejects_blank_legacy_name_without_alias() -> None:
+    _, unsupported = PREFLIGHT.load_alias_contract()
+
+    result = PREFLIGHT.validate_environment_aliases(
+        {"AION_RUNTIME_LEASE_HMAC_KEY": ""},
+        [],
+        unsupported,
+    )
+
+    assert result.errors
+    assert "AION_RUNTIME_LEASE_HMAC_KEY" in result.errors[0]
+
+
+def test_environment_file_update_is_atomic_and_rejects_multiline_values(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "migration.env"
+    path.write_text("# retained\nEXISTING=value\n", encoding="utf-8")
+    path.chmod(0o640)
+
+    PREFLIGHT.update_environment_file(
+        path,
+        {"EXISTING": "updated", "OMERTA_GATEWAY_PORT": "8080"},
+    )
+
+    assert path.read_text(encoding="utf-8") == (
+        "# retained\nEXISTING=updated\nOMERTA_GATEWAY_PORT=8080\n"
+    )
+    assert stat.S_IMODE(path.stat().st_mode) == 0o640
+
+    with pytest.raises(PREFLIGHT.EnvironmentFileError) as raised:
+        PREFLIGHT.update_environment_file(path, {"SECRET": "first\nsecond"})
+    assert "SECRET" in str(raised.value)
+    assert "first" not in str(raised.value)
+
+
+def test_environment_file_writers_refuse_symbolic_links(tmp_path: Path) -> None:
+    target = tmp_path / "target.env"
+    link = tmp_path / "linked.env"
+    target.write_text("OMERTA_GATEWAY_PORT=8080\n", encoding="utf-8")
+    link.symlink_to(target)
+    groups, unsupported = PREFLIGHT.load_alias_contract()
+
+    with pytest.raises(PREFLIGHT.EnvironmentFileError, match="symbolic link"):
+        PREFLIGHT.migrate_environment_file(link, groups, unsupported)
+    with pytest.raises(PREFLIGHT.EnvironmentFileError, match="symbolic link"):
+        PREFLIGHT.update_environment_file(link, {"OMERTA_GATEWAY_PORT": "8081"})
+
+    assert target.read_text(encoding="utf-8") == "OMERTA_GATEWAY_PORT=8080\n"

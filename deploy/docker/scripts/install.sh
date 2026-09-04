@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
@@ -7,19 +8,6 @@ COMPOSE_FILE="deploy/docker/compose/quickstart.yml"
 cd "${ROOT_DIR}"
 
 export COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-omertaos}
-
-if [ ! -f dev.env ]; then
-  echo "dev.env missing; aborting." >&2
-  exit 1
-fi
-
-if [ ! -f .env ]; then
-  cp dev.env .env
-  echo "Created .env from dev.env"
-else
-  cp .env .env.bak.$(date +%s)
-  echo "Backed up existing .env"
-fi
 
 PYTHON_BIN="${PYTHON_BIN:-}"
 if [ -z "$PYTHON_BIN" ]; then
@@ -33,69 +21,127 @@ if [ -z "$PYTHON_BIN" ]; then
   fi
 fi
 
-DEV_ADMIN_EMAIL=${DEV_ADMIN_EMAIL:-dev-admin@aion.local}
-DEV_ADMIN_PASSWORD=${DEV_ADMIN_PASSWORD:-$($PYTHON_BIN - <<'PY'
-import secrets,string
-alphabet=string.ascii_letters+string.digits
-print(''.join(secrets.choice(alphabet) for _ in range(16)))
-PY
-)}
-DEV_API_KEY=${DEV_API_KEY:-$($PYTHON_BIN - <<'PY'
-import secrets
-print(secrets.token_hex(12))
-PY
-)}
+"$PYTHON_BIN" scripts/validate_environment_aliases.py \
+  --reject-legacy-secrets --quiet
 
-append_if_missing() {
-  local key="$1" value="$2"
-  if ! grep -q "^${key}=" .env; then
-    echo "${key}=${value}" >> .env
-  fi
+if [ ! -f dev.env ]; then
+  echo "dev.env missing; aborting." >&2
+  exit 1
+fi
+
+created_env=false
+if [ ! -f .env ]; then
+  cp dev.env .env
+  created_env=true
+  echo "Created .env from dev.env"
+else
+  backup_path=".env.bak.$(date +%s)"
+  cp -p .env "$backup_path"
+  chmod 0600 "$backup_path"
+  echo "Backed up existing .env"
+fi
+chmod 0600 .env
+
+"$PYTHON_BIN" scripts/validate_environment_aliases.py \
+  --migrate-env-file .env --quiet
+
+read_env_value() {
+  local key="$1"
+  "$PYTHON_BIN" -c \
+    'from pathlib import Path; import sys; from scripts.validate_environment_aliases import parse_environment_file; value = parse_environment_file(Path(".env")).get(sys.argv[1]); sys.stdout.write(value or "")' \
+    "$key"
 }
 
 set_env() {
   local key="$1" value="$2"
-  if grep -q "^${key}=" .env; then
-    sed -i "s|^${key}=.*|${key}=${value}|" .env
-  else
-    echo "${key}=${value}" >> .env
-  fi
+  printf '%s' "$value" | "$PYTHON_BIN" -c \
+    'from pathlib import Path; import sys; from scripts.validate_environment_aliases import update_environment_file; update_environment_file(Path(".env"), {sys.argv[1]: sys.stdin.read()})' \
+    "$key"
 }
 
-append_if_missing "AION_GATEWAY_API_KEYS" "${DEV_API_KEY}:admin"
-append_if_missing "AION_GATEWAY_ADMIN_TOKEN" "${AION_GATEWAY_ADMIN_TOKEN:-${DEV_API_KEY}}"
-append_if_missing "AION_ADMIN_TOKEN" "${AION_ADMIN_TOKEN:-${DEV_API_KEY}}"
-append_if_missing "AION_DEV_ADMIN_TOKEN" "${AION_DEV_ADMIN_TOKEN:-${DEV_API_KEY}}"
-append_if_missing "DEV_ADMIN_EMAIL" "${DEV_ADMIN_EMAIL}"
-append_if_missing "DEV_ADMIN_PASSWORD" "${DEV_ADMIN_PASSWORD}"
-append_if_missing "DEV_API_KEY" "${DEV_API_KEY}"
-append_if_missing "AION_GATEWAY_PORT" "8080"
-append_if_missing "CONSOLE_PORT" "3000"
+generate_alnum() {
+  "$PYTHON_BIN" -c \
+    'import secrets, string, sys; alphabet = string.ascii_letters + string.digits; sys.stdout.write("".join(secrets.choice(alphabet) for _ in range(int(sys.argv[1]))))' \
+    "$1"
+}
 
-DB_USER=${AION_DB_USER:-aion}
-DB_PASSWORD=${AION_DB_PASSWORD:-password}
-DB_NAME=${AION_DB_NAME:-omerta_db}
-DB_HOST=${AION_DB_HOST:-postgres}
-CONTROL_POSTGRES_DSN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}"
+generate_hex() {
+  "$PYTHON_BIN" -c 'import secrets, sys; sys.stdout.write(secrets.token_hex(int(sys.argv[1])))' "$1"
+}
+
+resolve_value() {
+  local canonical_name="$1" legacy_name="$2" default_value="$3"
+  local resolved="${!canonical_name:-}"
+  if [ -z "$resolved" ] && [ -n "$legacy_name" ]; then
+    resolved="${!legacy_name:-}"
+  fi
+  if [ -z "$resolved" ]; then
+    resolved="$(read_env_value "$canonical_name")"
+  fi
+  printf '%s' "${resolved:-$default_value}"
+}
+
+resolve_install_secret() {
+  local key="$1" generated_value="$2"
+  local resolved="${!key:-}"
+  if [ -z "$resolved" ] && [ "$created_env" = false ]; then
+    resolved="$(read_env_value "$key")"
+  fi
+  printf '%s' "${resolved:-$generated_value}"
+}
+
+encode_uri_component() {
+  printf '%s' "$1" | "$PYTHON_BIN" -c \
+    'import sys; from urllib.parse import quote; sys.stdout.write(quote(sys.stdin.read(), safe=""))'
+}
+
+DEV_ADMIN_EMAIL_VALUE="$(resolve_value DEV_ADMIN_EMAIL '' dev-admin@omerta.local)"
+DEV_ADMIN_PASSWORD_VALUE="$(resolve_install_secret DEV_ADMIN_PASSWORD "$(generate_alnum 24)")"
+DEV_API_KEY_VALUE="$(resolve_install_secret DEV_API_KEY "$(generate_hex 16)")"
+GATEWAY_ADMIN_TOKEN="$(resolve_install_secret OMERTA_GATEWAY_ADMIN_TOKEN "$DEV_API_KEY_VALUE")"
+GATEWAY_API_KEYS="$(resolve_install_secret OMERTA_GATEWAY_API_KEYS "${DEV_API_KEY_VALUE}:admin")"
+DEV_ADMIN_TOKEN="$(resolve_install_secret OMERTA_DEV_ADMIN_TOKEN "$DEV_API_KEY_VALUE")"
+NEXTAUTH_SECRET_VALUE="$(resolve_install_secret NEXTAUTH_SECRET "$(generate_hex 32)")"
+
+DB_USER="$(resolve_value OMERTA_DB_USER AION_DB_USER aion)"
+DB_PASSWORD="$(resolve_install_secret OMERTA_DB_PASSWORD "$(generate_alnum 32)")"
+DB_NAME="$(resolve_value OMERTA_DB_NAME AION_DB_NAME omerta_db)"
+DB_HOST="$(resolve_value OMERTA_DB_HOST AION_DB_HOST postgres)"
+MINIO_SECRET="$(resolve_install_secret OMERTA_CONTROL_MINIO_SECRET_KEY "$(generate_alnum 32)")"
+ENCODED_DB_USER="$(encode_uri_component "$DB_USER")"
+ENCODED_DB_PASSWORD="$(encode_uri_component "$DB_PASSWORD")"
+ENCODED_DB_NAME="$(encode_uri_component "$DB_NAME")"
+CONTROL_POSTGRES_DSN="postgresql://${ENCODED_DB_USER}:${ENCODED_DB_PASSWORD}@${DB_HOST}:5432/${ENCODED_DB_NAME}"
 PRISMA_DATABASE_URL="${CONTROL_POSTGRES_DSN}?schema=public"
 
+set_env "OMERTA_DB_USER" "$DB_USER"
+set_env "OMERTA_DB_PASSWORD" "$DB_PASSWORD"
+set_env "OMERTA_DB_NAME" "$DB_NAME"
+set_env "OMERTA_DB_HOST" "$DB_HOST"
 set_env "DATABASE_URL" "${PRISMA_DATABASE_URL}"
-set_env "AION_CONTROL_POSTGRES_DSN" "${CONTROL_POSTGRES_DSN}"
-set_env "CONSOLE_ADMIN_EMAIL" "${DEV_ADMIN_EMAIL}"
-set_env "CONSOLE_ADMIN_PASSWORD" "${DEV_ADMIN_PASSWORD}"
-set_env "AION_GATEWAY_API_KEYS" "${DEV_API_KEY}:admin"
-set_env "AION_GATEWAY_ADMIN_TOKEN" "${AION_GATEWAY_ADMIN_TOKEN:-${DEV_API_KEY}}"
-set_env "AION_ADMIN_TOKEN" "${AION_ADMIN_TOKEN:-${DEV_API_KEY}}"
-set_env "AION_DEV_ADMIN_TOKEN" "${AION_DEV_ADMIN_TOKEN:-${DEV_API_KEY}}"
-set_env "AION_DOCKER" "1"
-set_env "AION_GATEWAY_PORT" "8080"
+set_env "OMERTA_CONTROL_POSTGRES_DSN" "${CONTROL_POSTGRES_DSN}"
+set_env "OMERTA_CONTROL_MINIO_SECRET_KEY" "$MINIO_SECRET"
+set_env "CONSOLE_ADMIN_EMAIL" "${DEV_ADMIN_EMAIL_VALUE}"
+set_env "CONSOLE_ADMIN_PASSWORD" "${DEV_ADMIN_PASSWORD_VALUE}"
+set_env "DEV_ADMIN_EMAIL" "${DEV_ADMIN_EMAIL_VALUE}"
+set_env "DEV_ADMIN_PASSWORD" "${DEV_ADMIN_PASSWORD_VALUE}"
+set_env "DEV_API_KEY" "${DEV_API_KEY_VALUE}"
+set_env "OMERTA_GATEWAY_API_KEYS" "${GATEWAY_API_KEYS}"
+set_env "OMERTA_GATEWAY_ADMIN_TOKEN" "${GATEWAY_ADMIN_TOKEN}"
+set_env "OMERTA_DEV_ADMIN_TOKEN" "${DEV_ADMIN_TOKEN}"
+set_env "NEXTAUTH_SECRET" "${NEXTAUTH_SECRET_VALUE}"
+set_env "OMERTA_DOCKER" "1"
+set_env "OMERTA_GATEWAY_PORT" "8080"
 set_env "CONSOLE_PORT" "3000"
 set_env "NEXTAUTH_URL" "http://localhost:3000"
 set_env "CONTROL_URL" "http://control:8000"
 set_env "GATEWAY_URL" "http://gateway:8080"
-set_env "AION_GATEWAY_URL" "http://gateway:8080"
+set_env "OMERTA_GATEWAY_URL" "http://gateway:8080"
 set_env "CONSOLE_URL" "http://localhost:3000"
 set_env "NEXT_PUBLIC_GATEWAY_URL" "http://localhost:8080"
+
+"$PYTHON_BIN" scripts/validate_environment_aliases.py \
+  --env-file .env --reject-legacy-secrets --quiet
 
 check_port() {
   local port="$1"
@@ -118,7 +164,7 @@ done
 existing_stack="$(docker compose --project-directory . -f "$COMPOSE_FILE" ps -q || true)"
 if [ -n "$existing_stack" ]; then
   echo "Stopping existing OMERTAOS stack..."
-  docker compose --project-directory . -f "$COMPOSE_FILE" down -v
+  docker compose --project-directory . -f "$COMPOSE_FILE" down
 fi
 
 echo "Generating self-signed certificates (dev only)..."
@@ -141,10 +187,8 @@ cat <<EOF
 Quick install completed.
 Services: control:8000, gateway:8080, console:3000
 
-Dev credentials (for local/dev only):
-  Email:    ${DEV_ADMIN_EMAIL}
-  Password: ${DEV_ADMIN_PASSWORD}
-  API key:  ${DEV_API_KEY}
+Local development credentials are stored in .env with mode 0600.
+Their values are intentionally not printed.
 
 You can re-run this bootstrap safely via: make bootstrap
 EOF

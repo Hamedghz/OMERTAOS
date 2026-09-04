@@ -9,11 +9,18 @@ def test_quickstart_uses_canonical_runtime_daemon() -> None:
     compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
 
     assert "  runtime:\n" in compose
-    assert "image: ${AION_RUNTIME_IMAGE:-omertaos-runtime}" in compose
+    assert "image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}" in compose
     assert "dockerfile: runtime-daemon/Dockerfile" in compose
     assert "AION_RUNTIME_BIND_ADDR: 0.0.0.0:50051" in compose
-    assert "AION_CONTROL_GRPC_BIND: ${AION_CONTROL_GRPC_BIND:-0.0.0.0:50051}" in compose
-    assert '"127.0.0.1:${AION_RUNTIME_HOST_PORT:-50051}:50051"' in compose
+    assert (
+        "AION_CONTROL_GRPC_BIND: "
+        "${OMERTA_CONTROL_GRPC_BIND:-${AION_CONTROL_GRPC_BIND:-0.0.0.0:50051}}"
+        in compose
+    )
+    assert (
+        '"127.0.0.1:${OMERTA_RUNTIME_HOST_PORT:-'
+        '${AION_RUNTIME_HOST_PORT:-50051}}:50051"' in compose
+    )
     assert '["CMD", "/usr/local/bin/runtime-daemon", "--healthcheck"]' in compose
     assert "runtime:\n        condition: service_healthy" in compose
     assert "  kernel:\n" not in compose
@@ -68,7 +75,11 @@ def test_runtime_daemon_handles_container_stop_gracefully() -> None:
 def test_quickstart_gateway_declares_development_api_key_map() -> None:
     compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
 
-    assert "AION_GATEWAY_API_KEYS: ${AION_GATEWAY_API_KEYS:-dev-admin-token:admin}" in compose
+    assert (
+        "AION_GATEWAY_API_KEYS: "
+        "${OMERTA_GATEWAY_API_KEYS:-${AION_GATEWAY_API_KEYS:-dev-admin-token:admin}}"
+        in compose
+    )
 
 
 def test_quickstart_applies_console_migrations_before_control() -> None:
@@ -94,6 +105,12 @@ def test_gateway_image_uses_locked_audited_dependency_install() -> None:
     assert "--no-audit" not in dockerfile
 
 
+def test_control_image_includes_the_model_client_http_dependency() -> None:
+    requirements = (REPO_ROOT / "control/requirements.docker.txt").read_text()
+
+    assert "requests==2.32.5" in requirements.splitlines()
+
+
 def test_console_image_uses_locked_reusable_dependency_install() -> None:
     dockerfile = (REPO_ROOT / "console" / "Dockerfile").read_text()
 
@@ -106,17 +123,36 @@ def test_console_image_uses_locked_reusable_dependency_install() -> None:
 def test_quickstart_supports_an_isolated_local_stack() -> None:
     compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
 
-    assert '"127.0.0.1:${AION_CONTROL_HOST_PORT:-8000}:8000"' in compose
-    assert '"${AION_GATEWAY_HOST_PORT:-8080}:8080"' in compose
-    assert '"${AION_CONSOLE_HOST_PORT:-3000}:3000"' in compose
-    assert "image: ${AION_CONSOLE_IMAGE:-omertaos-console}" in compose
-    assert "AION_CORS_ORIGINS: ${AION_CORS_ORIGINS:-http://localhost:3000}" in compose
+    assert (
+        '"127.0.0.1:${OMERTA_CONTROL_HOST_PORT:-'
+        '${AION_CONTROL_HOST_PORT:-8000}}:8000"' in compose
+    )
+    assert (
+        '"${OMERTA_GATEWAY_HOST_PORT:-${AION_GATEWAY_HOST_PORT:-8080}}:8080"'
+        in compose
+    )
+    assert (
+        '"${OMERTA_CONSOLE_HOST_PORT:-${AION_CONSOLE_HOST_PORT:-3000}}:3000"'
+        in compose
+    )
+    assert (
+        "image: ${OMERTA_CONSOLE_IMAGE:-${AION_CONSOLE_IMAGE:-omertaos-console}}"
+        in compose
+    )
+    assert (
+        "AION_CORS_ORIGINS: "
+        "${OMERTA_CORS_ORIGINS:-${AION_CORS_ORIGINS:-http://localhost:3000}}"
+        in compose
+    )
     assert "NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}" in compose
     assert (
         "NEXT_PUBLIC_GATEWAY_URL: "
         "${NEXT_PUBLIC_GATEWAY_URL:-http://localhost:8080}" in compose
     )
-    assert "name: ${AION_DOCKER_NETWORK:-omerta-net}" in compose
+    assert (
+        "name: ${OMERTA_DOCKER_NETWORK:-${AION_DOCKER_NETWORK:-omerta-net}}"
+        in compose
+    )
 
 
 def test_quickstart_enables_bounded_runtime_lifecycle_management() -> None:
@@ -125,15 +161,29 @@ def test_quickstart_enables_bounded_runtime_lifecycle_management() -> None:
         "  gateway:\n", maxsplit=1
     )[0]
 
-    assert "AION_RUNTIME_AUTO_REGISTER: ${AION_RUNTIME_AUTO_REGISTER:-true}" in control
-    assert "AION_RUNTIME_NODE_ID: ${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}" in control
-    assert "AION_RUNTIME_CAPABILITIES: ${AION_RUNTIME_CAPABILITIES:-terminal.execute}" in control
     assert (
-        "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: "
-        "${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}" in control
+        "AION_RUNTIME_AUTO_REGISTER: "
+        "${OMERTA_RUNTIME_AUTO_REGISTER:-${AION_RUNTIME_AUTO_REGISTER:-true}}"
+        in control
     )
     assert (
-        "AION_RUNTIME_MANAGED_NODE_LIMIT: ${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}"
+        "AION_RUNTIME_NODE_ID: "
+        "${OMERTA_RUNTIME_NODE_ID:-${AION_RUNTIME_NODE_ID:-runtime-quickstart-1}}"
+        in control
+    )
+    assert (
+        "AION_RUNTIME_CAPABILITIES: "
+        "${OMERTA_RUNTIME_CAPABILITIES:-${AION_RUNTIME_CAPABILITIES:-terminal.execute}}"
+        in control
+    )
+    assert (
+        "AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS: "
+        "${OMERTA_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-"
+        "${AION_RUNTIME_HEARTBEAT_INTERVAL_SECONDS:-10}}" in control
+    )
+    assert (
+        "AION_RUNTIME_MANAGED_NODE_LIMIT: ${OMERTA_RUNTIME_MANAGED_NODE_LIMIT:-"
+        "${AION_RUNTIME_MANAGED_NODE_LIMIT:-2}}"
         in control
     )
 
@@ -144,7 +194,10 @@ def test_two_worker_override_reuses_runtime_image_without_host_exposure() -> Non
     ).read_text()
 
     assert "  runtime-secondary:\n" in override
-    assert "image: ${AION_RUNTIME_IMAGE:-omertaos-runtime}" in override
+    assert (
+        "image: ${OMERTA_RUNTIME_IMAGE:-${AION_RUNTIME_IMAGE:-omertaos-runtime}}"
+        in override
+    )
     assert "ports: []" in override
     assert '"endpoint":"runtime:50051"' in override
     assert '"endpoint":"runtime-secondary:50051"' in override

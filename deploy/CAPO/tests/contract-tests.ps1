@@ -32,8 +32,8 @@ $units = @(
   'migrate-database\.sh', 'smoke-test\.sh', 'flock') |
     ForEach-Object { Require-Text $update $_ }
 
-@('AION_CONSOLE_HOST_PORT', 'AION_GATEWAY_HOST_PORT', 'AION_CONTROL_HOST_PORT',
-  'AION_RUNTIME_HOST_PORT', 'AION_DOCKER_NETWORK') |
+@('OMERTA_CONSOLE_HOST_PORT', 'OMERTA_GATEWAY_HOST_PORT', 'OMERTA_CONTROL_HOST_PORT',
+  'OMERTA_RUNTIME_HOST_PORT', 'OMERTA_DOCKER_NETWORK') |
     ForEach-Object { Require-Text $quickstart $_ }
 
 foreach ($unit in $units) {

@@ -39,9 +39,23 @@ esac
 
 read_value() {
   local file="$1" key="$2"
-  grep -E "^${key}=" "$file" | tail -n 1 | cut -d= -f2-
+  grep -E "^${key}=" "$file" | tail -n 1 | cut -d= -f2- || true
 }
-control_dsn="$(read_value "$CONTROL_ENV" AION_CONTROL_POSTGRES_DSN)"
+read_compatible_value() {
+  local file="$1" canonical_name="$2" legacy_name="$3" canonical_value legacy_value
+  canonical_value="$(read_value "$file" "$canonical_name")"
+  legacy_value="$(read_value "$file" "$legacy_name")"
+  if [[ -n "$canonical_value" && -n "$legacy_value" && "$canonical_value" != "$legacy_value" ]]; then
+    die "conflicting environment aliases: $canonical_name, $legacy_name"
+  fi
+  if [[ -n "$canonical_value" ]]; then
+    printf '%s' "$canonical_value"
+  else
+    [[ -z "$legacy_value" ]] || printf 'WARNING: deprecated environment alias %s; use %s\n' "$legacy_name" "$canonical_name" >&2
+    printf '%s' "$legacy_value"
+  fi
+}
+control_dsn="$(read_compatible_value "$CONTROL_ENV" OMERTA_CONTROL_POSTGRES_DSN AION_CONTROL_POSTGRES_DSN)"
 console_dsn="$(read_value "$CONSOLE_ENV" DATABASE_URL)"
 [[ "$control_dsn" == postgres* && "$console_dsn" == postgres* ]] || die 'PostgreSQL DSNs are missing'
 

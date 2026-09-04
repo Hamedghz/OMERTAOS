@@ -8,9 +8,9 @@ security:
   sandbox: process
   allow_net: false
   allow_fs_read:
-    - ${AION_WORKDIR}/scratch
+    - ${OMERTA_WORKDIR}/scratch
   allow_fs_write:
-    - ${AION_WORKDIR}/scratch/out
+    - ${OMERTA_WORKDIR}/scratch/out
   signature:
     cosign_pubkey: /etc/aion/keys/cosign.pub
 runtime:

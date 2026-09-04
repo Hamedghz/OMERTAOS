@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "baseline_commit": "a8c9b14b9f41dda49e7255fed0906472585acfbf",
-  "policy": "grandfathered legacy readers; additions are forbidden",
+  "policy": "grandfathered readers plus reviewed M2 host fallbacks; unreviewed additions are forbidden",
   "readers": [
     {
       "path": ".codex/scripts/test.ps1",
@@ -285,6 +285,11 @@
     },
     {
       "path": "deploy/docker/compose/full.yml",
+      "name": "AION_ENABLE_PRISMA",
+      "kind": "shell-or-compose-expansion"
+    },
+    {
+      "path": "deploy/docker/compose/full.yml",
       "name": "AION_ENV",
       "kind": "shell-or-compose-expansion"
     },
@@ -296,6 +301,11 @@
     {
       "path": "deploy/docker/compose/full.yml",
       "name": "AION_GATEWAY_ADMIN_TOKEN_SECRET_PATH",
+      "kind": "shell-or-compose-expansion"
+    },
+    {
+      "path": "deploy/docker/compose/full.yml",
+      "name": "AION_GATEWAY_API_KEYS",
       "kind": "shell-or-compose-expansion"
     },
     {
@@ -320,6 +330,11 @@
     },
     {
       "path": "deploy/docker/compose/full.yml",
+      "name": "AION_GATEWAY_URL",
+      "kind": "shell-or-compose-expansion"
+    },
+    {
+      "path": "deploy/docker/compose/full.yml",
       "name": "AION_IDEMPOTENCY_TTL",
       "kind": "shell-or-compose-expansion"
     },
@@ -330,7 +345,17 @@
     },
     {
       "path": "deploy/docker/compose/full.yml",
+      "name": "AION_KERNEL_PROFILE",
+      "kind": "shell-or-compose-expansion"
+    },
+    {
+      "path": "deploy/docker/compose/full.yml",
       "name": "AION_MINIO_SECRET_PATH",
+      "kind": "shell-or-compose-expansion"
+    },
+    {
+      "path": "deploy/docker/compose/full.yml",
+      "name": "AION_PROFILE",
       "kind": "shell-or-compose-expansion"
     },
     {

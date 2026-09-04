@@ -22,6 +22,10 @@ Create a local environment file from the development defaults:
 
 ```bash
 cp dev.env .env
+chmod 0600 .env
+python3 scripts/validate_environment_aliases.py --migrate-env-file .env
+python3 scripts/validate_environment_aliases.py \
+  --env-file .env --reject-legacy-secrets
 ```
 
 On PowerShell:
@@ -30,7 +34,10 @@ On PowerShell:
 Copy-Item dev.env .env
 ```
 
-The checked-in values are local placeholders only. Do not use them in production or expose the development services publicly.
+The checked-in values are local placeholders only. The migration command removes
+equal deprecated aliases, renames non-secret old-only settings, and refuses to
+copy an old-only secret. Do not use placeholder values in production or expose
+the development services publicly.
 
 ## Quickstart
 
@@ -55,16 +62,16 @@ a distinct Compose project, network, image name, and host ports for every
 command in the build/up/down sequence:
 
 ```bash
-export AION_DOCKER_NETWORK=omerta-r5-net
-export AION_RUNTIME_HOST_PORT=55051
-export AION_CONTROL_HOST_PORT=18000
-export AION_GATEWAY_HOST_PORT=18080
-export AION_CONSOLE_HOST_PORT=13000
-export AION_CONSOLE_IMAGE=omertaos-r5-console
-export AION_RUNTIME_IMAGE=omertaos-runtime
+export OMERTA_DOCKER_NETWORK=omerta-r5-net
+export OMERTA_RUNTIME_HOST_PORT=55051
+export OMERTA_CONTROL_HOST_PORT=18000
+export OMERTA_GATEWAY_HOST_PORT=18080
+export OMERTA_CONSOLE_HOST_PORT=13000
+export OMERTA_CONSOLE_IMAGE=omertaos-r5-console
+export OMERTA_RUNTIME_IMAGE=omertaos-runtime
 export NEXTAUTH_URL=http://localhost:13000
 export NEXT_PUBLIC_GATEWAY_URL=http://localhost:18080
-export AION_CORS_ORIGINS=http://localhost:13000
+export OMERTA_CORS_ORIGINS=http://localhost:13000
 
 docker compose --project-name omertaos-r5 --project-directory . \
   -f deploy/docker/compose/quickstart.yml config
@@ -84,9 +91,9 @@ After a successful Runtime gRPC readiness probe, it registers the configured
 node or bounded node list and refreshes heartbeats sequentially every 10
 seconds. The node id, capabilities, tenant eligibility, declared capacity,
 heartbeat interval, and probe timeout are configurable through the
-`AION_RUNTIME_*` values in `.env.example`. `AION_RUNTIME_NODES_JSON` is an
+`OMERTA_RUNTIME_*` values in `.env.example`. `OMERTA_RUNTIME_NODES_JSON` is an
 optional trusted Control-owned list; when blank, the original single-node
-settings remain active. `AION_RUNTIME_MANAGED_NODE_LIMIT` defaults to 2 and is
+settings remain active. `OMERTA_RUNTIME_MANAGED_NODE_LIMIT` defaults to 2 and is
 bounded to 32. The interval is limited to 20 seconds so it remains below the
 current 30-second stale-worker threshold. Stopping Runtime stops its heartbeats
 and causes scheduling to fail closed after that threshold; restarting Runtime
@@ -103,8 +110,9 @@ scheduling transaction. Runtime accepts the first valid generation for a
 tenant/task pair and rejects missing, expired, repeated, older, or wrong-node
 lease metadata. `OMERTA_RUNTIME_LEASE_TTL_SECONDS` is bounded to 5-120 seconds;
 `OMERTA_RUNTIME_LEASE_MAX_TTL_SECONDS` bounds Runtime admission and defaults to
-120 seconds. Keep the Control TTL above `AION_RUNTIME_TIMEOUT_SECONDS` and at or
-below the Runtime maximum.
+120 seconds. Keep the Control TTL above the execution timeout and at or below
+the Runtime maximum. The process-side `AION_RUNTIME_TIMEOUT_SECONDS` alias is
+still pending migration in M3 and is not a canonical operator setting yet.
 
 Before starting execution-capable services, provision one dedicated secret file
 and set `OMERTA_RUNTIME_LEASE_HMAC_KEY_FILE` in `.env` to its host path. The file
@@ -140,7 +148,7 @@ configures two trusted local nodes with separate tenant/capability/capacity
 declarations:
 
 ```bash
-export AION_RUNTIME_IMAGE=omertaos-runtime
+export OMERTA_RUNTIME_IMAGE=omertaos-runtime
 
 docker compose --env-file .env --project-directory . \
   --project-name omertaos-two-workers \

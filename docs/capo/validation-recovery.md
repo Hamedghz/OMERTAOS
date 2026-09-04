@@ -28,8 +28,8 @@ bash deploy/native/scripts/smoke-test.sh --mode quickstart \
   --project-name "${COMPOSE_PROJECT_NAME:-omertaos}"
 ```
 
-For an isolated stack, export the same `AION_CONSOLE_HOST_PORT`,
-`AION_GATEWAY_HOST_PORT`, and `AION_CONTROL_HOST_PORT` values used at startup.
+For an isolated stack, export the same `OMERTA_CONSOLE_HOST_PORT`,
+`OMERTA_GATEWAY_HOST_PORT`, and `OMERTA_CONTROL_HOST_PORT` values used at startup.
 The probe resolves containers through the selected project, checks the
 one-shot installer result, and rejects unhealthy containers before probing the
 host HTTP endpoints.
@@ -47,7 +47,7 @@ the Compose healthcheck remains the authoritative gRPC readiness probe there.
 - Control failure: check PostgreSQL and Redis readiness, then inspect
   `journalctl -u omertaos-control.service` or Quickstart Control logs. Do not
   replace missing required stores with memory-only state.
-- Gateway failure: verify Control health and `AION_CONTROL_BASE_URL`; Gateway
+- Gateway failure: verify Control health and `OMERTA_CONTROL_BASE_URL`; Gateway
   must route to Control rather than bypass it.
 - Console failure: distinguish browser `NEXT_PUBLIC_GATEWAY_URL` from the
   server-side Gateway address and confirm port `3000` is free.

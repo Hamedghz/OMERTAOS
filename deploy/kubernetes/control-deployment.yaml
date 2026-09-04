@@ -21,9 +21,9 @@ spec:
             - containerPort: 8000
             - containerPort: 50051
           env:
-            - name: AION_CONTROL_REDIS_URL
+            - name: OMERTA_CONTROL_REDIS_URL
               value: redis://aion-redis:6379/0
-            - name: AION_CONTROL_POSTGRES_DSN
+            - name: OMERTA_CONTROL_POSTGRES_DSN
               value: postgresql://aion:password@aion-postgres:5432/omerta_db?schema=public
           readinessProbe:
             httpGet:
