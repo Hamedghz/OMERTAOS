@@ -65,3 +65,11 @@ def test_ci_and_container_images_use_the_canonical_node_version() -> None:
     assert f"FROM {image} AS runner" in gateway
     assert console.count(f"FROM {image}") == 3
     assert f"corepack prepare pnpm@{PNPM_VERSION} --activate" in console
+
+
+def test_console_bootstrap_tsconfig_can_emit_installer_artifact() -> None:
+    config = _json("console/scripts/tsconfig.json")
+    compiler_options = config["compilerOptions"]
+
+    assert compiler_options["noEmit"] is False
+    assert compiler_options["allowImportingTsExtensions"] is False
