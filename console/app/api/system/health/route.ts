@@ -97,7 +97,7 @@ export async function GET() {
   ]);
   const { gateway, control } = gatewayHealth;
 
-  const status: ServiceStatus = [gateway, control].some(
+  const status: ServiceStatus = [gateway, control, consoleSvc].some(
     (service) => service.status === "degraded",
   )
     ? "degraded"

@@ -145,6 +145,7 @@ def test_quickstart_supports_an_isolated_local_stack() -> None:
         in compose
     )
     assert "NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}" in compose
+    assert "INTERNAL_CONSOLE_URL: http://localhost:3000" in compose
     assert (
         "NEXT_PUBLIC_GATEWAY_URL: "
         "${NEXT_PUBLIC_GATEWAY_URL:-http://localhost:8080}" in compose

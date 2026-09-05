@@ -228,6 +228,7 @@ services:
     environment:
       OMERTA_DOCKER: "1"
       DOCKER: "true"
+      INTERNAL_CONSOLE_URL: http://localhost:3000
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-quickstart-nextauth-secret}
       NEXT_PUBLIC_GATEWAY_URL: ${NEXT_PUBLIC_GATEWAY_URL:-http://localhost:8080}
