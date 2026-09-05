@@ -36,6 +36,21 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     ports: []
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -ec
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/6333;
+          printf 'GET /readyz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3;
+          IFS=' ' read -r protocol status rest <&3;
+          test "$$status" = 200
+      interval: 5s
+      timeout: 3s
+      retries: 30
   minio:
     image: minio/minio:latest
     environment:
@@ -151,7 +166,7 @@ services:
       redis:
         condition: service_healthy
       qdrant:
-        condition: service_started
+        condition: service_healthy
       minio:
         condition: service_started
       runtime:
@@ -263,6 +278,7 @@ volumes:
   postgres-data:
   mongo-data:
   minio-data:
+  qdrant-data:
   runtime-state:
   runtime-lease-secret:
 

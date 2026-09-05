@@ -154,6 +154,12 @@ def test_quickstart_supports_an_isolated_local_stack() -> None:
         "name: ${OMERTA_DOCKER_NETWORK:-${AION_DOCKER_NETWORK:-omerta-net}}"
         in compose
     )
+    qdrant = compose.split("  qdrant:\n", maxsplit=1)[1].split(
+        "  minio:\n", maxsplit=1
+    )[0]
+    assert "qdrant-data:/qdrant/storage" in qdrant
+    assert "GET /readyz HTTP/1.1" in qdrant
+    assert "  qdrant-data:\n" in compose
 
 
 def test_quickstart_enables_bounded_runtime_lifecycle_management() -> None:
