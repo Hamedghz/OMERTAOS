@@ -1,5 +1,80 @@
 # CAPO acceptance report
 
+## M4 isolated Docker acceptance - 2026-09-05
+
+Branch: `Radin/omerta-env-namespace`. Checkpoint: `6469f44`
+(`checkpoint/omerta-m4-start-6469f44`). Repairs: `073e63c`, `66eb610`,
+`e3a4b76`. This is local, single-worker acceptance, not a scalability,
+Linux sandbox, native systemd, or production-readiness claim.
+
+The isolated project was `omerta-m4-validation`, with network
+`omerta-m4-validation-net` and Console/Gateway/Control/Runtime host ports
+23000/28080/28000/25051. Other Compose projects were outside this work.
+
+| Gate | Actual result | Limits |
+|---|---|---|
+| Sequential application image builds | Control, Runtime, Gateway and Console passed | Gateway install reported one moderate and one high vulnerability; unresolved |
+| Console bootstrap compilation | Repaired inherited TypeScript option; rebuilt successfully | Initial build failed with TS5096 |
+| Console health aggregation | Repaired internal self-probe URL and degraded aggregation; full Console suite: 32 passed | Test harness required test-mode React and dependencies under `/app` |
+| Final architecture suite | 99 passed, 1 deselected; exit 0, 20.92s | Structure completion gate explicitly excluded; not passed |
+| Final native contract suite | 75 passed; exit 0, 6.02s | Container-based tests, not live systemd acceptance |
+| Focused Quickstart tests | 13 passed; exit 0, 0.55s | Static contract checks supplemented by live checks below |
+| Compose config | Exit 0 | Rendering alone is not live acceptance |
+| Qdrant readiness | Docker healthy; direct `/readyz` HTTP 200 | Official image has Bash but no curl; probe uses Bash TCP and requires HTTP 200 |
+| Qdrant persistence | Fixture point retrieved after forced container recreation | Named volume preserved; fixture retained in isolated test data |
+| Final Quickstart smoke | Exit 0; PostgreSQL, Redis, installer, Runtime, registration, Control, Gateway, Console and canonical health chain passed | Read-only smoke does not itself execute a task |
+| Authenticated task flow, earlier in M4 | Console -> Gateway -> Control -> Runtime deterministic echo and idempotent replay passed; persisted tenant, scheduling and audit evidence inspected | One Runtime, deterministic echo only |
+| Earlier restart checks | PostgreSQL records, Runtime fencing fingerprint and Control registration survived normal restarts; installer rerun retained counts | No crash or host reboot claim |
+| Backup pipeline | Nonempty PostgreSQL custom dump and archive listing verified | No isolated restore performed; not full backup acceptance |
+
+Failed attempts remain part of the evidence: the first Console build failed;
+host Python lacked pytest; an early read-only container lacked Git metadata;
+Console test harness attempts encountered write permissions, module resolution
+and production React `act` errors before a corrected full run passed. An early
+Runtime metadata assertion expected the wrong GID and was independently rerun
+against actual protected metadata. The first Qdrant data copy could not access
+the container writable layer via `--volumes-from`; copying the stopped
+container's data with `docker cp` succeeded. Its first healthcheck failed
+because curl was absent. The final smoke first exited 1 because the environment
+file was omitted, then passed with `COMPOSE_ENV_FILES` explicitly supplied.
+These failures were not counted as successful gates.
+
+Open limitations: the manually provisioned Qdrant volume has no Compose labels
+and causes a warning; it was preserved. Redis warned about host overcommit;
+no sysctl was changed. Upstream images still use mutable tags, including
+Qdrant `latest`, so exact image reproduction requires digest pinning in a
+separate reviewed change. Full old-only versus new-only live-stack parity,
+isolated restore, native startup/reboot acceptance and dependency vulnerability
+remediation remain open. Do not remove legacy aliases on this evidence alone.
+
+Reproduce focused checks from the repository root (the local ignored environment
+file and secret must already be provisioned; never paste their values):
+
+```bash
+docker compose --project-directory "$PWD" --project-name omerta-m4-validation \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  -f deploy/docker/compose/quickstart.yml config --quiet
+docker run --rm --network none \
+  --mount type=bind,src="$PWD",dst=/workspace,readonly --workdir /workspace \
+  omertaos-python-validation:m3 python -m pytest \
+  tests/architecture/test_quickstart_runtime.py -q -p no:cacheprovider
+docker run --rm --network none \
+  --mount type=bind,src="$PWD",dst=/workspace,readonly --workdir /workspace \
+  omertaos-python-validation:m3 python -m pytest tests/native -q -p no:cacheprovider
+# Requires the isolated stack to be running first:
+COMPOSE_ENV_FILES=/home/omerta/projects/OMERTAOS/.env \
+OMERTA_CONSOLE_HOST_PORT=23000 OMERTA_GATEWAY_HOST_PORT=28080 \
+OMERTA_CONTROL_HOST_PORT=28000 bash deploy/native/scripts/smoke-test.sh \
+  --mode quickstart --project-name omerta-m4-validation --timeout 8
+```
+
+Do not revert the Qdrant volume mount on an existing populated deployment:
+rolling back the health probe must preserve `qdrant-data:/qdrant/storage`.
+No volume deletion, push, merge, native installation or benchmark was performed.
+Final `docker compose stop --timeout 30` exited 0. All eleven project containers
+were retained and stopped; Qdrant reported exit 143 following the requested
+stop, and the other containers exit 0. All six named project volumes remain.
+
 ## R6.15 OMERTA lease namespace and file-backed secret acceptance — 2026-09-03
 
 Branch: `Radin/omerta-env-namespace`

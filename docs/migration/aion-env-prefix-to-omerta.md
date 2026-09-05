@@ -1,7 +1,10 @@
 # برنامه مهاجرت namespace تنظیمات از AION به OMERTA
 
 **وضعیت:** M0 تا M3 و زیرمرحله M3.1 تکمیل و به‌صورت static/کانتینری ولیدیت
-شدند؛ catalog قدیمی در M3.2 قرنطینه و پذیرش زنده Docker برای M4 باقی مانده است
+شدند؛ catalog قدیمی در M3.2 قرنطینه شد. پذیرش محدود Docker در M4 با یک Runtime،
+smoke موفق و ماندگاری Qdrant پس از recreate انجام شد؛ پذیرش کامل old-only/new-only
+و restore مستقل هنوز باز است. جزئیات در [گزارش پذیرش M4](../capo/acceptance-report.md)
+ثبت شده و حذف aliasهای قدیمی هنوز مجاز نیست.
 **مبنای M2:** branch `Radin/omerta-env-namespace`، checkpoint
 `4e1b89e3c36770dc7d06919b1f401ce526e1345c`
 **تاریخ inventory:** 2026-09-04
