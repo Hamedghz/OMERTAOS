@@ -1,5 +1,59 @@
 # CAPO acceptance report
 
+## M4.1.1 Gateway dependency remediation - 2026-09-06
+
+Baseline/checkpoint: `1d1ed05`, `checkpoint/m4-1-1-start-1d1ed05`.
+Branch: `Radin/omerta-env-namespace`.
+
+Fastify's manifest minimum is now 5.12.1; the npm-generated lock resolves
+5.12.3, with fast-uri 4.1.4 and all three nested 3.x copies at 3.1.7.
+Only these dependency entries changed. Relevant upstream advisories include
+[primitive coercion](https://github.com/advisories/GHSA-w2qp-rph6-63g4),
+[forwarded-header spoofing](https://github.com/advisories/GHSA-3m5p-2c4r-xxw2),
+[repeated hostname decoding](https://github.com/advisories/GHSA-fph4-wmhf-6fwf)
+and [scheme normalization](https://github.com/advisories/GHSA-jqff-g426-hqxp).
+These identify dependency defects, not proof of application exploitability.
+
+The primitive-schema probe independently reproduced Fastify 5.11.3 handing
+the string `"10"` to a handler after integer validation (exit 1). The added
+regression verifies the numeric handler value and rejection of an out-of-range
+input on the patched dependency.
+
+| Command/gate | Result |
+|---|---|
+| `npm update fastify fast-uri --prefix gateway --package-lock-only` | Exit 0; targeted lock update, zero reported vulnerabilities |
+| `npm ci --prefix gateway` | Exit 0; 408 packages installed in approximately 3 minutes |
+| `node gateway/node_modules/vitest/vitest.mjs run tests/gateway/schemaValidation.spec.ts` | Exit 0; 1 passed, 4.32s |
+| `npm run build --prefix gateway` | Exit 0 |
+| `npm test --prefix gateway` | Exit 0; 26 passed in 9 files, 12.14s |
+| `npm audit --prefix gateway --json` | Exit 0; total vulnerabilities 0, 432 dependencies reported |
+| Container pytest `tests/architecture/test_javascript_toolchain.py -q -p no:cacheprovider` | Exit 0; 3 passed, 0.36s |
+| `git diff --check` | Exit 0 |
+
+Commands used Node 22.23.2 and npm 10.9.8. The host's official Linux x64 Node
+archive was downloaded from nodejs.org and checked against its published
+SHA-256 (`d60acfe00a2932254bb0ad20e01b0d74397a0875595de719654b214f4b03f307`).
+It is installed under `~/.local/opt/node-v22.23.2-linux-x64`; new Bash login
+shells report the expected Node/npm versions. Existing process environments
+need a new shell or an explicit PATH prefix. The system Node was retained.
+The prior Bash configuration is backed up at
+`~/.cache/omerta-toolchain/bashrc.before-node-22.23.2`.
+
+Earlier failures: Docker audit attempts were interrupted after stalled network
+requests (137); host audit returned ETIMEDOUT (1) and metadata fetch timed out
+(124). Retrying the official registry subsequently succeeded. The old local
+Vitest installation lacked a native binding (1), resolved by locked `npm ci`.
+The first host build could not write root-owned generated `gateway/dist` (2);
+ownership of that generated directory alone was corrected to the workspace
+user before the successful build. Deprecated ESLint/inflight/glob and related
+tooling warnings remain; zero audit findings is not security certification.
+
+No application image was rebuilt and no persistent service was started in this
+subphase. The previous Gateway image still contains the previous dependencies;
+image rebuild and live acceptance remain pending. Rollback is a reviewed revert
+of the manifest, lock and regression change, followed by locked installation;
+it would restore the known vulnerable dependencies. No push or merge occurred.
+
 ## M4 isolated Docker acceptance - 2026-09-05
 
 Branch: `Radin/omerta-env-namespace`. Checkpoint: `6469f44`
