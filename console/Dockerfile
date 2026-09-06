@@ -1,5 +1,5 @@
 # Stage 1: install dependencies with pnpm
-FROM node:22.23.2-alpine3.24 AS deps
+FROM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
 
 WORKDIR /workspace
 
@@ -18,7 +18,7 @@ RUN --mount=type=cache,id=omerta-console-pnpm-v11,target=/pnpm/store,sharing=loc
     && pnpm install --frozen-lockfile --network-concurrency=4 --child-concurrency=2
 
 # Stage 2: build (Next.js + Prisma generate)
-FROM node:22.23.2-alpine3.24 AS builder
+FROM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
 
 WORKDIR /workspace
 RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
@@ -49,7 +49,7 @@ RUN pnpm build
 RUN pnpm exec tsc --project scripts/tsconfig.json
 
 # Stage 3: runtime image
-FROM node:22.23.2-alpine3.24 AS runner
+FROM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production

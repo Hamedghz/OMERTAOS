@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16@sha256:cf2a05fe40887b721e4b3dbac8fd32673c08292dcc8ba6b62b52b7f640433bd0
     environment:
       POSTGRES_USER: ${OMERTA_DB_USER:-${AION_DB_USER:-aion}}
       POSTGRES_PASSWORD: ${OMERTA_DB_PASSWORD:-${AION_DB_PASSWORD:-password}}
@@ -19,7 +19,7 @@ services:
       retries: 30
     restart: unless-stopped
   redis:
-    image: redis:7
+    image: redis:7@sha256:483eaf69e400c5254a2dae9c9f9499c336ecc0537c36fca462516a8f8bf75f78
     ports: []
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -29,12 +29,12 @@ services:
     restart: unless-stopped
 
   mongo:
-    image: mongo:7
+    image: mongo:7@sha256:542095b9517562dbbd4dd061a19459168237eb5f26841ac0e56c89ebb2eb4173
     ports: []
     volumes:
       - mongo-data:/data/db
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:latest@sha256:db1c735496dfa982ef27576a17b624e48e6b46a140bcdc2ac34e39d186204ef5
     ports: []
     volumes:
       - qdrant-data:/qdrant/storage
@@ -52,7 +52,7 @@ services:
       timeout: 3s
       retries: 30
   minio:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     environment:
       MINIO_ROOT_USER: ${OMERTA_CONTROL_MINIO_ACCESS_KEY:-${AION_CONTROL_MINIO_ACCESS_KEY:-minio}}
       MINIO_ROOT_PASSWORD: ${OMERTA_CONTROL_MINIO_SECRET_KEY:-${AION_CONTROL_MINIO_SECRET_KEY:-miniosecret}}
@@ -61,14 +61,14 @@ services:
     volumes:
       - minio-data:/data
   proxy-router:
-    image: teddysun/xray:latest
+    image: teddysun/xray:latest@sha256:e70b64b94e5684c1133c5dc53df18967187aec3d383c1dc62dfadbd76f6ead88
     profiles: ["proxy"]
     restart: unless-stopped
     volumes:
       - ./deploy/proxy/xray/config.json:/etc/xray/config.json:ro
     ports: []
   runtime-lease-secret-init:
-    image: alpine:3.20
+    image: alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
     user: "0:0"
     command:
       - sh

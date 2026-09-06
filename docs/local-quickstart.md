@@ -41,6 +41,18 @@ the development services publicly.
 
 ## Quickstart
 
+Quickstart upstream images and the four application Dockerfile base images are
+pinned by SHA-256 digest. Tags alongside the digest are descriptive; the digest
+selects the content. Update these references deliberately, then repeat locked
+builds and live readiness checks. Existing local images do not inherit source
+or dependency repairs until rebuilt. Digest pins do not freeze downloads made
+by `apt`, `apk`, or other package managers during a build, and are not a security
+certification. The optional proxy profile is pinned but is not covered by the
+minimal-stack acceptance run.
+
+The local `.secrets-out/` directory is excluded from the build context. Supply
+the Runtime key through the existing Compose secret mechanism at runtime.
+
 ```bash
 docker compose --project-directory . -f deploy/docker/compose/quickstart.yml config
 docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build

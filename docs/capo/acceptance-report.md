@@ -1,5 +1,109 @@
 # CAPO acceptance report
 
+## M4.1.2 Pinned images and bounded live acceptance - 2026-09-06
+
+Branch: `Radin/omerta-env-namespace`; baseline: `62fdfed`;
+checkpoint: `checkpoint/m4-1-2-start-62fdfed`.
+Builds used this baseline plus the digest-pin working-tree changes recorded
+with this report. No source changes were made during the builds.
+
+Seven upstream Quickstart references and all base-image references in the four
+application Dockerfiles are pinned to SHA-256 digests. Pins preserve locally
+tested images; the optional Xray index digest was obtained from the registry.
+Xray was not started. `.secrets-out/` is now excluded from Docker build context;
+earlier context exclusion was incomplete, but this is not evidence that a key
+was copied into an application image. Existing caches were not purged.
+
+| Gate | Actual result |
+|---|---|
+| Focused image/toolchain and Quickstart contracts | 17 passed, exit 0, 0.54s |
+| Compose rendering, including isolated image override | Exit 0; no environment values printed |
+| Control build | Exit 0; BuildKit duration 15.2s |
+| Runtime locked release build | Exit 0; BuildKit duration 15m 26s; one Cargo job |
+| Gateway locked build | Exit 0; BuildKit duration 4m 29s |
+| Console frozen-lockfile build | Exit 0; BuildKit duration 21m 41s; 21 pages and bootstrap compiler completed |
+| Isolated stack readiness | Exit 0, 123.2s; Compose parallel limit 1 and one Runtime |
+| Running Gateway package verification | Exit 0, 0.8s; Fastify 5.12.3, fast-uri 4.1.4 |
+| Mongo ping | Exit 0, 8.6s |
+| Qdrant/MinIO readiness and existing Qdrant fixture | Exit 0, 3.3s; prior fixture retained across container recreation |
+| Single final native-script Quickstart smoke | Exit 0, 21.5s; 13 checks passed |
+| Normal shutdown | Exit 0; all 11 containers stopped and six volumes retained |
+
+The final smoke covers PostgreSQL, Redis, installer completion, Runtime health
+and automatic registration, Control, Gateway dependencies, Console and the
+Console -> Gateway -> Control health chain. It is not an authenticated task
+execution test; full task/parity/restore acceptance remains in later subphases.
+No repeated application test suites were run after the user's batching request.
+The final acceptance ran once. No second Runtime, benchmark, live systemd test,
+image vulnerability scan or optional proxy acceptance was performed.
+
+Resource guards polled available RAM during the Console build and acceptance.
+No guard triggered; minimum sampled RAM during live acceptance was 2865 MiB.
+Qdrant exited 143 on requested shutdown; other project containers exited 0.
+
+Warnings/negative evidence: Cargo index timeouts recovered without changing
+the lockfile or TLS controls; npm emitted existing deprecated-tool warnings;
+Console reported stale Browserslist data. The manually provisioned Qdrant volume
+still lacks Compose labels. One diagnostic image-inspection command contained a
+mistyped Redis digest and exited 1; the checked-in pin was correct and live
+startup passed. Digest pins do not freeze apt/apk or all transitive Python
+resolution, and no bit-for-bit or production-security claim is made.
+
+Local image IDs (not published registry artifacts):
+
+| Tag | SHA-256 image ID |
+|---|---|
+| `omertaos-control:m412-62fdfed` | `e40d4d92021723de368fa4544c172e3b1148ab98505c5c7b7d72b2315663c36c` |
+| `omertaos-runtime:m412-62fdfed` | `c83cbcd5a9b5126614bc20e446b01777c0032735941875b2afb87b70245e066c` |
+| `omertaos-gateway:m412-62fdfed` | `477ba0891a67a301aa91bb03431219bdc07b0e3b9e46e247c90c888c844d8502` |
+| `omertaos-console:m412-62fdfed` | `4bb2d109a3f3da333f1dbdf1cc68f8064d18c9aa4a66d1dcab46df9a5b97eaad` |
+
+Build commands, run sequentially from the repository root:
+
+```bash
+docker build --progress=plain -f control/Dockerfile -t omertaos-control:m412-62fdfed .
+docker build --progress=plain -f runtime-daemon/Dockerfile -t omertaos-runtime:m412-62fdfed .
+docker build --progress=plain -f gateway/Dockerfile -t omertaos-gateway:m412-62fdfed .
+docker build --progress=plain -f console/Dockerfile -t omertaos-console:m412-62fdfed .
+```
+
+The local override `/tmp/omerta-m412-62fdfed.compose.yml` contains:
+
+```yaml
+services:
+  control:
+    image: omertaos-control:m412-62fdfed
+  gateway:
+    image: omertaos-gateway:m412-62fdfed
+```
+
+For this isolated stack, use the environment and Compose invocation below.
+The existing ignored environment file and Runtime secret must be provisioned.
+Start only with at least 1 GiB available RAM, monitor during execution, and
+stop this project if RAM falls below that threshold.
+
+```bash
+export COMPOSE_PARALLEL_LIMIT=1
+export COMPOSE_ENV_FILES=/home/omerta/projects/OMERTAOS/.env
+export OMERTA_DOCKER_NETWORK=omerta-m4-validation-net
+export OMERTA_CONSOLE_HOST_PORT=23000 OMERTA_GATEWAY_HOST_PORT=28080
+export OMERTA_CONTROL_HOST_PORT=28000 OMERTA_RUNTIME_HOST_PORT=25051
+export OMERTA_RUNTIME_IMAGE=omertaos-runtime:m412-62fdfed
+export OMERTA_CONSOLE_IMAGE=omertaos-console:m412-62fdfed
+export OMERTA_CORS_ORIGINS=http://localhost:23000 NEXTAUTH_URL=http://localhost:23000
+export NEXT_PUBLIC_GATEWAY_URL=http://localhost:28080
+compose=(docker compose --project-directory "$PWD" --project-name omerta-m4-validation
+  -f deploy/docker/compose/quickstart.yml -f /tmp/omerta-m412-62fdfed.compose.yml)
+"${compose[@]}" config --quiet
+"${compose[@]}" up -d --no-build --pull never --wait --wait-timeout 120
+bash deploy/native/scripts/smoke-test.sh --mode quickstart --project-name omerta-m4-validation --timeout 8
+"${compose[@]}" stop --timeout 30
+```
+
+Earlier images remain available for rollback. Keep the same project volumes
+when selecting previous application image tags. No volume deletion, push,
+merge, reset-credit redemption or production deployment occurred.
+
 ## M4.1.1 Gateway dependency remediation - 2026-09-06
 
 Baseline/checkpoint: `1d1ed05`, `checkpoint/m4-1-1-start-1d1ed05`.

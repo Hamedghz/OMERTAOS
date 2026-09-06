@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -62,9 +63,27 @@ def test_ci_and_container_images_use_the_canonical_node_version() -> None:
     assert "node-version: '22'" not in ci
     assert ci.count(f"node-version: '{NODE_VERSION}'") == 2
     assert gateway.count(f"FROM --platform=$BUILDPLATFORM {image}") == 2
-    assert f"FROM {image} AS runner" in gateway
+    assert re.search(rf"FROM {re.escape(image)}@sha256:[a-f0-9]{{64}} AS runner", gateway)
     assert console.count(f"FROM {image}") == 3
     assert f"corepack prepare pnpm@{PNPM_VERSION} --activate" in console
+
+
+def test_quickstart_upstream_images_and_build_bases_are_digest_pinned() -> None:
+    compose = (REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text()
+    images = re.findall(r"^\s+image: (\S+)$", compose, re.MULTILINE)
+    upstream_images = [image for image in images if not image.startswith("${")]
+    assert upstream_images
+    for image in upstream_images:
+        assert re.fullmatch(r"\S+@sha256:[a-f0-9]{64}", image), image
+
+    for service in ("control", "runtime-daemon", "gateway", "console"):
+        dockerfile = (REPO_ROOT / service / "Dockerfile").read_text()
+        bases = re.findall(r"^FROM (?:--platform=\S+ )?(\S+)", dockerfile, re.MULTILINE)
+        assert bases
+        for base in bases:
+            assert re.fullmatch(r"\S+@sha256:[a-f0-9]{64}", base), base
+
+    assert ".secrets-out/" in (REPO_ROOT / ".dockerignore").read_text().splitlines()
 
 
 def test_console_bootstrap_tsconfig_can_emit_installer_artifact() -> None:
