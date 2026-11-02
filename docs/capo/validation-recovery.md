@@ -71,8 +71,8 @@ Use a new `--fresh-project omerta-p3-fresh-<unique-suffix>` for another fresh
 attempt; retained volumes must never be deleted to make the fresh check pass.
 See the P3 entry in `acceptance-report.md` for the actual invocation and limits.
 
-The current partial gate exits 2 even when restart probes pass: encrypted
-backup/isolated restore and older-release upgrade remain outstanding. Gateway
+This restart-only gate exits 2 even when restart probes pass; it does not run
+the separate encrypted-backup/restore or older-release-upgrade gates. Gateway
 Redis cache replay does not prove durable Control result recovery. Control
 currently rejects dispatched-task replay after process restart rather than
 returning the lost result or executing it again.
@@ -81,11 +81,27 @@ The legacy `deploy/docker/scripts/backup.sh` archives only repository folders;
 its paired restore copies files into the working directory. They do not export
 PostgreSQL, MongoDB, MinIO, Qdrant or the paired Runtime fencing state/key, and
 must not be used as a sensitive-data or P3 disaster-recovery procedure.
-Before completing P3, obtain an operator-approved encryption recipient/key,
-keep sensitive exports encrypted outside Git, include the provisioned env and
-paired lease key/state, verify manifests and restore to separate new volumes.
-Preserve the source volumes. Validate genuine older-release data on a restored
-clone separately from a fresh install or reapplication of the same images.
+The user subsequently authorized local recovery-key creation. The dedicated
+`scripts/quickstart_encrypted_recovery.py` acceptance tool now signs/encrypts
+six stopped volumes, env/config and the paired lease key. It checks signatures,
+encrypted-message integrity and archive paths before extracting into new
+volumes, compares content/ownership/mode inventories before startup, and then
+checks restored historical fixtures and authenticated canonical execution.
+The local same-image restore passed; genuine older-release upgrade remains
+outstanding. See the newer P3 report for exact evidence and reproduction.
+
+Key/backup paths must be separate, owner-only and outside every Git worktree.
+`--create-key --run` requires new paths; `--existing-backup --run` reuses the
+protected exported key and signed backup but requires a NEW restore project.
+The latter is a scoped validation workflow with source safety checks, not a
+source-free disaster-recovery installer. New logical exports go under a unique
+`exports-<restore-project>/` directory. The first run's exports remain at root.
+No existing backup/key/volume is overwritten or deleted. Both dedicated key
+agent caches are cleared on completion. Retain recovery keys and passphrase;
+same-host storage does not cover host loss. Off-host custody, separate logical
+restore and portable MinIO/Qdrant API exports need their own validation.
+Preserve source volumes and test genuine older-release data on a restored clone
+separately from a fresh install or reapplication of the same images.
 No native/systemd acceptance is implied by these Docker probes.
 
 ### Native release workflow

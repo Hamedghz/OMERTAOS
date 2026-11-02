@@ -1,5 +1,112 @@
 # CAPO acceptance report
 
+## P3 encrypted cold backup and isolated restore - 2026-11-02
+
+The user explicitly authorized creating and using the recovery key. Baseline:
+`9622774544c3840ed34ce97e0052ecd66ae18c05`; checkpoint:
+`checkpoint/p3-encrypted-backup-start-9622774`. Implementation: `3415359`;
+restore-specific logical-export retention repair: `76a5477`. Branch remains
+`Radin/omerta-env-namespace`. Nothing was pushed, merged, installed system-wide,
+rebuilt or changed in the application schema/authentication/topology.
+
+The dedicated local OpenPGP identity has an Ed25519 signing key and cv25519
+encryption subkey, one-year expiry and a randomly generated passphrase protecting
+the private key. Only public identity metadata is in reports. The key directory
+is mode 0700; passphrase, public export and protected private export are 0600,
+outside all Git worktrees. This is an authorized local acceptance key, not an
+enterprise KMS, external trust certification or proof of off-host key custody.
+The passphrase remains on the same protected host; losing the host can still
+lose both backup and recovery material. Separate off-host custody is outstanding.
+Both dedicated GPG agent caches were explicitly cleared after validation.
+
+| Gate | Actual result |
+|---|---|
+| Source safety | All eleven `omerta-m4-validation` containers stopped; foreign/active volume consumers rejected; rendered env checked against retained application containers |
+| Provenance | All retained service images pinned to their actual image IDs in the encrypted configuration; canonical Compose config exit 0 |
+| Protected key recovery | Exported private key imported into a separate GNUPGHOME; deliberately wrong passphrase rejected, expected exit 2 |
+| Signed encrypted backup | Six consistent cold volume archives plus Compose config, original env and paired lease key: nine signed/encrypted files, AES256, signed checksum manifest; no plaintext backup file created |
+| Integrity before extraction | Manifest signer fingerprint pinned; ciphertext lengths/SHA-256 checked; all nine messages had valid signature, DECRYPTION_OKAY and GOODMDC; tampered ciphertext rejected, expected exit 1 |
+| Archive safety | Absolute/traversal paths, links, special files and setuid/setgid entries rejected before writing restore volumes; read-only source mounts and bounded helper resources |
+| Actual cold restore | Six new `omerta-p3-restore-20261102a_*` volumes; every file-content/mode/uid/gid inventory matched the signed source inventory before any store was started |
+| Logical export sidecars | PostgreSQL custom dump and MongoDB archive exported from restored stores before application startup, signed/encrypted, decryption authenticated and a separate export manifest signed; logical restore itself NOT tested |
+| Live restored services | Store readiness exit 0 in 35.47s; full stack readiness exit 0 in 82.59s; one Runtime |
+| Restored historical data | Existing administrator, migrations, audit task and MongoDB fixture, corresponding MinIO object and Qdrant payload read successfully without reseeding |
+| Canonical path | Actual administrator login, Console -> Gateway -> Control -> Runtime echo/replay and tenant/correlation/trace audit assertions passed |
+| Source preservation | All six original cold inventories rechecked after acceptance and unchanged |
+| Shutdown | Normal stop exit 0 in 12.52s; eleven restore containers stopped, six new volumes retained; source and other `compose-*` worker project untouched |
+| Targeted regression | Final validation image: 36 passed, 21 subtests passed, 0 failed/skipped, 7.04s; strengthened replay-path regression separately passed once; Ruff and diff check exit 0 |
+| Sanitized artifacts | Two encrypted-recovery JSON reports checked against selected configured source/lease values and the new passphrase; no matches; key files not tracked |
+| Resource guard | Minimum sampled available RAM 3406 MiB; no 1 GiB cutoff triggered; about 25 GiB disk available before and after; no image build or concurrent test suite |
+
+Local evidence: `artifacts/p3/encrypted-restore.json` (131 gates) and
+`artifacts/p3/encrypted-postchecks.json` (endpoint guard, bounded archive checks,
+agent-cache cleanup). The first report exits **2**, `partial-blocked`: the
+historical older-release upgrade is still separate. Its off-host entry means
+an untested boundary, not a newly imposed P3 requirement. The current harness
+classifies that boundary as a limitation. Backup/restore is no longer blocked
+by a missing key. The earlier restart-only report below is historical and is
+not the current global backup status.
+
+Failures and follow-up repairs were not bypassed:
+
+- Initial host unit run: one of 32 tests failed because its assertion matched
+  the word `stderr` inside retained command metadata rather than leaked output;
+  Ruff also found an unused import. The fixture now supplies a synthetic value
+  through the child environment and asserts that value is absent from reports.
+- First validation-image run: 33 passed, one failed because permission-denied
+  path inspection raised raw PermissionError. The guard now rejects workspace
+  paths up front and turns unreadable-path errors into a sanitized fail-closed
+  rejection; permissions were not opened and the test was not skipped.
+- Streaming archive validation initially took 154.38s for MongoDB and 160.85s
+  for Qdrant. Explicit 1 MiB member reads retained all safety assertions; targeted
+  checks of the same authenticated archives then passed in 9.38s and 12.13s.
+- Replay review found fixed logical-export names would collide on a second
+  restore. New runs place exports under `exports-<restore-project>/` without
+  overwriting previous exports. The first run's sidecars remain at backup root.
+- Two optional Docker observer commands raced with a normally exiting helper
+  and reported 'No such container'. The authoritative pipeline completed with
+  exits [0, 0]; no workload was restarted for that observer failure.
+
+The immutable backup and key files are local, outside Git:
+
+```text
+$HOME/.local/share/omerta-recovery/keys/p3-20261102a/recovery-public.asc
+$HOME/.local/share/omerta-recovery/keys/p3-20261102a/recovery-private.asc
+$HOME/.local/share/omerta-recovery/keys/p3-20261102a/passphrase
+$HOME/.local/share/omerta-recovery/backups/p3-20261102a/manifest.json
+```
+
+Reproduce isolated restore acceptance from that existing backup with a NEW
+project suffix. It requires the retained stopped source project for the safety
+and source-unchanged checks, matching ignored env, existing recovery files and
+the pinned local images. It is a scoped acceptance harness, not a source-free
+full-host disaster-recovery installer. Do not add `--create-key` for this mode:
+
+```bash
+python3 scripts/quickstart_encrypted_recovery.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --key-dir "$HOME/.local/share/omerta-recovery/keys/p3-20261102a" \
+  --backup-dir "$HOME/.local/share/omerta-recovery/backups/p3-20261102a" \
+  --restore-project "omerta-p3-restore-$(date -u +%Y%m%d%H%M%S)" \
+  --output "artifacts/p3/restore-$(date -u +%Y%m%d%H%M%S).json" \
+  --existing-backup --run
+```
+
+The original execution used the same directories, `--restore-project
+omerta-p3-restore-20261102a`, `--output artifacts/p3/encrypted-restore.json`
+and `--create-key --run` instead of `--existing-backup`. New backup/key paths
+must not already exist. Existing backups/volumes are never deleted or replaced.
+Use the validation-image command in the prior P3 section with
+`tests/architecture/test_encrypted_quickstart_recovery.py` added for the tests.
+
+This is E2 same-host, same-image cold recovery. MinIO/Qdrant are restored from
+their complete cold volume data, not portable S3 exports or Qdrant API snapshots.
+Redis queue/cache disaster recovery, separate logical restore, historical
+upgrade compatibility, power-loss tests, native/systemd, production security,
+scalability and off-host recovery remain unproven. Removing this optional
+harness needs no schema/image rollback; retain all generated recovery evidence,
+keys, stopped containers and volumes. P4 has not started.
+
 ## P3 partial fresh-install and restart recovery - 2026-11-02
 
 User authorized the next phase after P2. Branch: `Radin/omerta-env-namespace`;
