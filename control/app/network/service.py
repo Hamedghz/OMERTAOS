@@ -3,7 +3,10 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import os
 import secrets
+import stat
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -32,8 +35,10 @@ class LocalSecretProvider:
         )
         assert isinstance(configured_root, str)
         root = Path(configured_root)
-        root.mkdir(parents=True, exist_ok=True)
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
         self.root = root
+        with self._directory():
+            pass
         raw_key = resolve_environment(
             "OMERTA_CONTROL_LOCAL_SECRET_KEY",
             aliases=("AION_CONTROL_LOCAL_SECRET_KEY",),
@@ -51,11 +56,33 @@ class LocalSecretProvider:
         safe = path.strip("/").replace("/", "__")
         return self.root / f"{safe}.json"
 
+    @contextmanager
+    def _directory(self):
+        descriptor = None
+        try:
+            descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            metadata = os.fstat(descriptor)
+            if metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) & 0o027:
+                raise SecretProviderError("Local proxy secret directory must be owner-controlled and private")
+            yield descriptor
+        except OSError:
+            raise SecretProviderError("Local proxy secret storage is not private or accessible") from None
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
+
     def get_secret(self, path: str) -> dict[str, str]:
         secret_file = self._file(path)
-        if not secret_file.exists():
-            raise SecretProviderError(f"Secret not found at '{path}'")
-        raw = secret_file.read_bytes()
+        with self._directory() as directory:
+            try:
+                descriptor = os.open(secret_file.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                     dir_fd=directory)
+            except FileNotFoundError:
+                raise SecretProviderError(f"Secret not found at '{path}'") from None
+            with os.fdopen(descriptor, "rb") as handle:
+                if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+                    raise SecretProviderError("Local proxy secret must be a regular file")
+                raw = handle.read()
         try:
             if raw.lstrip().startswith(b"{"):
                 payload = json.loads(raw.decode("utf-8"))
@@ -73,14 +100,30 @@ class LocalSecretProvider:
         secret_file = self._file(path)
         cipher = AES.new(self.key, AES.MODE_GCM, nonce=secrets.token_bytes(12))
         ciphertext, tag = cipher.encrypt_and_digest(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
-        secret_file.write_bytes(base64.b64encode(cipher.nonce + tag + ciphertext))
-        try:
-            secret_file.chmod(0o600)
-        except OSError:
-            pass
+        with self._directory() as directory:
+            temporary = f".proxy-secret-{secrets.token_hex(16)}"
+            descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                 0o600, dir_fd=directory)
+            try:
+                with os.fdopen(descriptor, "wb") as handle:
+                    os.fchmod(handle.fileno(), 0o600)
+                    handle.write(base64.b64encode(cipher.nonce + tag + ciphertext))
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, secret_file.name, src_dir_fd=directory, dst_dir_fd=directory)
+                os.fsync(directory)
+            finally:
+                try:
+                    os.unlink(temporary, dir_fd=directory)
+                except FileNotFoundError:
+                    pass
 
     def delete_secret(self, path: str) -> None:
-        self._file(path).unlink(missing_ok=True)
+        with self._directory() as directory:
+            try:
+                os.unlink(self._file(path).name, dir_fd=directory)
+            except FileNotFoundError:
+                pass
 
 
 def _secret_provider():
