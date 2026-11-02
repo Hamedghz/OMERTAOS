@@ -23,7 +23,7 @@
     "@fastify/cors": "11.3.0",
     "@fastify/helmet": "13.1.0",
     "@fastify/websocket": "11.3.0",
-    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/grpc-js": "^1.14.5",
     "@grpc/proto-loader": "^0.7.8",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
@@ -31,10 +31,10 @@
     "@opentelemetry/sdk-node": "^0.221.0",
     "@opentelemetry/semantic-conventions": "^1.23.0",
     "@types/jsonwebtoken": "^9.0.5",
-    "compression": "^1.7.4",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
-    "fastify": "^5.12.1",
+    "fastify": "^5.12.6",
     "fastify-plugin": "^4.5.1",
     "fastify-sse-v2": "^2.1.0",
     "http-errors": "^2.0.0",
@@ -43,6 +43,15 @@
     "pino": "^8.17.0",
     "uuid": "^11.1.1",
     "zod": "^3.23.8"
+  },
+  "overrides": {
+    "vite": "7.3.7",
+    "brace-expansion@1": "^1.1.21",
+    "brace-expansion@2": "^2.1.7",
+    "js-yaml": "^4.3.2",
+    "source-map-js": "^1.2.2",
+    "fast-uri@3": "^3.1.9",
+    "fast-uri@4": "^4.2.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
@@ -58,6 +67,7 @@
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.2",
-    "vitest": "^4.1.10"
+    "vite": "7.3.7",
+    "vitest": "^4.1.12"
   }
 }

@@ -155,6 +155,22 @@ procedure with the verified external backup.
 Quickstart rollback is `docker compose --project-directory . -f deploy/docker/compose/quickstart.yml down`
 without `--volumes`; named volumes and data remain intact.
 
+## Local proxy secret permissions
+
+On the Linux Quickstart, the local encrypted proxy-secret provider creates its
+directory with mode `0700` and atomically replaces encrypted files with mode
+`0600`. Existing directories must belong to the service UID, have no access for
+others, and have no group-write bit. An owner-controlled `0750` native directory
+remains supported. Directory and read-file symlinks are rejected; failed permission
+or write operations are errors rather than successful writes. The AES-GCM file
+format, encryption key and legacy configuration aliases are unchanged.
+
+Before changing an existing directory, inspect ownership and active bind-mount
+consumers. Apply a narrowly scoped permission repair as its owner, never recursive
+permission changes or a key reset. Keep operator `.env` files at `0600`; provisioning
+to a service with another UID requires its existing explicit secret-mount workflow,
+not opening host secret files to all users. Never put real values in command logs.
+
 ## Acceptance state
 
 Static validation on Windows can confirm syntax, contracts, Compose rendering,

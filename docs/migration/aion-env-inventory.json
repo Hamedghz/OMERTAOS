@@ -12,8 +12,8 @@
     "token_count": 164,
     "active_token_count": 156,
     "retired_token_count": 8,
-    "files_with_tokens": 80,
-    "occurrences": 527
+    "files_with_tokens": 84,
+    "occurrences": 547
   },
   "policy": {
     "canonical_product_prefix": "OMERTA_",
@@ -34,6 +34,7 @@
         "gateway",
         "native-deployment",
         "repository-configuration",
+        "scripts",
         "tests"
       ],
       "value_type": "string",
@@ -54,10 +55,11 @@
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
         "gateway/src/config.ts",
+        "scripts/validate_quickstart_environment_parity.py",
         "tests/architecture/test_environment_alias_preflight.py",
         "tests/control/test_configuration_api.py"
       ],
-      "occurrences": 18,
+      "occurrences": 19,
       "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
@@ -748,7 +750,7 @@
         "deploy/native/env/contract.json",
         "tests/control/test_network_proxy_secrets.py"
       ],
-      "occurrences": 8,
+      "occurrences": 9,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -1065,7 +1067,7 @@
         "deploy/native/env/contract.json",
         "tests/control/test_network_proxy_secrets.py"
       ],
-      "occurrences": 5,
+      "occurrences": 6,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -1133,11 +1135,12 @@
         "control/config.py",
         "deploy/docker/compose/quickstart.yml",
         "gateway/src/config.ts",
+        "tests/architecture/test_historical_quickstart_upgrade.py",
         "tests/architecture/test_quickstart_runtime.py",
         "tests/control/test_config_cors.py",
         "tests/gateway/configDefaults.spec.ts"
       ],
-      "occurrences": 6,
+      "occurrences": 8,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -1426,7 +1429,8 @@
       "canonical_name": "OMERTA_DOCKER",
       "classification": "product-environment",
       "owners": [
-        "console"
+        "console",
+        "tests"
       ],
       "value_type": "boolean",
       "required": "owner-defined",
@@ -1440,9 +1444,10 @@
         "console/lib/gatewayConfig.ts",
         "console/lib/prisma.ts",
         "console/tests/unit/gateway-config-env.test.tsx",
-        "console/tests/unit/system-database-env.test.tsx"
+        "console/tests/unit/system-database-env.test.tsx",
+        "tests/architecture/test_quickstart_environment_parity.py"
       ],
-      "occurrences": 5,
+      "occurrences": 7,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -1553,6 +1558,7 @@
         "gateway",
         "native-deployment",
         "repository-configuration",
+        "scripts",
         "tests"
       ],
       "value_type": "string",
@@ -1573,11 +1579,13 @@
         "deploy/docker/compose/quickstart.yml",
         "deploy/native/env/contract.json",
         "gateway/src/config.ts",
+        "scripts/validate_quickstart_environment_parity.py",
         "tests/architecture/test_environment_alias_preflight.py",
+        "tests/architecture/test_historical_quickstart_upgrade.py",
         "tests/control/test_configuration_api.py",
         "tests/control/test_runtime_node_routes.py"
       ],
-      "occurrences": 29,
+      "occurrences": 34,
       "note": "Gateway internal-admin compatibility group fails closed on conflicts."
     },
     {
@@ -1771,7 +1779,8 @@
       "owners": [
         "console",
         "docker-deployment",
-        "repository-configuration"
+        "repository-configuration",
+        "tests"
       ],
       "value_type": "endpoint-or-url",
       "required": false,
@@ -1786,9 +1795,10 @@
         "console/README.md",
         "console/lib/gatewayConfig.ts",
         "console/tests/unit/gateway-config-env.test.tsx",
-        "deploy/docker/compose/full.yml"
+        "deploy/docker/compose/full.yml",
+        "tests/architecture/test_quickstart_environment_parity.py"
       ],
-      "occurrences": 9,
+      "occurrences": 11,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -2553,6 +2563,7 @@
         "documentation",
         "native-deployment",
         "runtime-daemon",
+        "scripts",
         "tests"
       ],
       "value_type": "endpoint-or-url",
@@ -2569,9 +2580,10 @@
         "docs/migration/control-plane-to-control.md",
         "runtime-daemon/README.md",
         "runtime-daemon/src/config.rs",
+        "scripts/validate_quickstart_environment_parity.py",
         "tests/native/test_environment_contract.py"
       ],
-      "occurrences": 8,
+      "occurrences": 10,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {
@@ -2746,10 +2758,11 @@
       "legacy_alias": null,
       "source_files": [
         "docs/adr/0002-omerta-configuration-namespace.md",
+        "docs/capo/execution-progress-fa.md",
         "tests/architecture/test_environment_alias_preflight.py",
         "tests/control/test_runtime_lease_signing.py"
       ],
-      "occurrences": 6,
+      "occurrences": 7,
       "note": "R6.15 accepted the canonical HMAC key without a legacy alias."
     },
     {
@@ -2997,7 +3010,9 @@
       "classification": "product-environment",
       "owners": [
         "control",
-        "docker-deployment"
+        "docker-deployment",
+        "scripts",
+        "tests"
       ],
       "value_type": "delimited-list",
       "required": "owner-defined",
@@ -3009,9 +3024,11 @@
       "legacy_alias": "AION_RUNTIME_TENANT_IDS",
       "source_files": [
         "control/app/runtime_nodes/lifecycle.py",
-        "deploy/docker/compose/quickstart.yml"
+        "deploy/docker/compose/quickstart.yml",
+        "scripts/validate_quickstart_environment_parity.py",
+        "tests/architecture/test_historical_quickstart_upgrade.py"
       ],
-      "occurrences": 3,
+      "occurrences": 6,
       "note": "Canonical and legacy conflicts fail closed."
     },
     {

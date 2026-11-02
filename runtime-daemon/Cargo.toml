@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1.53.3", features = ["macros", "rt-multi-thread", "signal"] }
 tonic = { version = "0.12", features = ["transport"] }
 prost = "0.13"
 serde = { version = "1", features = ["derive"] }
