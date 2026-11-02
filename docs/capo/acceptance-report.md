@@ -1,5 +1,57 @@
 # CAPO acceptance report
 
+## P1 Console login handoff validation - 2026-11-02
+
+Branch: `Radin/omerta-env-namespace`; baseline: `2e8b914`;
+checkpoint: `checkpoint/p1-start-2e8b914`; source commit: `dae20bf`.
+P1 was authorized by the user's implementation request. Later phases remain
+separately gated. See the [execution progress ledger](execution-progress-fa.md).
+
+Transferred four remaining Console files from the other checkout without
+altering that checkout. Login no longer reads the administrator password or
+passes it to the client form. The identifier label agrees with existing auth
+handling, and the transferred display strings use `OMERTA OS`.
+
+| Gate | Actual result |
+|---|---|
+| Locked pnpm install | Exit 0; 30.0s including wrapper; Node 22.23.2, npm 10.9.8, Corepack pnpm 11.13.1 |
+| Console unit suite, one worker | Exit 0; 15 files, 36 passed, 0 failed/skipped; runner 44.43s, wrapper 48.1s |
+| Four new Login regression scenarios | Passed within the same suite: password absent from client props, missing email, incomplete setup redirect, authenticated-session redirect |
+| Direct Prisma generation | Exit 0; 16.0s; placeholder DB URL only, no migration or checksum-ignore setting |
+| Initial production build | Exit 1; 10.0s; root-owned generated `.next/trace` caused EACCES |
+| Production build after generated-output ownership repair | Exit 0; 430.8s; one build worker and 1536 MiB V8 heap limit |
+| Diff/dependency review | Whitespace check passed; manifests and lockfiles unchanged |
+
+Commands, from the repository root:
+
+```bash
+corepack pnpm --dir console install --frozen-lockfile --network-concurrency=4 --child-concurrency=2 --reporter=append-only
+corepack pnpm --dir console exec vitest run --config vitest.config.mts --maxWorkers=1
+export DATABASE_URL='postgresql://placeholder:placeholder@127.0.0.1:1/placeholder?schema=public'
+export NODE_OPTIONS='--max-old-space-size=1536'
+export NEXT_TELEMETRY_DISABLED=1
+corepack pnpm --dir console exec prisma generate
+CIRCLE_NODE_TOTAL=2 corepack pnpm --dir console build
+git diff --check
+```
+
+The commands ran sequentially under a 1 GiB available-memory stop guard with
+timeouts; minimum sampled RAM was 1983 MiB during the successful build.
+`CIRCLE_NODE_TOTAL=2` selects one build worker in this pinned Next version;
+it does not bypass compilation, linting or type checking. Existing root-owned
+`node_modules` (empty) and `.next` generated artifacts were narrowly reassigned
+to the checkout user, UID/GID 1000, with no broad permission change or cleanup.
+The successful unit suite was run once; only the failed build was retried.
+
+Warnings: stale baseline-browser-mapping data in unit tests, and Next's initial
+workspace-root warning about an external home-directory lockfile. The global
+pnpm remains 9.15.9; all recorded commands used the pinned Corepack version.
+The earlier missing-Vitest blocker is resolved. These are E1 source/build
+checks, not new live Docker or authenticated-session acceptance. Existing
+Console images still contain the earlier code and require a new tagged build
+before P2 live acceptance. No persistent service was started; no volumes, credentials, auth
+protocols or APIs changed. Nothing from P1 was pushed or merged.
+
 ## M4.1.2 Pinned images and bounded live acceptance - 2026-09-06
 
 Branch: `Radin/omerta-env-namespace`; baseline: `62fdfed`;
