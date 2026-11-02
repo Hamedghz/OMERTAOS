@@ -231,6 +231,7 @@ class RuntimeTaskDispatcher:
                     retry_count=retry_count,
                     max_retries=self.max_retries,
                     trace_id=request.trace_id or request.request_id or None,
+                    request_id=request.request_id or None,
                 ),
                 actor=request.agent_id,
             )

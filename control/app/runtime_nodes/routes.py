@@ -244,6 +244,8 @@ def schedule_runtime_attempt(
         max_retries=payload.max_retries,
         trace_id=request.headers.get("traceparent")
         or request.headers.get("x-correlation-id"),
+        request_id=request.headers.get("x-correlation-id")
+        or request.headers.get("x-request-id"),
     )
     result = scheduler.schedule(db, scheduling_request, actor=_actor(request))
     return SchedulingResultOut(

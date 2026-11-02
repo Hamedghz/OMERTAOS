@@ -219,8 +219,8 @@ def test_dispatch_executes_allowlisted_command_once_and_replays_cached_result(
             "runtime.dispatch.success",
             "runtime.dispatch.cache_replay",
         ]
-        assert events[1].request_id == "request-a"
-        assert events[1].trace_id == "00-trace-a-span-a-01"
+        assert all(event.request_id == "request-a" for event in events)
+        assert all(event.trace_id == "00-trace-a-span-a-01" for event in events)
         assert events[2].outcome == "completed"
         assert events[2].actor == "agent-a"
     finally:

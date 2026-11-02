@@ -89,6 +89,7 @@ class SchedulingRequest:
     retry_count: int = 0
     max_retries: int = 0
     trace_id: str | None = None
+    request_id: str | None = None
 
     def __post_init__(self) -> None:
         _require_text(self.task_id, "task_id")
@@ -852,6 +853,7 @@ class RuntimeScheduler:
             task_id=request.task_id,
             attempt_id=request.attempt_id,
             node_id=selected_node_id,
+            request_id=request.request_id,
             trace_id=request.trace_id,
             outcome=decision,
             reason=reason,

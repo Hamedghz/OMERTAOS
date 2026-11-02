@@ -39,6 +39,8 @@ def test_runtime_node_routes_register_heartbeat_and_schedule(
             "x-aion-roles": "admin",
             "tenant-id": "tenant-a",
             "x-request-id": "req-a",
+            "x-correlation-id": "correlation-a",
+            "traceparent": "00-trace-a-span-a-01",
         }
         registration = client.post(
             "/v1/runtime/nodes",
@@ -91,6 +93,8 @@ def test_runtime_node_routes_register_heartbeat_and_schedule(
         assert [item["action"] for item in trail.json()["items"]] == [
             "runtime.schedule"
         ]
+        assert trail.json()["items"][0]["request_id"] == "correlation-a"
+        assert trail.json()["items"][0]["trace_id"] == "00-trace-a-span-a-01"
 
         other_tenant = client.get(
             "/v1/runtime/audit/task-a",
