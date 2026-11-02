@@ -155,6 +155,33 @@ procedure with the verified external backup.
 Quickstart rollback is `docker compose --project-directory . -f deploy/docker/compose/quickstart.yml down`
 without `--volumes`; named volumes and data remain intact.
 
+## Selecting Images For Fresh Restart Acceptance
+
+Pass all four application images explicitly when checking patched builds. The
+historical defaults remain for earlier recorded runs; they do not select the
+latest local image automatically. For example, after successful sequential
+builds of these tags:
+
+```bash
+python3 scripts/validate_quickstart_recovery.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --console-image omertaos-console:p4-20261103 \
+  --control-image omertaos-control:p4-20261103 \
+  --runtime-image omertaos-runtime:p4-20261103 \
+  --gateway-image omertaos-gateway:p4-20261103 \
+  --fresh-project omerta-p3-fresh-p4-20261103 \
+  --fresh-only --run --output artifacts/p4/fresh-recovery.json
+```
+
+`--fresh-only` runs the existing authenticated request, store persistence and
+restart/fencing assertions against one new isolated project, then stops it and
+retains volumes. Existing fresh-project volumes cause refusal: for another run,
+use a distinct approved `omerta-p3-fresh-` suffix instead of deleting anything.
+This mode returns success only within its recorded fresh/restart scope. It does
+not rerun existing-data reapply, encrypted backup/restore or historical upgrade.
+Without this option, the original two-project checks and partial P3 exit status
+remain unchanged. Image-selection options also apply to the parity CLI.
+
 ## Local proxy secret permissions
 
 On the Linux Quickstart, the local encrypted proxy-secret provider creates its

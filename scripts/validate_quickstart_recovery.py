@@ -31,11 +31,11 @@ from scripts.validate_environment_aliases import (  # noqa: E402
 FRESH_PROJECT = "omerta-p3-fresh"
 
 
-def recovery_config(rendered, groups, project, console_image, control_image):
+def recovery_config(rendered, groups, project, console_image, control_image, **images):
     parity.require(project == parity.PROJECT or re.fullmatch(r"omerta-p3-fresh(?:-[a-z0-9-]{1,20})?", project),
                    "unapproved recovery project")
     config, _ = parity.variant_config(rendered, groups, legacy=False,
-                                     console_image=console_image, control_image=control_image)
+                                     console_image=console_image, control_image=control_image, **images)
     config["name"] = project
     config["networks"]["default"]["name"] = f"{project}-net"
     config["volumes"] = {name: {"name": f"{project}_{name}"} for name in parity.VOLUMES}
@@ -342,8 +342,12 @@ def main(argv=None):
     parser.add_argument("--env-file", type=Path, required=True)
     parser.add_argument("--console-image", required=True)
     parser.add_argument("--control-image", required=True)
+    parser.add_argument("--runtime-image", default="omertaos-runtime:m412-62fdfed")
+    parser.add_argument("--gateway-image", default="omertaos-gateway:m412-62fdfed")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--fresh-project", default=FRESH_PROJECT)
+    parser.add_argument("--fresh-only", action="store_true",
+                        help="Only fresh-install/restart checks; excludes existing data, backup and upgrade")
     parser.add_argument("--run", action="store_true")
     args = parser.parse_args(argv)
     parity.require(args.output.resolve().is_relative_to(ROOT / "artifacts"), "report must be under artifacts")
@@ -353,6 +357,10 @@ def main(argv=None):
         "older-release upgrade compatibility requires a separately restored clone; current-data reapply is not that gate"],
         skipped=["Redis durable queue recovery: canonical Quickstart has no named Redis volume; cache replay is separate",
                  "native/systemd, benchmarks and broader P4 security review are outside P3"])
+    if args.fresh_only:
+        runner.report.update(scope="fresh-install/restart only", blocked=[], skipped=[
+            "existing-data reapply, encrypted backup/restore and historical upgrade are outside this invocation",
+            "native/systemd, benchmarks and security scanning are outside this invocation"])
     try:
         runner.memory()
         parity.require(shutil.disk_usage(ROOT).free >= 5 * 1024**3, "less than 5 GiB free disk")
@@ -368,9 +376,11 @@ def main(argv=None):
         _, raw, _ = runner.run("volume inventory", ["docker", "volume", "ls", "--format", "{{.Name}}"])
         existing = raw.decode().splitlines()
         assert_fresh_absent(existing, args.fresh_project)
-        parity.require(all(f"{parity.PROJECT}_{name}" in existing for name in parity.VOLUMES), "source volumes missing")
-        configs = {project: recovery_config(rendered, groups, project, args.console_image, args.control_image)
-                   for project in (args.fresh_project, parity.PROJECT)}
+        if not args.fresh_only:
+            parity.require(all(f"{parity.PROJECT}_{name}" in existing for name in parity.VOLUMES), "source volumes missing")
+        projects = (args.fresh_project,) if args.fresh_only else (args.fresh_project, parity.PROJECT)
+        configs = {project: recovery_config(rendered, groups, project, args.console_image, args.control_image,
+                   runtime_image=args.runtime_image, gateway_image=args.gateway_image) for project in projects}
         runner.report["images"] = {}
         for service in parity.APPLICATIONS:
             image = configs[args.fresh_project]["services"][service]["image"]
@@ -389,8 +399,8 @@ def main(argv=None):
             parity.require(not raw.strip(), "project still running after final stop")
             runner.run(project + ": retained volumes", ["docker", "volume", "inspect",
                        *(f"{project}_{name}" for name in parity.VOLUMES)])
-        runner.report["status"] = "partial-blocked"
-        return 2
+        runner.report["status"] = "passed-in-scope" if args.fresh_only else "partial-blocked"
+        return 0 if args.fresh_only else 2
     except (Exception, KeyboardInterrupt) as exc:
         runner.report["status"] = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
         runner.report["error"] = str(exc) if isinstance(exc, parity.AcceptanceFailure) else type(exc).__name__

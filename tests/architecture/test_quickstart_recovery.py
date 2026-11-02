@@ -4,9 +4,12 @@ import ast
 import base64
 import copy
 import hashlib
+import json
 import struct
 import unittest
-from unittest.mock import Mock
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import Mock, patch
 
 from scripts import validate_quickstart_recovery as recovery
 from scripts.validate_quickstart_environment_parity import AcceptanceFailure, VOLUMES
@@ -14,6 +17,44 @@ from tests.architecture.test_quickstart_environment_parity import GROUPS, fixtur
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_fresh_only_cli_selects_exact_images_and_preserves_default_source_guard(self):
+        for fresh_only, source_present, expected_exit in ((True, False, 0), (False, False, 1), (False, True, 2)):
+            with self.subTest(fresh_only=fresh_only, source_present=source_present), TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                runner = Mock()
+                runner.report = {}
+                runner.minimum_ram = 2 * 1024 * 1024
+
+                def run(label, *args, **kwargs):
+                    if label == "canonical render":
+                        return 0, json.dumps(fixture()).encode(), b""
+                    if label == "volume inventory":
+                        volumes = [f"{recovery.parity.PROJECT}_{name}" for name in VOLUMES] if source_present else []
+                        return 0, "\n".join(volumes).encode(), b""
+                    return 0, b"", b""
+
+                runner.run.side_effect = run
+                argv = ["--env-file", "unused.env", "--console-image", "console:new", "--control-image", "control:new",
+                        "--runtime-image", "runtime:new", "--gateway-image", "gateway:new", "--run",
+                        "--output", str(root / "artifacts/result.json")]
+                if fresh_only:
+                    argv.append("--fresh-only")
+                with patch.object(recovery, "ROOT", root), patch.object(recovery.parity, "Runner", return_value=runner), \
+                     patch.object(recovery, "load_alias_contract", return_value=(GROUPS, ())), \
+                     patch.object(recovery, "parse_environment_file", return_value={}), \
+                     patch.object(recovery.shutil, "disk_usage", return_value=Mock(free=8 * 1024**3)), \
+                     patch.object(recovery, "run_project", return_value={"status": "passed"}) as live:
+                    self.assertEqual(recovery.main(argv), expected_exit)
+                self.assertEqual(live.call_count, 0 if expected_exit == 1 else (1 if fresh_only else 2))
+                for call in live.call_args_list:
+                    config = call.args[1]
+                    self.assertEqual(config["services"]["runtime"]["image"], "runtime:new")
+                    self.assertEqual(config["services"]["gateway"]["image"], "gateway:new")
+                if fresh_only:
+                    self.assertEqual(runner.report["scope"], "fresh-install/restart only")
+                    self.assertEqual(runner.report["skipped"][0],
+                        "existing-data reapply, encrypted backup/restore and historical upgrade are outside this invocation")
+
     def test_fresh_storage_and_network_cannot_alias_existing_project(self):
         source = fixture()
         original = copy.deepcopy(source)

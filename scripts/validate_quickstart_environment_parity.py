@@ -58,15 +58,17 @@ def compose_dollars(value, *, encode: bool):
 
 
 def variant_config(rendered, groups, *, legacy: bool, console_image: str,
-                   control_image: str = "omertaos-control:m412-62fdfed"):
+                   control_image: str = "omertaos-control:m412-62fdfed",
+                   runtime_image: str = "omertaos-runtime:m412-62fdfed",
+                   gateway_image: str = "omertaos-gateway:m412-62fdfed"):
     config = copy.deepcopy(rendered)
     config["name"] = PROJECT
     config["networks"]["default"]["name"] = f"{PROJECT}-net"
     coverage = {}
     image_overrides = {
-        "runtime": "omertaos-runtime:m412-62fdfed",
+        "runtime": runtime_image,
         "control": control_image,
-        "gateway": "omertaos-gateway:m412-62fdfed",
+        "gateway": gateway_image,
         "console": console_image,
         "install": console_image,
     }
@@ -285,6 +287,8 @@ def main(argv=None):
     parser.add_argument("--env-file", type=Path, required=True)
     parser.add_argument("--console-image", required=True)
     parser.add_argument("--control-image", default="omertaos-control:m412-62fdfed")
+    parser.add_argument("--runtime-image", default="omertaos-runtime:m412-62fdfed")
+    parser.add_argument("--gateway-image", default="omertaos-gateway:m412-62fdfed")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--run", action="store_true", help="Explicitly authorize starting the isolated stack")
     parser.add_argument("--build-console", action="store_true")
@@ -307,7 +311,8 @@ def main(argv=None):
         _, raw, _ = runner.run("canonical Compose render", base + ["config", "--format", "json"])
         rendered = compose_dollars(json.loads(raw), encode=False)
         configs = {name: variant_config(rendered, groups, legacy=name == "legacy", console_image=args.console_image,
-                                       control_image=args.control_image)
+                                       control_image=args.control_image, runtime_image=args.runtime_image,
+                                       gateway_image=args.gateway_image)
                    for name in ("canonical", "legacy")}
         runner.report["configured_aliases"] = configs["canonical"][1]
         runner.report["conflict_preflight_pairs"] = conflicting_pairs(groups, configs["canonical"][1])

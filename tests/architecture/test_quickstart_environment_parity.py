@@ -68,6 +68,12 @@ class QuickstartParityTests(unittest.TestCase):
         _, coverage = parity.variant_config(fixture(), GROUPS, legacy=True, console_image="console:new")
         self.assertEqual(parity.conflicting_pairs(GROUPS, coverage), 2)
 
+    def test_explicit_runtime_and_gateway_images_replace_historical_defaults(self):
+        config, _ = parity.variant_config(fixture(), GROUPS, legacy=False, console_image="console:new",
+                                          runtime_image="runtime:new", gateway_image="gateway:new")
+        self.assertEqual(config["services"]["runtime"]["image"], "runtime:new")
+        self.assertEqual(config["services"]["gateway"]["image"], "gateway:new")
+
     def test_rendered_dollars_are_escaped_recursively(self):
         source = {"environment": {"PASSWORD": "probe$with${interpolation}"}, "command": ["$HOME"]}
         self.assertEqual(parity.compose_dollars(source, encode=True),
