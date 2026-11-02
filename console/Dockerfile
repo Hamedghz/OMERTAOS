@@ -45,7 +45,8 @@ ARG PRISMA_DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/pla
 ENV DATABASE_URL=${PRISMA_DATABASE_URL}
 
 RUN pnpm prisma generate
-RUN pnpm build
+# Next subtracts one from this value when choosing build workers.
+RUN CIRCLE_NODE_TOTAL=2 pnpm build
 RUN pnpm exec tsc --project scripts/tsconfig.json
 
 # Stage 3: runtime image
