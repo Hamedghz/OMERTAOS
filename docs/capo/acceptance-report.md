@@ -1,5 +1,92 @@
 # CAPO acceptance report
 
+## P3 historical R6 upgrade and bounded phase closure - 2026-11-02
+
+Baseline: `6f69b3b6e2de6be4b80ac2217e99d73dd49f05b6`; clean-tree checkpoint:
+`checkpoint/p3-historical-upgrade-start-6f69b3b`; implementation and regressions:
+`614b2ef`. Branch remains `Radin/omerta-env-namespace`. This continues the
+approved P3 scope; P4 has NOT started and needs separate approval.
+
+Read-only inspection found the actual retained `omertaos-r6-fixed` single-worker
+dataset. All ten source containers were created/stopped on 2026-08-30 and have
+not been restarted. Their immutable image IDs and timestamps were recorded,
+not inferred from mutable tags. Source Control image:
+`c6d6489508ccb9b991083210187e86a2f95996b79044c24fdd5ca2dfe735e8c3`;
+source Console/install image:
+`44cf82636036cea758b9566752387ccca242c0c121f8e70aa57dd403acc45ceb`.
+The source was not reseeded or replaced with current-version fixtures.
+
+Historical storage required more than copying the three named volumes: Redis
+and Mongo configdb used anonymous volumes, while Qdrant data lived in the
+stopped container writable layer at `/qdrant/storage`. All six storage sources
+were signed/encrypted with the already authorized recovery key. Qdrant was
+read through `docker cp` without starting it. Retained service environments
+and target configuration were encrypted separately; values were never printed.
+
+| Gate | Actual result |
+|---|---|
+| Source isolation | Source stopped; all five volume consumers belonged only to the stopped source project; no source service recreated or started |
+| Backup/authentication | Six cold archives plus encrypted configuration, signed manifest, pinned signer and ciphertext checks, all passed |
+| Clone integrity | All six decrypted inventories matched file contents, ownership and modes before store startup; archive paths/types validated |
+| Genuine old schema/data | Eight existing tables; one User, one SystemState, two Prisma migration records, two Runtime node records, six task attempts and six scheduling decisions; Configuration/Proxy tables empty |
+| Clone stores | Same immutable store images as source; PostgreSQL ready in 9.66s |
+| Current installer | Normal forward Console migrations/bootstrap exited 0 in 16.68s with retained admin identity/password; no seed-skip or password-reset bypass |
+| Current Control schema | Existing additive migration exited 0 in 10.79s; added `runtime_audit_events`, `runtime_resource_leases`, `runtime_execution_leases` |
+| Pre-activation data preservation | Hash multisets over ALL old columns/rows remained present; no old column/row removed or changed; duplicate multiplicity checked |
+| Upgraded stack | Current P2 image IDs, one Runtime; readiness exit 0 in 81.29s |
+| Canonical path | Login with retained administrator credentials and actual Console -> Gateway -> Control -> Runtime echo, replay and audit-context assertions passed |
+| Post-activation data | Original User/password hash, SystemState, migration records, attempts and decisions preserved; Runtime-node operational metadata intentionally allowed to advance with lifecycle heartbeats |
+| Shutdown/source recheck | Normal stop exit 0 in 13.27s; eleven target containers and eight named target volumes retained; all five original volume inventories and the Qdrant writable-layer inventory unchanged |
+| Key caches | Both dedicated GPG agents stopped after acceptance |
+| Regression | Initial six new unit tests passed; final validation image: 42 passed, 21 subtests passed, 0 failed/skipped, 6.36s; Ruff and diff check exit 0 |
+| Privacy | Report/new sources checked against eight selected distinct legacy credential/passphrase values; no matches; raw rows, secrets, cookies and lease tokens not persisted in reports |
+| Resources | One test Runtime, sequential suites, no builds; minimum sampled available RAM 3481 MiB, about 24 GiB disk remaining |
+
+`artifacts/p3/historical-upgrade.json` records 109 subprocess/HTTP gates and
+status `passed`; the harness exited **0**, with no failed validation gate.
+Read-only discovery first looked for an absent `.artifacts` directory and a
+noncanonical lifecycle path, then located the actual files; these were not
+substituted test results. No new application, schema or authentication repair
+was necessary: the existing forward migration handled this retained dataset.
+
+The target image IDs are the same Console `2462cb0a17ee...`, Control
+`266e12e16720...`, Gateway `477ba0891a67...` and Runtime `c83cbcd5a9b5...`
+recorded in full in P2. New fencing volumes were deliberately empty because
+the old source predates durable fencing; the current provisioned lease key and
+normal initializer were used. No unexpired historical fence was fabricated.
+Extra Redis/Mongo-configdb mounts belong only to the isolated upgrade override;
+the shipped canonical Compose topology was not changed.
+
+Reproduce with a NEW backup path and clone project, the retained original R6
+containers/volumes, provisioned env/lease key, existing protected recovery files
+and recorded local images. The fixed historical source is never started:
+
+```bash
+stamp=$(date -u +%Y%m%d%H%M%S)
+python3 scripts/validate_historical_quickstart_upgrade.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --key-dir "$HOME/.local/share/omerta-recovery/keys/p3-20261102a" \
+  --backup-dir "$HOME/.local/share/omerta-recovery/backups/r6-upgrade-$stamp" \
+  --project "omerta-p3-restore-$stamp" \
+  --output "artifacts/p3/historical-upgrade-$stamp.json" --run
+```
+
+Actual execution used backup `r6-upgrade-20261102a`, target
+`omerta-p3-restore-r6upgrade1`, report `artifacts/p3/historical-upgrade.json`.
+Run the validation-image pytest command below with all four P3 test files,
+including `tests/architecture/test_historical_quickstart_upgrade.py`.
+No volume deletion, original-data mutation, push, merge, installation, systemd
+change or image build occurred. Restore rollback retains the original cold
+snapshot and separate clone; no database downgrade was attempted.
+
+Together with the prior fresh-install/restart and encrypted current-state
+restore runs, this closes P3's bounded local acceptance gates. It does not
+prove arbitrary-version upgrade compatibility, rollback execution on old code,
+old Console UI security, populated encrypted Configuration/Proxy migration,
+portable logical/API restore, host-loss recovery, production isolation,
+scalability, native/systemd acceptance or certification. Those boundaries were
+not turned into successful gates. All original snapshots/backups remain intact.
+
 ## P3 encrypted cold backup and isolated restore - 2026-11-02
 
 The user explicitly authorized creating and using the recovery key. Baseline:

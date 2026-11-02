@@ -87,8 +87,9 @@ six stopped volumes, env/config and the paired lease key. It checks signatures,
 encrypted-message integrity and archive paths before extracting into new
 volumes, compares content/ownership/mode inventories before startup, and then
 checks restored historical fixtures and authenticated canonical execution.
-The local same-image restore passed; genuine older-release upgrade remains
-outstanding. See the newer P3 report for exact evidence and reproduction.
+The local same-image restore passed. A separate historical upgrade harness
+subsequently passed against the actual retained R6 single-worker dataset.
+See the newer P3 report for exact evidence and reproduction.
 
 Key/backup paths must be separate, owner-only and outside every Git worktree.
 `--create-key --run` requires new paths; `--existing-backup --run` reuses the
@@ -103,6 +104,22 @@ restore and portable MinIO/Qdrant API exports need their own validation.
 Preserve source volumes and test genuine older-release data on a restored clone
 separately from a fresh install or reapplication of the same images.
 No native/systemd acceptance is implied by these Docker probes.
+
+`scripts/validate_historical_quickstart_upgrade.py --run` uses only the retained
+stopped `omertaos-r6-fixed` source and a new `omerta-p3-restore-*` target. It also
+preserves anonymous Redis/Mongo configdb volumes and Qdrant's original container
+writable-layer data; those must not be mistaken for absent data. It hashes all
+old database rows/columns before forward migrations, verifies preservation, then
+validates the current authenticated canonical path with retained credentials.
+The old Console is not started. Original services, volumes and writable-layer
+data remain unchanged. Original cold backup is the recovery point; an automatic
+database downgrade or running-old-code rollback is not tested.
+
+P3's bounded local gates are now complete. Individual older reports may still
+say `partial-blocked` because they cover only their own subset; use the latest
+historical-upgrade result and current evidence ledger for aggregate status.
+Do not infer arbitrary-version upgrades, nonempty encrypted proxy/configuration
+migration, host-loss recovery or production acceptance from this one dataset.
 
 ### Native release workflow
 
