@@ -1,5 +1,250 @@
 # CAPO acceptance report
 
+## P4 compatible security repair checkpoint - 2026-11-03
+
+Approved scope: batched dependency/security inspection, private secret storage
+and constrained Docker validation. Original HEAD `3b1ef78`; clean-tree checkpoint
+`checkpoint/p4-start-3b1ef78`; branch `Radin/omerta-env-namespace`. Local repairs:
+`20988f8` (private atomic secret storage) and `089127b` (compatible security
+patches, lockfiles, operator workflow and refreshed namespace inventory).
+P4 is **not closed** and no P5 push/merge is authorized by this execution.
+
+The local provider now creates a `0700` directory, checks owner and unsafe
+permission bits on every operation, uses no-follow directory-relative I/O and
+atomically replaces AES-GCM ciphertext with `0600` files. Permission failure is
+no longer swallowed. Tests preserve prior ciphertext on failed permission setup,
+reject directory/read symlinks, protect a symlink target from overwrite, retain
+legacy plaintext migration and accept owner-controlled native `0750` directories.
+No API/schema/key-format change or secret rotation was made.
+
+Metadata-only inspection confirmed the two previously documented permission
+defects. After checking ownership and running-service bind mounts, only these
+owned paths were restricted, without changing contents or recursing:
+
+| Local path | Before | After |
+|---|---|---|
+| `/home/omerta/projects/OMERTAOS/.env` | `0664` | `0600` |
+| `/home/omerta/projects/OMERTAOS/.aion/secrets` (empty) | `0777` | `0700` |
+| Current worktree `.aion/secrets` (empty) | `0775` | `0700` |
+
+The existing worktree lease-key directory/file were already `0700`/`0600`.
+No running service mounted the two checkout secret directories or environment
+file. No root-owned native path or systemd setting was changed.
+
+### Executed Gates
+
+Test durations below are suite-reported unless marked wall time. Early commands
+without a timed runner have no captured wall duration; it is not reconstructed.
+
+| Gate / exact command | Actual result | Evidence |
+|---|---|---|
+| `python -m pytest tests/control -q -p no:cacheprovider` in pinned validation image, with data/secret dirs under `/tmp` | Exit 0; 117 passed, 1 skipped, 9 warnings; 18.19s | E1; includes 12 local-secret tests and Configuration/Network authorization cases |
+| `ruff check control/app/network/service.py tests/control/test_network_proxy_secrets.py` | Exit 0 | E1 |
+| `npm ci --prefix gateway --no-audit --fetch-retries=1 --fetch-timeout=120000` | Exit 0; 410 packages; CLI reported 54s; six deprecation warnings | Locked install, not a clean advisory result |
+| `npm run build --prefix gateway` / `npm test --prefix gateway` | Both exit 0; 26 tests in 9 files; 7.84s | E1 |
+| `corepack pnpm --dir console install --frozen-lockfile --prefer-offline --network-concurrency=4 --child-concurrency=2` | Exit 0; final manifest/lock synchronization reported 8.7s | Locked install; Node/npm/pnpm contract unchanged |
+| `corepack pnpm --dir console test --config vitest.config.mts` | Exit 0; 36 tests in 15 files; 36.65s | E1 |
+| `cargo fmt --manifest-path runtime-daemon/Cargo.toml --check` | Exit 0 | E1 |
+| `cargo test --manifest-path runtime-daemon/Cargo.toml --locked --jobs 1` | Exit 0; 19 unit + 4 contract tests; compilation reported 2m51s; minimum available RAM 3807 MiB | E1; fail-closed sandbox contracts are not successful Linux isolation |
+| `docker compose --project-directory /home/omerta/.codex/worktrees/09e8/OMERTAOS --project-name omerta-p4-validation --env-file /home/omerta/projects/OMERTAOS/.env -f deploy/docker/compose/quickstart.yml config --quiet` | Exit 0 | E1 rendering only, not live acceptance |
+| `python3 scripts/audit_environment_namespace.py --write` | Exit 0; final 164 tokens, 85 files, 548 occurrences; same 93 reviewed compatibility readers | Refreshed stale P2/P3/test/report inventory, not a removed compatibility gate |
+
+The Control skip is the PostgreSQL scheduler-concurrency test: no dedicated
+`AION_TEST_POSTGRES_DSN` was supplied to that unit-suite container. Four existing
+framework deprecations and five expected legacy-alias warnings remain.
+The native host, browser UI, full Python repository suite, benchmark and
+intentionally red Structure completion gate were not executed in this P4 batch.
+
+### Dependency And Scanner Results
+
+| Check | Before | After / actual limitation |
+|---|---|---|
+| Gateway `npm audit --json --package-lock-only --fetch-retries=0 --fetch-timeout=20000` | Exit 1; 25 affected packages: 7 high, 18 moderate | Exit 1; 15 affected packages: 1 high (Zod), 14 moderate propagated through lint/glob dependencies; 14.85s |
+| Console `corepack pnpm audit --json --fetch-retries=0 --fetch-timeout=20000` | Exit 1; 39 advisory entries: 4 critical, 15 high, 14 moderate, 6 low | Exit 1; 4 entries: DeepmergeTS/Zod high, Minimatch/Glob moderate; zero critical; 9.50s |
+| Cargo audit 0.22.2 | Initial DB fetch blocked; after CLI Git fetch, exit 0 but Tokio `RUSTSEC-2026-0386` unsound warning | Tokio 1.53.3 and minimum manifest version; exit 0, no vulnerabilities/warnings against 1402 advisories |
+| CI-equivalent `bandit -r . -x ./tests -s B101,B105 -f json` | Exit 1; 5 low/high-confidence findings, no parse errors; 20.99s | Open: imports and argv-only subprocess calls in parity/encrypted-recovery harnesses. No new ignore/nosec waiver added |
+| Trivy 0.76.1 tracked-source snapshot, `fs --scanners vuln,secret --parallel 1 --timeout 5m --exit-code 1 --format json` | Exit 1 before scan; DB mirror HTTP 403 | Explicit upstream `--db-repository ghcr.io/aquasecurity/trivy-db:2` also blocked, TLS timeout, 35.68s; vulnerability/image acceptance unavailable |
+| Separate Trivy `fs --scanners secret --parallel 1 --timeout 3m --exit-code 1 --format json` | Independent secret-only gate, not a substitute for blocked vulnerability scanning | Exit 0; zero detected secrets in tracked-source snapshot; 2.71s. Not a Git-history, ignored-file or comprehensive credential-leak proof |
+| Control installed-package audit with `pip-audit==2.10.1 -r /dev/stdin --no-deps --disable-pip --format json --progress-spinner off --timeout 20` in temporary bounded container | Exact package versions captured from existing Control image in memory | Tool install exit 1, DNS failure for files.pythonhosted.org; 148.90s; audit NOT executed |
+
+The RustSec DB was freshly cloned with CLI Git after the scanner's own Git
+transport failed; revision `263a4d951a0867d4bddc29dddd6d59427c78f9a7`, dated
+2026-11-02T12:45:44+01:00. No stale/advisory-ignore mode was used. Cargo audit
+and Trivy release archives matched publisher GitHub API SHA-256 digests before
+execution; tools live outside Git under the operator's local validation directory.
+The first broad audit wrappers printed underlying nonzero results but themselves
+returned zero; subsequent audit wrappers propagate the underlying failure and
+the above table records the real scanner exits, not wrapper success.
+
+Next.js 15.5.28, Sharp >=0.35.5, DOMPurify >=3.4.17, Vitest 4.1.12 and compatible
+transitive patches address the selected published advisories. Both Console
+lockfiles are regenerated, with pnpm remaining canonical. Gateway raises gRPC,
+compression and Fastify security floors. Vite is constrained to patched 7.3.7,
+within Vitest 4's declared supported range: npm 10.9.8 crashed while traversing
+newer Vite optional-devtools peers. Peer validation was NOT disabled. Gateway's
+test-only Vite moves from 8.2.2 to 7.3.7, a supported Vitest peer line; it is not
+a Vite-application migration. Development dependencies were not pruned to hide
+findings.
+
+Remaining major upgrades require separate compatibility work; a user question
+was sent before undertaking Zod 4, DeepmergeTS 8, Minimatch 11 or Glob 14.
+No application-schema major migration, direct dependency removal, `--force`, `--legacy-peer-deps`, new
+scanner exclusion, security certification or production-readiness claim was made.
+Upstream patch references: [Next.js](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw),
+[DOMPurify](https://github.com/cure53/DOMPurify/security/advisories/GHSA-cg2g-xh64-v4q7).
+
+### Failed Attempts And Recovery
+
+- One targeted pytest command named a nonexistent authorization test file:
+  exit 4, no tests. The real Network/Configuration tests were included above.
+- First network/config batch: 2 failed, 20 passed, 5 warnings, 8.96s. A supplied
+  canonical directory conflicted with legacy-unit fixture environment. The unit
+  fixture now clears both spelling groups before explicitly configuring each
+  case; no resolver conflict check was relaxed.
+- Five npm lock-update/install attempts exited 1 with Arborist `edgesOut`,
+  including an independent clean scratch reproduction. Pinning only root Vite
+  was insufficient because Vitest could still select a nested newer Vite.
+  The compatible explicit override fixed it; locked `npm ci`, build and tests
+  subsequently passed. Root tool versions and engine-strict policy are unchanged.
+- Initial pnpm lock generation exited 1 with an internal error following a
+  network timeout. Bounded retries with longer timeout succeeded; subsequent
+  package-download timeouts are warnings on eventually successful installs.
+- First architecture container: 3 failed, 139 passed, 1 deselected, 21 subtests,
+  32.67s. Git worktree metadata was not mounted; a dependency traversal also
+  raced Gateway installation. Second, with UID 1000 and read-only Git metadata:
+  1 failed, 141 passed, 1 deselected, 21 subtests, 30.62s. The remaining failure
+  identified the genuinely stale namespace inventory, regenerated above.
+  No architecture assertion was removed or vendor traversal hidden.
+
+### Docker And Final Checkpoint
+
+Inspection found that the acceptance CLIs hardcoded old Gateway/Runtime images.
+Explicit `--gateway-image`/`--runtime-image` options now reach both parity and
+recovery configurations. Explicit `--fresh-only` selects one new project, retains
+all original restart/request/store/fencing assertions, and records exclusions
+instead of claiming backup/upgrade acceptance. The default two-project guard
+and partial exit 2 are preserved. Regressions: 23 passed, 13 subtests, 3.82s;
+four-file Ruff passed. No old image is silently presented as a patched build.
+Final namespace/toolchain checks after inventory regeneration: 8 passed, 2.93s.
+
+Operational sequencing deviation: this short harness pytest/Ruff pair overlapped
+the single Runtime image build. No image builds overlapped and available RAM
+remained above the limit; further validation waits until image builds finish.
+The earlier install/architecture traversal race is separately recorded above.
+
+The application source is `089127b`; subsequent `38c6702` changes only the
+acceptance helpers/tests and operator documentation, not shipped app code.
+All four patched Linux/amd64 tags were built sequentially, not simultaneously:
+
+| Image `omertaos-<service>:p4-20261103` | Final immutable image ID | Build wall time / exit |
+|---|---|---|
+| control | `sha256:ce7942eebcd216c500ad3ff053cc60e6a9887439ceb096d8458bdfd819861c98` | 12.88s / 0 |
+| runtime | `sha256:d2cbeb5288caacf706f1bd018b21a5560a0e18558292fd58d09b982820c92d05` | 1199.17s / 0 |
+| gateway | `sha256:d1cee7b90a98a087c84caa6e7c29e8ef4e1faae6c82c0401592ef3b332e2186b` | 319.87s / 0 |
+| console | `sha256:8130c7fb0cc465343177710f1d95c5595ff35059bc7a13c7bb1262f4c796eaaf` | first 1202.26s / 130; cached retry 101.82s / 0 |
+
+Each exact build command is `docker build --progress plain --file
+<service-directory>/Dockerfile --tag omertaos-<service>:p4-20261103 .`; Runtime
+uses directory `runtime-daemon`. The timed runner's initial 1200s bound canceled
+Console during export/unpack, after Next production build, type checking and
+installer TypeScript compilation had all completed. Buildx independently
+confirmed cancellation, not an application compile defect or OOM. The artifact
+existed but was NOT treated as a successful build. A 2400s bounded retry reused
+27 cached steps, including Next and TypeScript; it did not rerun compilation.
+Memory monitoring and provenance were not disabled. Original failed metadata
+remains in the first-attempt report, separate from the successful retry report.
+Minimum sampled available RAM: 3238 MiB first build batch, 4460 MiB retry.
+About 14 GiB disk remains; no image/volume/cache cleanup was performed.
+
+Control reused its prior dependency-install layer. Direct Python requirements
+are pinned but deployed transitive requirements are not hash-locked; the hashed
+validation-image lock is NOT proof of an uncached reproducible Control install.
+APT/APK/OS-image vulnerability and independent-host/multi-architecture acceptance
+remain unverified. No all-green supply-chain or hermetic-build claim is made.
+
+Read-only preflight reused the existing local-endpoint guard and verified all
+configured data/worker endpoints point to their selected Compose services, with
+no static external worker inventory and no preexisting fresh-project volumes.
+The reused P3 harness ran explicitly with `--fresh-only` and all four image
+arguments, using source `38c6702aea90328801978b4cd331a08153338503`. Its JSON retains
+the P3 harness-family label, but scope is explicitly `fresh-install/restart only`:
+exit **0**, `passed-in-scope`, 68 command/HTTP gates, no nonzero gate.
+This is new bounded E2 evidence, not inherited acceptance of previous images.
+
+| Patched-image live gate | Result |
+|---|---|
+| One-worker fresh project `omerta-p3-fresh-p4-20261103` | Ready in 94.41s; four explicitly selected image IDs above; loopback app ports |
+| Authentication/canonical path | Real Console login; unauthenticated denial; Console -> Gateway -> Control -> Runtime echo and replay; all three schedule/start/success audit events match tenant/correlation/trace |
+| Runtime restart | Signed claim executes once; duplicate rejected before and after normal restart while unexpired; identical persisted generation/expiry record; bounded probe 22.43s |
+| Whole-stack restart | Normal stop 10.80s; startup/installer reapply 66.85s; no password reset, seed skip or migration bypass |
+| Persistence | Same administrator and migration digest, original audit IDs, PostgreSQL/Mongo fixture, MinIO object and Qdrant payload retained |
+| Replay after Control restart | Gateway Redis cache replay passed; separate Control gRPC replay failed closed with `RUNTIME_RESULT_REPLAY_UNAVAILABLE`; dispatch count stayed one; new authenticated request succeeded |
+| Shutdown | Final normal stop 12.82s; no project container running; eleven containers and six named volumes retained; image-created anonymous store volumes also remain with their retained containers |
+| Privacy | Nine distinct selected actual credential/key values absent in 202 retained lines across five application/install logs and in diff/five JSON artifacts; raw environment, keys, signed leases and logs were not persisted |
+| Resources | Minimum available RAM 4018 MiB live, 4610 MiB post-run privacy check; about 14 GiB disk remains; other worker's six healthy `compose` services untouched |
+
+Actual commands and durations are in ignored `artifacts/p4/image-builds.json`
+(first attempt, with the Console failure preserved), `console-export-retry.json`,
+`runtime-tests.json`, `live-preflight.json`, `fresh-recovery.json`,
+`log-artifact-scan.json` and `bandit.json`. No encrypted restore or historical
+upgrade was rerun in P4; the earlier bounded P3 results remain separately scoped.
+
+Reproduce sequentially from this branch's checkpoint, without replacing old tags
+or deleting any volume:
+
+```bash
+docker compose --project-directory . --env-file /home/omerta/projects/OMERTAOS/.env \
+  -f deploy/docker/compose/quickstart.yml config --quiet
+docker build --progress plain -f control/Dockerfile -t omertaos-control:p4-20261103 .
+docker build --progress plain -f runtime-daemon/Dockerfile -t omertaos-runtime:p4-20261103 .
+docker build --progress plain -f gateway/Dockerfile -t omertaos-gateway:p4-20261103 .
+docker build --progress plain -f console/Dockerfile -t omertaos-console:p4-20261103 .
+python3 scripts/validate_quickstart_recovery.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --console-image omertaos-console:p4-20261103 \
+  --control-image omertaos-control:p4-20261103 \
+  --runtime-image omertaos-runtime:p4-20261103 \
+  --gateway-image omertaos-gateway:p4-20261103 \
+  --fresh-project omerta-p3-fresh-p4-next --fresh-only --run \
+  --output artifacts/p4/fresh-recovery-next.json
+```
+
+Use a new approved project suffix and image tag for subsequent repairs; the
+recorded first-run project cannot be reused as a fresh installation. The command
+list is operator-run: retain the harness memory monitor for long builds, bound
+Console export at 2400s rather than the failed 1200s deadline, and stop workloads
+below 1 GiB available RAM. All four source/lock states are committed; this is
+not evidence of an independent-host or uncached Python/OS build.
+
+Next P4 gates remain: reviewed application/schema major upgrades, working
+vulnerability DB/Python audit access and hash-locked deployed Python dependencies,
+and disposition of the five low Bandit subprocess findings. Existing CI already
+skips B101/B105; this phase did not add exclusions or claim those omitted rules
+passed. No P5 synchronization or production/native deployment is authorized.
+
+Final Bandit rerun on the changed harness tree: exit 1, the same five low/high-
+confidence findings, zero parse errors, 22.18s; 34 existing comment-parser warning
+lines. This failed gate remains visible in `artifacts/p4/bandit.json`.
+
+Final affected-helper regression, after all repairs: parity, restart recovery,
+encrypted recovery, historical upgrade, namespace and JavaScript-toolchain test
+files together passed **52 tests and 24 subtests**, zero fail/skip, exit 0,
+9.10s, in the pinned read-only validation image with exact worktree Git metadata
+mounted read-only and UID 1000. The namespace `--check` and `git diff --check`
+also exited 0. The other 141 architecture checks passed in the earlier full
+run; only affected checks were repeated, not every application suite/build.
+
+Local checkpoint: `checkpoint/p4-compatible-repairs-2026-11-03`. Inspect its
+complete file/commit inventory with `git diff --stat 3b1ef78
+checkpoint/p4-compatible-repairs-2026-11-03` and `git log --oneline
+3b1ef78..checkpoint/p4-compatible-repairs-2026-11-03`. No schema/public API or
+encryption-format migration was introduced. Rollback is an operator-reviewed
+source revert/selection of retained old immutable images, preserving volumes,
+keys and private host modes; it was not executed and old vulnerable images must
+not be treated as a certified fallback. Human review is required before merge.
+No stack owned by another worker has been changed; no volume/image was removed,
+and no system-wide package, native service, push or merge has been performed.
+
 ## P3 historical R6 upgrade and bounded phase closure - 2026-11-02
 
 Baseline: `6f69b3b6e2de6be4b80ac2217e99d73dd49f05b6`; clean-tree checkpoint:

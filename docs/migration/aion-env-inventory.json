@@ -12,8 +12,8 @@
     "token_count": 164,
     "active_token_count": 156,
     "retired_token_count": 8,
-    "files_with_tokens": 84,
-    "occurrences": 547
+    "files_with_tokens": 85,
+    "occurrences": 548
   },
   "policy": {
     "canonical_product_prefix": "OMERTA_",
@@ -3298,6 +3298,7 @@
       "canonical_name": null,
       "classification": "test-fixture",
       "owners": [
+        "documentation",
         "tests"
       ],
       "value_type": "endpoint-or-url",
@@ -3309,9 +3310,10 @@
       "migration_state": "excluded",
       "legacy_alias": null,
       "source_files": [
+        "docs/capo/acceptance-report.md",
         "tests/control/test_runtime_scheduler_postgres.py"
       ],
-      "occurrences": 2,
+      "occurrences": 3,
       "note": "Synthetic test fixture, not an operator contract."
     },
     {
