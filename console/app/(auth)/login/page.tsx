@@ -17,8 +17,8 @@ export default async function LoginPage() {
   }
 
   const defaultHint =
-    process.env.CONSOLE_ADMIN_EMAIL && process.env.CONSOLE_ADMIN_PASSWORD
-      ? `Default admin: ${process.env.CONSOLE_ADMIN_EMAIL} / ${process.env.CONSOLE_ADMIN_PASSWORD}`
+    process.env.CONSOLE_ADMIN_EMAIL
+      ? `Administrator email: ${process.env.CONSOLE_ADMIN_EMAIL}`
       : 'Use the admin credentials you configured earlier.';
 
   return <LoginForm defaultHint={defaultHint} />;

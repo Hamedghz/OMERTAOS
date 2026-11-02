@@ -52,7 +52,7 @@ export default function LoginForm({ defaultHint }: { defaultHint?: string }) {
               className="mx-auto mb-4 border border-white/20 shadow-xl"
             />
             <h1 className="text-2xl font-semibold text-white/90">
-              Sign in to OMERTAOS
+              Sign in to OMERTA OS
             </h1>
             <p className="text-sm text-white/60">
               Use the admin account created during setup.
@@ -62,7 +62,7 @@ export default function LoginForm({ defaultHint }: { defaultHint?: string }) {
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-2 text-left">
               <label htmlFor="identifier" className="text-sm text-white/80">
-                Email
+                Username or email
               </label>
               <input
                 id="identifier"

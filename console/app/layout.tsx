@@ -9,8 +9,8 @@ import { AuthProvider } from "../providers/AuthProvider";
 import TouchProvider from "./(providers)/TouchProvider";
 
 export const metadata: Metadata = {
-  title: "OMERTAOS Console",
-  description: "Operator console for the OMERTAOS platform",
+  title: "OMERTA OS Console",
+  description: "Operator console for the OMERTA OS platform",
   icons: {
     icon: "/brand/omertaos-logo.png",
     apple: "/brand/omertaos-logo.png",

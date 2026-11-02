@@ -29,7 +29,7 @@ export default async function DashboardLayout({
               />
               <div className="space-y-1">
                 <h1 className="text-2xl font-semibold text-white/90">
-                  OMERTAOS
+                  OMERTA OS
                 </h1>
                 <p className="text-sm text-white/65">
                   Unified console for control, gateway, and agents.
