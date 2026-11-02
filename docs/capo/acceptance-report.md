@@ -1,5 +1,102 @@
 # CAPO acceptance report
 
+## P3 partial fresh-install and restart recovery - 2026-11-02
+
+User authorized the next phase after P2. Branch: `Radin/omerta-env-namespace`;
+baseline: `849d3d0279d6b477c16da63c5cb25d5f966e8c1c`; clean-tree checkpoint:
+`checkpoint/p3-start-849d3d0`; acceptance harness/tests: `9769808`.
+No application source, schema, authentication rule or image was changed.
+The four application images recorded in the P2 section below were reused without builds.
+
+Host: Ubuntu 22.04.5 LTS, Linux 6.8.0-138-generic x86_64, Python 3.10.12,
+Docker Compose 5.6.0, 7840 MiB total RAM. Disk went from 26 to 25 GiB available
+while retaining all attempts. Test suites and stacks ran sequentially, with
+one test Runtime at a time. Minimum sampled available RAM was 3669 MiB in the
+final run; the 1 GiB cutoff did not trigger.
+
+| Gate | Actual result and boundary |
+|---|---|
+| Targeted locked Python validation image | `21 passed, 10 subtests passed`, 0 failed/skipped, 3.66s; exit 0 |
+| Targeted Ruff | Exit 0 for the two new files |
+| Compose rendering | Canonical render and both isolated configurations exited 0 before startup |
+| Fresh install | New `omerta-p3-fresh-retry2` project/network and six previously absent named volumes; installer/bootstrap and actual ADMIN login passed; initial readiness 111.04s |
+| Existing-data reapply | Existing `omerta-m4-validation` data, same current images, initial readiness 90.40s; NOT an older-release upgrade test |
+| Canonical path | Console -> Gateway -> Control -> Runtime authenticated echo, immediate replay and tenant/correlation/trace audit checks passed before and after restart in both projects |
+| Runtime fencing | A genuinely signed claim executed once; duplicate metadata was rejected before and after a normal Runtime restart. The exact hashed generation/expiry record survived unchanged and the original lease was still unexpired after the final RPC. Full bounded probes took 29.73s and 31.67s, not performance benchmarks |
+| PostgreSQL/bootstrap | Migration-name/checksum digest, one administrator row and all three original task audit event IDs survived normal whole-stack stop/start and installer reapply |
+| MongoDB, MinIO, Qdrant | A distinct synthetic document, signed-S3 object read and vector payload read passed before/after normal whole-stack stop/start in both projects |
+| Gateway replay after restart | Same task ID and successful result returned from the Redis-backed idempotency cache |
+| Independent Control replay after restart | Loopback Control gRPC probe replayed the original task identity/context and returned `RUNTIME_RESULT_REPLAY_UNAVAILABLE`; historical audit remained and `runtime.dispatch.start` count stayed exactly one |
+| New work after restart | New authenticated Console task executed successfully through Runtime in both projects |
+| Selected credential artifact scan | Three JSON reports checked against five distinct selected configured sensitive values, including the lease-file value; no literal/JSON-escaped matches |
+| Shutdown | Every attempted test project stopped normally; 44 containers retained, none running; 24 named volumes retained. Qdrant exited 143 on requested SIGTERM; all other retained test containers exited 0 |
+| Other workers | Existing `compose-*` services remained running/healthy; no command changed that project. Volume-consumer guards reject active/foreign consumers before starting either selected test project |
+| Encrypted backup and independent restore | BLOCKED: no operator-approved encryption recipient/public key was available; no sensitive unencrypted export or new operational secret was created |
+| Older-release upgrade on restored clone | BLOCKED pending a verified backup/restore and a genuine older-release baseline; reapplying current images is not a substitute |
+| Durable Control result recovery | UNAVAILABLE by current implementation; Redis cache replay is not proof of durable Control result storage |
+| Redis durable queue recovery | SKIPPED: Quickstart declares no named Redis volume. Cache replay across normal container stop/start is a separate observation, not disaster recovery |
+| Native/systemd, broader P4 security review, benchmarks | Not run; outside this authorized phase |
+
+Two failed harness attempts were preserved, not counted as successful acceptance:
+
+1. `artifacts/p3/acceptance.json`: initial internal-error-text expectation was
+   incorrect. Runtime intentionally maps lease failures to the generic public
+   `FAILED_PRECONDITION` diagnostic. Inspection of `server.rs::map_lease_error`
+   confirmed the cause. The repaired probe retains the generic public response,
+   verifies the exact persisted claim, reuses metadata that actually executed,
+   and rejects expiry as fencing evidence. No Runtime diagnostic was weakened.
+2. `artifacts/p3/acceptance-retry1.json`: the test incorrectly expected a
+   Console-originated replay to reach restarted Control. Gateway's Redis cache
+   returned the previously successful result. The repaired harness tests cache
+   replay and Control's fail-closed replay separately, without clearing Redis,
+   changing task identity or bypassing an application security control.
+
+The final `artifacts/p3/acceptance-retry2.json` records 135 subprocess/HTTP gates
+and both project results as passed. The overall harness deliberately exits **2**
+with status `partial-blocked`, because backup/restore and historical upgrade
+are NOT complete. Do not mask that exit as full P3 success. Initial unit checks
+reported 19, then 20, then 21 passing tests as the regression cases were added;
+the final validation-image pytest run above covers the committed code.
+Raw application logs, cookies, rendered secrets and signed lease tokens were
+not persisted in these reports. This is not an exhaustive log/secret audit.
+
+Targeted test reproduction (no service startup, no network/dependency install):
+
+```bash
+validation=(docker run --rm --network none --read-only --memory 1024m --cpus 2
+  --tmpfs /tmp:rw,nosuid,nodev,size=128m
+  --mount "type=bind,src=$PWD,dst=/workspace,readonly"
+  --env OMERTA_CONTROL_DATA_DIR=/tmp/omerta-p3 --workdir /workspace
+  omertaos-python-validation:local)
+"${validation[@]}" python -m pytest tests/architecture/test_quickstart_recovery.py \
+  tests/architecture/test_quickstart_environment_parity.py -q -p no:cacheprovider
+"${validation[@]}" ruff check scripts/validate_quickstart_recovery.py \
+  tests/architecture/test_quickstart_recovery.py
+```
+
+Reproduce from the repository root with the existing source volumes, provisioned
+env/lease key and recorded local image tags. A unique fresh project is mandatory
+after a prior attempt; volumes are deliberately never deleted or reused as a
+fresh-install substitute:
+
+```bash
+python3 scripts/validate_quickstart_recovery.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --console-image omertaos-console:m413-1ac6890 \
+  --control-image omertaos-control:m413-9689b8a \
+  --fresh-project "omerta-p3-fresh-$(date -u +%Y%m%d%H%M%S)" \
+  --output "artifacts/p3/reproduction-$(date -u +%Y%m%d%H%M%S).json" --run
+```
+
+This is constrained E2 restart evidence, not backup acceptance, a completed
+historical upgrade, power-loss recovery, successful Linux isolation,
+multi-Control consistency, scalability, production readiness or certification.
+The legacy Docker backup/restore scripts do not cover the named stores or
+paired Runtime key/state and must not be used to certify P3 recovery.
+No schema migration or image rollout needs rollback for this harness-only
+change. Retain the synthetic fixtures, stopped containers and volumes; removing
+the optional acceptance tool does not require restoring or deleting store data.
+
 ## P2 / M4.1.3 Actual process environment parity - 2026-11-02
 
 Branch: `Radin/omerta-env-namespace`; baseline: `1ac6890`;

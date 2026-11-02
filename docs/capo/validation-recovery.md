@@ -60,6 +60,36 @@ the Compose healthcheck remains the authoritative gRPC readiness probe there.
 
 ## Versioned update and non-destructive rollback
 
+### Quickstart P3 boundary
+
+`scripts/validate_quickstart_recovery.py` is an explicitly opted-in, bounded
+fresh-install/restart probe, not a backup/restore tool. It reuses the validated
+application images and an existing provisioned env/lease key. It refuses to
+take over running test projects, rejects foreign/active volume consumers,
+creates distinct fresh volumes and stops each project without deleting data.
+Use a new `--fresh-project omerta-p3-fresh-<unique-suffix>` for another fresh
+attempt; retained volumes must never be deleted to make the fresh check pass.
+See the P3 entry in `acceptance-report.md` for the actual invocation and limits.
+
+The current partial gate exits 2 even when restart probes pass: encrypted
+backup/isolated restore and older-release upgrade remain outstanding. Gateway
+Redis cache replay does not prove durable Control result recovery. Control
+currently rejects dispatched-task replay after process restart rather than
+returning the lost result or executing it again.
+
+The legacy `deploy/docker/scripts/backup.sh` archives only repository folders;
+its paired restore copies files into the working directory. They do not export
+PostgreSQL, MongoDB, MinIO, Qdrant or the paired Runtime fencing state/key, and
+must not be used as a sensitive-data or P3 disaster-recovery procedure.
+Before completing P3, obtain an operator-approved encryption recipient/key,
+keep sensitive exports encrypted outside Git, include the provisioned env and
+paired lease key/state, verify manifests and restore to separate new volumes.
+Preserve the source volumes. Validate genuine older-release data on a restored
+clone separately from a fresh install or reapplication of the same images.
+No native/systemd acceptance is implied by these Docker probes.
+
+### Native release workflow
+
 Create a verified external backup, preview the immutable release build, and
 activate only after the preview is reviewed:
 
