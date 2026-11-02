@@ -411,24 +411,25 @@ def live_restore(runner, crypto, args, home, config, data):
         runner.run("restored stores ready", compose + ["up", "-d", "--pull", "never", "--no-build", "--wait",
             "--wait-timeout", "180", "postgres", "mongo", "qdrant", "minio", "redis"], data=data, timeout=300)
         exports = {}
+        export_directory = private_directory(args.backup_dir / ("exports-" + args.restore_project))
         for name, service, command in (
             ("postgres-logical.pgdump.gpg", "postgres", ["sh", "-ec", 'exec pg_dump --format=custom --no-owner --no-privileges -U "$POSTGRES_USER" -d "$POSTGRES_DB"']),
             ("mongo-logical.archive.gpg", "mongo", ["mongodump", "--archive", "--gzip"]),
         ):
             pipeline(runner, "encrypted restored-store logical export " + service,
                 ["docker", "exec", f"{args.restore_project}-{service}-1", *command], crypto.encrypt(),
-                output=args.backup_dir / name)
-            crypto.verify(args.backup_dir / name, home)
-            exports[name] = {"bytes": (args.backup_dir / name).stat().st_size,
-                             "sha256": digest_file(args.backup_dir / name)}
-        export_manifest = args.backup_dir / "logical-exports.json"
+                output=export_directory / name)
+            crypto.verify(export_directory / name, home)
+            exports[name] = {"bytes": (export_directory / name).stat().st_size,
+                             "sha256": digest_file(export_directory / name)}
+        export_manifest = export_directory / "logical-exports.json"
         secure_write(export_manifest, json.dumps({"origin": "restored stores before application startup",
             "restore_project": args.restore_project, "files": exports}, indent=2).encode() + b"\n")
         _, raw, _ = runner.run("sign logical export manifest", crypto.command(private=True) + [
             "--local-user", crypto.fingerprint, "--output", "-", "--detach-sign", str(export_manifest)])
-        secure_write(args.backup_dir / "logical-exports.sig", raw)
+        secure_write(export_directory / "logical-exports.sig", raw)
         _, raw, _ = runner.run("verify logical export manifest", crypto.command(home=home) + ["--status-fd", "1",
-            "--verify", str(args.backup_dir / "logical-exports.sig"), str(export_manifest)])
+            "--verify", str(export_directory / "logical-exports.sig"), str(export_manifest)])
         status_signature(raw, crypto.fingerprint)
         runner.report["logical_exports"] = {"status": "encrypted and signed; decryption authenticated",
             "origin": "restored stores before application startup", "independent_logical_restore": "not tested"}

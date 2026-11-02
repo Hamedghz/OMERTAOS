@@ -10,7 +10,7 @@ import tarfile
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from scripts import quickstart_encrypted_recovery as encrypted
 from scripts.validate_quickstart_environment_parity import AcceptanceFailure, Runner, VOLUMES
@@ -186,6 +186,24 @@ class EncryptedRecoveryTests(unittest.TestCase):
             encrypted.main(["--env-file", "fixture.env", "--key-dir", "/tmp/keys", "--backup-dir", "/tmp/backup",
                             "--restore-project", "omerta-p3-restore-test", "--output", "artifacts/test.json", "--create-key"])
         crypto.assert_not_called()
+
+    def test_second_restore_exports_do_not_replace_first_restore_exports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            outputs = []
+            for project in ("omerta-p3-restore-first", "omerta-p3-restore-second"):
+                args = SimpleNamespace(backup_dir=root, restore_project=project)
+                with patch.object(encrypted, "pipeline", side_effect=RuntimeError("stop-before-I/O")) as pipe:
+                    with self.assertRaisesRegex(RuntimeError, "stop-before-I/O"):
+                        encrypted.live_restore(Mock(), Mock(), args, None, {}, b"{}")
+                output = pipe.call_args.kwargs["output"]
+                self.assertEqual(output.parent.name, "exports-" + project)
+                encrypted.secure_write(output, b"synthetic-ciphertext")
+                outputs.append(output)
+            self.assertNotEqual(outputs[0], outputs[1])
+            self.assertEqual(outputs[0].read_bytes(), b"synthetic-ciphertext")
+            with self.assertRaises(FileExistsError):
+                encrypted.private_directory(outputs[0].parent)
 
     def test_container_probes_are_valid_python_and_originals_are_read_only(self):
         ast.parse(encrypted.INVENTORY)
