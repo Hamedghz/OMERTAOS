@@ -1,5 +1,136 @@
 # CAPO acceptance report
 
+## P2 / M4.1.3 Actual process environment parity - 2026-11-02
+
+Branch: `Radin/omerta-env-namespace`; baseline: `1ac6890`;
+checkpoint: `checkpoint/m413-start-1ac6890`. User explicitly approved P2.
+Repair: `9689b8a`; harness and single-worker Console build: `d02a54b`.
+The image build/test worktrees contained those subsequently committed changes.
+
+The harness renders canonical Compose in memory, decodes Compose's escaped
+strings, and feeds each re-encoded variant through stdin. No rendered env,
+cookie jar, password or token is written to the report. It verifies actual
+container environments, not just host-variable interpolation. The higher-priority
+Console `GATEWAY_URL`/`DOCKER` overrides are omitted in both test variants so the
+product readers are exercised. Lease key/file and profile settings without a
+supported alias remain canonical. App ports bind to loopback; the existing
+isolated project, network and six volume identities are preserved.
+
+| Gate | Actual result |
+|---|---|
+| Environment-file preflight | No conflicts; 34 deprecated host settings, values withheld |
+| Harness unit checks | Initial 8 passed; after the escaping repair and RAM/timeout regression additions, 11 passed in 2.161s |
+| Actual Compose config round-trip | Exit 0; health command and application environment values preserved |
+| Affected Control suites | 40 passed, 0 failed/skipped, 5 warnings, 18.72s |
+| Targeted Ruff | Exit 0 for harness, tests and modified Control files |
+| Console image build | Exit 0; 1205.64s; one build worker; built once |
+| Repaired Control image build | Exit 0; 14.81s; built once |
+| Variant config rendering | Both exit 0 |
+| Conflict preflight | 45 configured canonical/alias pairs rejected with key names only |
+| Actual Runtime conflict probe | Expected exit 1; conflicting bind aliases rejected without probe values in diagnostic |
+| Final canonical readiness | Exit 0; 85.65s |
+| Final legacy readiness | Exit 0; 92.81s |
+| Actual process environments | 52 configured service/key instances, 44 distinct canonical names; one Runtime only |
+| Console, Gateway, Control HTTP health and container health | Passed for both variants |
+| Console API without session | HTTP 401 in both variants |
+| Actual credentials login/session | HTTP 200; ADMIN session established in both variants |
+| Console -> Gateway -> Control -> Runtime echo | HTTP 200, status OK, route runtime, exit 0 and exact deterministic output in both variants |
+| Same-request replay | Same task ID and outcome in both variants |
+| Tenant/correlation/trace | Three schedule/start/success audit events in each variant matched all submitted context |
+| Observed deprecations | Canonical: 0; legacy: 28 distinct aliases; configured does not mean every key was behaviorally consumed |
+| Selected credential log scan | Passed for configured sensitive application fields and lease-file key; raw logs withheld |
+| Sanitized artifact scan | Six JSON files checked against seven selected configured credential fields; no matches |
+| Normal stop and volume checks | Both stops exit 0; final project running count 0; six existing volumes retained |
+
+Failures were retained and repaired rather than bypassed:
+
+- Attempt 1: canonical startup exited 1 after 178.34s because the new harness
+  double-escaped already escaped Compose config strings. Qdrant's health command
+  contained `$$status` in the container instead of `$status`. An independent
+  synthetic Compose round-trip reproduced the representation behavior. The
+  harness now decodes once before transforming and encodes once on stdin;
+  the original readiness check remains intact.
+- Attempt 2: login, task execution and replay passed, but the strict all-events
+  context assertion failed. A separate read-only PostgreSQL query confirmed
+  only `runtime.schedule.request_id` was missing; start/success retained it.
+  The internal optional SchedulingRequest field now carries correlation into
+  the existing audit column from dispatch and the administrative schedule route.
+  No database/schema migration, public request payload, auth or execution
+  boundary changed; historical events were not rewritten. The strict assertion
+  was retained. Only Control needed an additional rebuild.
+- An optional build-history log observer exited 1 without usable progress
+  detail. The original live exec handle was observed until the build exited 0;
+  no build was restarted because of an observation failure.
+
+All builds and test suites ran sequentially. Minimum sampled available RAM was
+2526 MiB across builds/acceptance, and 3769 MiB in the successful final acceptance.
+The 1 GiB guard never triggered. Timeout and low-memory refusal are covered by
+unit tests, including termination of a synthetic timed-out child. Unit warnings
+were existing Starlette/httpx, anyio, FastAPI startup-event deprecations and one
+expected legacy admin-token warning. The previously noted Qdrant Compose-label
+warning was not repaired by deleting or replacing its volume.
+Qdrant exited 143 on requested shutdown; the other final project containers
+exited 0. This was not reported as a failed readiness or isolation gate.
+
+Local sanitized artifacts, ignored by Git:
+`artifacts/m413/acceptance.json` (failed attempt 1),
+`acceptance-retry1.json` (failed attempt 2), `build-control.json`, and
+`acceptance-retry2.json` (passed, 55 recorded subprocess/HTTP gates).
+
+| Service | Local image tag | SHA-256 image ID |
+|---|---|---|
+| Console/install | `omertaos-console:m413-1ac6890` | `2462cb0a17ee2474a393afa8845d07330158a4ef151a6a497ee053ecf88e4702` |
+| Control | `omertaos-control:m413-9689b8a` | `266e12e16720e074728a42d3574671dc0c510ade3714da322ef8aa03379c8418` |
+| Gateway, reused | `omertaos-gateway:m412-62fdfed` | `477ba0891a67a301aa91bb03431219bdc07b0e3b9e46e247c90c888c844d8502` |
+| Runtime, reused | `omertaos-runtime:m412-62fdfed` | `c83cbcd5a9b5126614bc20e446b01777c0032735941875b2afb87b70245e066c` |
+
+Reproduction from the repository root requires the existing isolated volumes,
+previous Gateway/Runtime images, provisioned ignored env file and lease secret.
+It refuses to take over an already running isolated project. Rebuilds are
+optional if the recorded images already exist. The guarded Control build is:
+
+```bash
+python3 - <<'PY'
+from scripts.validate_quickstart_environment_parity import Runner
+Runner().run("Control image build", [
+    "docker", "build", "--progress=plain", "-f", "control/Dockerfile",
+    "-t", "omertaos-control:m413-9689b8a", ".",
+], timeout=900)
+PY
+python3 -m unittest discover -s tests/architecture -p test_quickstart_environment_parity.py -v
+python3 scripts/validate_quickstart_environment_parity.py \
+  --env-file /home/omerta/projects/OMERTAOS/.env \
+  --console-image omertaos-console:m413-1ac6890 \
+  --control-image omertaos-control:m413-9689b8a \
+  --output artifacts/m413/reproduction.json --run
+# Add --build-console to the last command only when rebuilding that image.
+```
+
+The affected Control suite ran in the existing locked validation image:
+
+```bash
+docker run --rm --network none --read-only --memory 1536m --cpus 2 \
+  --tmpfs /tmp:rw,nosuid,nodev,size=256m \
+  --mount type=bind,src="$PWD",dst=/workspace,readonly \
+  --env OMERTA_CONTROL_DATA_DIR=/tmp/omerta-p2 --workdir /workspace \
+  omertaos-python-validation:local python -m pytest \
+  tests/control/test_runtime_dispatch.py tests/control/test_runtime_scheduler.py \
+  tests/control/test_runtime_node_routes.py tests/control/test_runtime_audit.py \
+  tests/control/test_transport_adapters.py -q -p no:cacheprovider
+```
+
+This is E2 constrained process-environment parity, not exhaustive alias
+semantics or live conflict testing of every language/key. The 45-pair gate is
+preflight validation; the actual binary conflict probe covers Runtime bind.
+Existing Quickstart development auth/defaults were not changed, so this is not
+production security acceptance. No successful Linux sandbox isolation,
+scalability, or bit-identical build claim is made. Full fresh-install/upgrade
+clone testing, backup/restore, independent restart fencing, native/systemd,
+vulnerability scanning and benchmarks were not run in P2. Unaffected app test
+suites were not repeated. Previous image tags remain available, but rollback
+would restore their known defects and requires review; no volume or schema
+rollback is required for this optional audit field. Nothing was pushed or merged.
+
 ## P1 Console login handoff validation - 2026-11-02
 
 Branch: `Radin/omerta-env-namespace`; baseline: `2e8b914`;
