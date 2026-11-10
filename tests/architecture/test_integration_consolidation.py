@@ -3,9 +3,41 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from packaging.version import Version
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_ROOT = REPO_ROOT / "integrations" / "windows-agentic-bridge"
 LEGACY_ROOT = REPO_ROOT / "execution" / "windows-agentic-bridge"
+
+
+def test_bridge_dependencies_include_security_patches() -> None:
+    lock = json.loads((CANONICAL_ROOT / "bridge-server/package-lock.json").read_text(encoding="utf-8"))
+    security_floors = {
+        "@hono/node-server": "2.1.3",
+        "@modelcontextprotocol/sdk": "1.32.0",
+        "axios": "1.20.0",
+        "body-parser": "2.4.0",
+        "fast-uri": "3.1.9",
+        "follow-redirects": "1.16.2",
+        "hono": "4.13.11",
+        "ip-address": "10.7.4",
+        "proxy-addr": "2.0.8",
+        "qs": "6.16.1",
+        "brace-expansion": "1.1.21",
+        "js-yaml": "4.3.2",
+        "source-map-js": "1.2.2",
+        "vitest": "4.1.12",
+    }
+    for name, minimum in security_floors.items():
+        packages = [package for path, package in lock["packages"].items()
+                    if path.endswith(f"node_modules/{name}")]
+        assert packages, f"expected transport dependency {name} in the lock"
+        assert all(Version(package["version"]) >= Version(minimum) for package in packages), name
+
+    manifest = json.loads((CANONICAL_ROOT / "bridge-server/package.json").read_text(encoding="utf-8"))
+    assert manifest["devDependencies"]["vite"] == manifest["overrides"]["vite"] == "7.3.7"
+    assert lock["packages"]["node_modules/vite"]["version"] == "7.3.7"
+    assert "^7.0.0" in lock["packages"]["node_modules/vitest"]["dependencies"]["vite"]
 
 
 def _files(root: Path) -> dict[str, Path]:

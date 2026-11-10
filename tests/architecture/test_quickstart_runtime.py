@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+from packaging.requirements import Requirement
+from packaging.version import Version
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -106,9 +110,34 @@ def test_gateway_image_uses_locked_audited_dependency_install() -> None:
 
 
 def test_control_image_includes_the_model_client_http_dependency() -> None:
-    requirements = (REPO_ROOT / "control/requirements.docker.txt").read_text()
+    versions = []
+    for filename in ("control/requirements.docker.txt", "control/requirements.validation.lock"):
+        definitions = [Requirement(line.removesuffix("\\").strip())
+                       for line in (REPO_ROOT / filename).read_text().splitlines()
+                       if line.startswith("requests==")]
+        assert len(definitions) == 1, f"exactly one Requests pin required in {filename}"
+        specifiers = list(definitions[0].specifier)
+        assert len(specifiers) == 1 and specifiers[0].operator == "=="
+        versions.append(Version(specifiers[0].version))
 
-    assert "requests==2.32.5" in requirements.splitlines()
+    assert versions[0] == versions[1], "Docker and validation Requests versions must agree"
+    assert versions[0] >= Version("2.33.0"), "Requests must include GHSA-gc5v-m9x4-r6x2 remediation"
+
+
+@pytest.mark.parametrize("docker_version,validation_version", [
+    ("2.32.5", "2.34.2"), ("2.32.5", "2.32.5"),
+])
+def test_control_requests_contract_rejects_drift_and_pre_remediation_pins(
+    monkeypatch, tmp_path, docker_version, validation_version,
+) -> None:
+    directory = tmp_path / "control"
+    directory.mkdir()
+    (directory / "requirements.docker.txt").write_text(f"requests=={docker_version}\n")
+    (directory / "requirements.validation.lock").write_text(f"requests=={validation_version}\n")
+    monkeypatch.setitem(globals(), "REPO_ROOT", tmp_path)
+
+    with pytest.raises(AssertionError):
+        test_control_image_includes_the_model_client_http_dependency()
 
 
 def test_console_image_uses_locked_reusable_dependency_install() -> None:
