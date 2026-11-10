@@ -1,6 +1,6 @@
 # برنامه اجرا و دفتر پیشرفت OMERTAOS
 
-تاریخ وضعیت: ۲۰۲۶-۱۱-۰۲. این سند مرجع هماهنگی ادامه کار است؛ نتیجه تست
+تاریخ وضعیت: ۲۰۲۶-۱۱-۱۰. این سند مرجع هماهنگی ادامه کار است؛ نتیجه تست
 یا مجوز اجرای مرحله بعد را جایگزین نمی‌کند. وضعیت هر مرحله فقط با شواهد واقعی
 به‌روزرسانی می‌شود.
 
@@ -96,7 +96,7 @@ P4 با مجوز کاربر آغاز شده و هنوز بسته نیست. پس 
 | P1 | بازبینی و انتقال تغییرات مفید checkout دیگر | چهار فایل منتقل شد؛ password از props کلاینت حذف شد؛ چهار تست Login در suite با ۳۶ تست پاس شد؛ build تولیدی موفق | تکمیل محلی؛ push نشده |
 | P2 / M4.1.3 | rebuild کنسول و Control، harness تکرارپذیر و رفع correlation زمان‌بندی | هر دو variant، ورود واقعی، echo و replay و context سه رویداد audit موفق؛ بررسی مقادیر حساس منتخب لاگ موفق؛ stack متوقف و شش volume حفظ شد | تکمیل محلی؛ push نشده |
 | P3 | restart، replay/fencing، persistence، backup و restore مجزا | نصب تازه، restart، backup/restore رمزگذاری‌شده و ارتقای clone داده واقعی R6 پاس؛ حدود شواهد در گزارش پذیرش | تکمیل محدود محلی؛ push نشده |
-| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | checkpoint سازگار و Docker پاس؛ majorها و gateهای شبکه/اسکن بازند |
+| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | پذیرش عملکردی محدود پاس؛ اسکن imageها مردود، اصلاحات سازگار ادامه دارد، majorها مجوز جدا می‌خواهند |
 | P5 | checkpoint، تطبیق شواهد و آماده‌سازی تغییرات برای GitHub | diff و commitهای قابل مرور، گزارش pass/fail/blocked؛ push/merge فقط با مجوز مربوط | منتظر تأیید |
 | P6 / M5 | تصمیم درباره بازنشستگی aliasها | نبود مصرف فعال با scan/telemetry و عبور gateهای مهاجرت؛ rollback روشن | منتظر تأیید |
 | P7 | طرح native/WARLOCK و بررسی static اسکریپت‌ها | plan برگشت‌پذیر user/env/systemd/update/rollback/backup/restore؛ sudo و نصب سرویس مجوز جدا می‌خواهد | منتظر تأیید |
@@ -365,6 +365,50 @@ P4 کامل اعلام نمی‌شود؛ برای majorها سؤال جدا مط
 جزئیات failureها، انحراف کوتاه ترتیب validation، رفع و فرمان‌ها در گزارش پذیرش‌اند.
 تست نهایی ابزارهای مشترک/قراردادها: ۵۲ پاس و ۲۴ subtest، صفر fail/skip،
 ۹٫۱۰ ثانیه. checkpoint محلی: `checkpoint/p4-compatible-repairs-2026-11-03`.
+
+### پیگیری P4 و اصلاحات سازگار — ۲۰۲۶-۱۱-۱۰
+
+تصمیم کاربر: ابتدا اصلاحات سازگار و checkpoint؛ majorها با تأیید جداگانه.
+مبنای شروع `e8b15d5` و checkpoint پیش از ویرایش
+`checkpoint/p4-open-gates-start-e8b15d5` است. شاخه تغییر نکرد.
+
+اسکن‌های حفظ‌شده با timestamp واقعی ۲۰۲۶-۱۱-۰۲ نشان می‌دهند Trivy با
+دیتابیس رسمی Aqua در ECR از انسداد خارج شده، اما هر چهار image مردودند:
+Control چهار، Runtime چهار، Gateway دو و Console سه critical دارند.
+این اعداد وقوع package/advisory هستند، نه شمارش CVE یکتا یا اثبات exploit.
+«صفر critical» قبلی فقط به audit برنامه‌های npm/pnpm مربوط بود.
+جزئیات بسته‌ها، نسخه‌ها و applicability مورد zlib در گزارش پذیرش آمده‌اند؛
+هیچ ignore جدید یا ادعای امنیت کامل اضافه نشده است.
+
+pin مربوط به Requests در Docker با lock هش‌دار validation روی ۲.۳۴.۲
+هماهنگ شد. ده dependency زمان اجرای Bridge در همان majorهای موجود patch/minor
+شدند؛ proxy-addr آسیب‌پذیر از ۲.۰.۷ به ۲.۰.۸ رسید. تست جلوگیری از drift و
+نسخه‌های پیش از اصلاح برای Requests و کف امنیتی ده بسته Bridge اضافه شد.
+ابزارهای توسعه Bridge نیز patch شدند: Vitest روی ۴.۱.۱۲ و peer پشتیبانی‌شده
+Vite روی ۷.۳.۷، همان الگوی Gateway. این تغییر از peer قبلی ۸.۲.۱ صریحاً ثبت
+شده و API اجرایی نیست؛ تست قرارداد peer و چهار کف امنیتی توسعه نیز اضافه شد.
+تست نهایی: ۲۵ تست Python و سه تست Bridge، build و Ruff پاس؛ صفر fail/skip.
+شکست Arborist در اصلاح خودکار و timeout نصب Axios صریحاً ثبت شدند؛ update
+هدفمند و retry محدود نصب بدون force یا غیرفعال‌سازی peer validation پاس شدند.
+audit نهایی Bridge فقط یک high مربوط به Zod دارد و هنوز exit 1 است.
+
+اسکن تازه سورس با DB رسمی به‌روز ۲۰۲۶-۱۱-۱۰، صفر critical و دو high و سه
+medium گزارش کرد؛ پنج وقوع مربوط به سه advisory در lockهای Console هستند.
+Bridge در دامنه اسکن فایل findings ندارد، ولی npm همچنان Zod را رد می‌کند.
+secret شناسایی‌شده صفر بود؛ ۹۷۱ فایل tracked بررسی شد و دو symlink تاریخی
+شکسته دنبال نشدند. اسکن فایل، جای اسکن image یا وابستگی Python را نمی‌گیرد.
+
+بازبینی DNS در ۲۰۲۶-۱۱-۱۰ همچنان خطای میزبان wheelهای Python را نشان داد.
+pip-audit و rebuild معتبر Control هنوز مسدودند؛ image قدیمی اصلاح نشده است.
+PyPI metadata برای ۳۴ بسته، پنج بسته آسیب‌پذیر و ۱۲ advisory یکتا پس از
+حذف alias نشان داد؛ این روش جای pip-audit را نمی‌گیرد.
+اصلاح base OS، بسته‌های باندل npm/Go، lock کامل Python و یافته‌های Bandit
+هنوز باقی‌اند. P4 بسته نیست و P5/push/merge مجاز نشده است. majorهای Zod،
+Minimatch/Glob و DeepmergeTS تا تأیید جداگانه دست‌نخورده می‌مانند.
+این بسته migration داده ندارد؛ containerها و volumeها تغییر نکردند.
+checkpoint محلی این بسته: `checkpoint/p4-compatible-deps-2026-11-10`؛
+commit اصلاحات dependency و تست: `1eae3e7`، محلی و push نشده.
+وضعیت «همه اصلاحات سازگار تمام شده» یا پذیرش نهایی امنیت اعلام نمی‌شود.
 
 ## دفتر پیشرفت
 

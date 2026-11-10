@@ -1,5 +1,160 @@
 # CAPO acceptance report
 
+## P4 scanner follow-up and dependency checkpoint - 2026-11-10
+
+Scope remains compatible repairs first, local checkpoint, and separate human
+approval for major upgrades. Starting HEAD: `e8b15d5cb112eb72a2b361a7539e6d186cf2d263`;
+pre-edit tag: `checkpoint/p4-open-gates-start-e8b15d5`. Branch unchanged.
+Dependency/test repair commit: `1eae3e7`.
+**P4 is open. No push, merge, P5 transition or major migration was performed.**
+
+The retained scanner artifacts below were produced on 2026-11-02 UTC; their
+timestamps are preserved, not relabeled as fresh 2026-11-10 scans. They supersede
+the earlier *unavailable* Trivy result, not the functional Docker evidence.
+The official Aqua ECR DB endpoint unblocked the same scanner without TLS bypass,
+severity filtering, advisory ignores or dropping development dependencies.
+DB download: exit 0, 103.12s, minimum available RAM 4666 MiB; database update
+`2026-11-02T19:15:11.074748541Z`, schema 2. See
+[Trivy's publisher documentation](https://trivy.dev/docs/dev/docs/configuration/db/).
+
+### Retained Image Findings
+
+All scans used Trivy 0.76.1 and `image --image-src docker --scanners vuln
+--db-repository public.ecr.aws/aquasecurity/trivy-db:2 --parallel 1 --timeout 6m
+--exit-code 1 --format json`, with cache at
+`/home/omerta/.local/share/omerta-validation/tools/p4/trivy-cache`.
+The four exact image IDs are in the earlier build table and the ignored
+`artifacts/p4/image-vulnerabilities.json`. Counts are package/advisory
+occurrences, not unique CVEs, demonstrated exploits or current zero-finding proof.
+
+| Retained image | Exit | Wall seconds | Critical | High | Medium | Low | Unknown |
+|---|---|---|---|---|---|---|---|---|
+| `omertaos-control:p4-20261103` | 1 | 22.90 | 4 | 64 | 132 | 88 | 11 |
+| `omertaos-runtime:p4-20261103` | 1 | 8.80 | 4 | 40 | 107 | 83 | 6 |
+| `omertaos-gateway:p4-20261103` | 1 | 30.74 | 2 | 16 | 34 | 71 | 4 |
+| `omertaos-console:p4-20261103` | 1 | 88.16 | 3 | 42 | 62 | 74 | 5 |
+
+Minimum available RAM during these sequential scans: 4566 MiB. Critical
+findings include Debian Perl in Control/Runtime, Control certifi, Alpine Brotli
+and npm's bundled tar in Gateway/Console, and Go stdlib in Console's bundled
+`@esbuild/linux-x64@0.25.11` binary. Updating application locks alone does not
+update OS packages, npm's own dependency tree or compiled Go binaries.
+The earlier zero-critical npm/pnpm results covered those application audits
+only, not these complete images. Runtime's final image yielded no Rust library
+inventory; Cargo source audit is a separate, narrower gate.
+
+Runtime `zlib1g` also reports CVE-2023-45853. Read-only package probes confirmed
+`1:1.2.13.dfsg-1` and absence of `minizip`/`libminizip1` (expected probe exits 1).
+[Debian's applicability note](https://security-tracker.debian.org/tracker/CVE-2023-45853)
+explains that bookworm's zlib does not build the affected contrib/minizip code.
+This is an applicability-review candidate, not an added ignore or a passed
+image gate; all four raw critical counts above remain recorded.
+
+### Compatible Repairs And Targeted Validation
+
+- Control's Docker Requests pin now matches the existing hashed validation lock
+  at 2.34.2 instead of 2.32.5. Regression tests reject both version drift and
+  pre-remediation pins. The upstream
+  [Requests advisory](https://github.com/psf/requests/security/advisories/GHSA-gc5v-m9x4-r6x2)
+  concerns direct `extract_zipped_paths()` use, not normal requests; no exploit
+  of this application's model client was demonstrated.
+- Bridge lock updates stay within declared major ranges: MCP SDK 1.32.2,
+  Axios 1.21.1, Hono 4.13.17, node-server 2.1.6, body-parser 2.4.0,
+  fast-uri 3.1.9, follow-redirects 1.16.3, ip-address 10.7.6,
+  proxy-addr 2.0.8 and qs 6.17.1. The source-scan critical proxy-addr finding
+  motivated the first patch. The lock-contract test checks all ten runtime floors,
+  four development-package floors and the supported Vite peer contract.
+  Node/npm contract, transport API and authorization are unchanged.
+- Broad `npm audit fix --package-lock-only --ignore-scripts --json` failed with
+  Arborist `edgesOut` (exit 1, 58.39s), leaving the lock unchanged. Targeted
+  `npm update proxy-addr --package-lock-only --ignore-scripts --no-audit` succeeded;
+  a second targeted update batched the other nine affected runtime packages.
+  No force or peer-validation bypass was used.
+- First final `npm ci` failed fetching Axios with ETIMEDOUT (exit 1, 52.74s).
+  The explicit bounded retry below succeeded; the failed attempt is retained.
+  An earlier proxy-only build and three tests also passed, but are not substituted
+  for the final expanded-lock validation.
+- The next full npm audit exposed compatible development fixes omitted by the
+  production-focused filesystem scan. Vitest now pins 4.1.12, brace-expansion
+  1.1.21, js-yaml 4.3.2 and source-map-js 1.2.2. Targeted development update also
+  reproduced Arborist `edgesOut` (exit 1, 30.77s). As already done for Gateway,
+  explicit Vite 7.3.7 dependency/override selects Vitest 4's supported patched
+  peer line instead of 8.2.1. This test-only peer-line change is disclosed; it is
+  not an application Vite migration or a disabled peer/security check. Lockfile
+  platform-package churn is generated by the changed Vite dependency graph.
+  Zod, DeepmergeTS and Glob/Minimatch major upgrades were not implemented.
+
+| Final gate | Result |
+|---|---|
+| `npm audit --prefix integrations/windows-agentic-bridge/bridge-server --package-lock-only --json --fetch-retries=0 --fetch-timeout=30000` | Exit 1; only Zod remains: 1 high, 0 critical/moderate/low; proposed fix 4.6.7 is a major; 5.29s wall |
+| `npm ci --prefix integrations/windows-agentic-bridge/bridge-server --no-audit --prefer-offline --fetch-retries=1 --fetch-timeout=120000` | Exit 0; 361 packages, 48.36s wall; audit executed separately above, not suppressed |
+| `npm run build --prefix integrations/windows-agentic-bridge/bridge-server` | Exit 0; 18.30s wall |
+| `npm test --prefix integrations/windows-agentic-bridge/bridge-server -- --run` | Exit 0; 3 passed, 0 failed/skipped, 2 files; 2.32s suite / 6.96s wall |
+| `python -m pytest tests/architecture/test_quickstart_runtime.py tests/architecture/test_integration_consolidation.py tests/control/test_model_client.py -q -p no:cacheprovider` | Exit 0; 25 passed, 0 failed/skipped, 6.17s suite / 21.38s wall |
+| `ruff check --no-cache tests/architecture/test_quickstart_runtime.py tests/architecture/test_integration_consolidation.py` | Exit 0; 3.16s wall |
+
+Python commands used `omertaos-python-validation:local`, read-only workspace,
+network disabled, 1 GiB memory limit, 2 CPUs, `/tmp` tmpfs and temporary Control
+data directory. Its Requests is 2.34.2. Minimum available RAM for the final
+sequential validation batch: 3820 MiB. Exact argv/durations are retained in
+`artifacts/p4/bridge-complete-validation.json`; its overall exit remains 1
+because the audit is red, even though build/tests/lint passed. Intermediate
+results are retained in `compatible-final-retry.json`, and install failures in
+`compatible-final-tests.json`. Two diagnostic wrapper mistakes (wrong Runner
+constructor and treating an artifact list as a mapping) exited 1 before their
+intended operation, were corrected, and are not counted as validation passes.
+
+### Fresh Source Scan
+
+The 2026-11-10 scan refreshed the official DB rather than reusing the expired
+baseline: updated `2026-11-10T10:23:24.039108641Z`, downloaded
+`2026-11-10T13:11:26.428874735Z`. Initial refresh/scan took 177.79s. The final
+snapshot rerun used Trivy `fs --scanners vuln,secret --db-repository
+public.ecr.aws/aquasecurity/trivy-db:2 --parallel 1 --timeout 5m --exit-code 1
+--format json`, the cache directory above and a new tracked-file-only snapshot.
+Exit 1, 3.10s, minimum available RAM 4067 MiB:
+**0 critical, 2 high, 3 medium occurrences, 0 detected secrets**.
+The five occurrences are three distinct advisory IDs: DeepmergeTS in both
+Console locks, Glob in both locks, and Minimatch in the pnpm lock; all published
+fixes require the deferred major migrations. No findings were reported for the
+Bridge lock by this scanner, but its broader npm audit still flags Zod.
+
+There were 971 copied tracked files. Two historical broken symlinks were not
+followed: `docs/migration/evidence/config-sustemd.broken-link` and
+`docs/migration/evidence/process-analytics.broken-link`. Python requirements
+were not dependency targets of this filesystem scan. The result is not image,
+full dependency, ignored-file or Git-history acceptance. Snapshot manifest SHA-256:
+`a9fd8b20abb5e5f92c767680b85017c2fd3801f0cbc2e6cb275a9080c75b4ecc`;
+sanitized evidence is in `artifacts/p4/final-source-scan.json`. This manifest
+identifies the working-tree snapshot before this final report wording, not an
+assertion that all later document edits were scanned. Different DB baselines
+mean old/new counts cannot be attributed solely to dependency patches.
+
+### Still Open
+
+The 2026-11-10 DNS recheck still resolves PyPI but not `files.pythonhosted.org`
+(10.09s). Python wheel downloads and pip-audit installation remain blocked.
+The earlier exact-version PyPI release-metadata query fetched all 34 installed
+Control packages: five affected packages, 12 alias-deduplicated advisories
+(23 raw entries). This is supplementary evidence, **not pip-audit acceptance**.
+Affected packages include certifi, pip, Requests, setuptools and urllib3.
+The Requests source repair does not repair the retained image.
+
+No image rebuild or new Docker live acceptance was performed for this batch;
+the new Control dependency is not deployed. Full pinned Python transitive
+closure, OS/Brotli/Perl fixes, bundled npm/Go fixes, Bandit's five existing low
+findings, and reviewed major migrations remain open. Previously passed 68
+functional fresh/restart gates do not prove security acceptance. Native,
+benchmark, full repository Python, and historical restore/upgrade reruns were
+not executed. No running worker, volume or persistent service was changed.
+Rollback is a reviewable reversal of these dependency/test changes, with no
+data/schema migration; do not use an insecure old dependency for production.
+
+Final supporting checks: `python3 scripts/audit_environment_namespace.py --check`
+and `git diff --check` exited 0; 164 tokens and the same 93 reviewed legacy
+readers remain. No alias retirement was performed. Local checkpoint name:
+`checkpoint/p4-compatible-deps-2026-11-10`; this is not P4 closure.
+
 ## P4 compatible security repair checkpoint - 2026-11-03
 
 Approved scope: batched dependency/security inspection, private secret storage
