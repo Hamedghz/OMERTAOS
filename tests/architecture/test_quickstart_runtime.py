@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 
 import pytest
 from packaging.requirements import Requirement
@@ -122,6 +125,36 @@ def test_control_image_includes_the_model_client_http_dependency() -> None:
 
     assert versions[0] == versions[1], "Docker and validation Requests versions must agree"
     assert versions[0] >= Version("2.33.0"), "Requests must include GHSA-gc5v-m9x4-r6x2 remediation"
+
+
+def test_control_model_client_imports_from_isolated_image_payload(tmp_path) -> None:
+    dockerfile = (REPO_ROOT / "control/Dockerfile").read_text().splitlines()
+    assert "COPY control ./control" in dockerfile
+    assert "COPY integrations/providers ./integrations/providers" in dockerfile
+
+    for source in ("control/clients", "integrations/providers"):
+        shutil.copytree(REPO_ROOT / source, tmp_path / source,
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+
+    probe = """
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from control.clients.models import LLMProviderDisabled, call_llm
+from integrations.providers import http_llm
+assert Path(http_llm.__file__).resolve().is_relative_to(Path(sys.argv[1]).resolve())
+try:
+    call_llm({"provider": "disabled"}, "", [], 1, 0)
+except LLMProviderDisabled:
+    pass
+else:
+    raise AssertionError("disabled provider did not fail closed")
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-B", "-c", probe, str(tmp_path)],
+        capture_output=True, text=True, timeout=20, check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize("docker_version,validation_version", [

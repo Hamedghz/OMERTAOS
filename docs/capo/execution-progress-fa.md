@@ -410,6 +410,22 @@ checkpoint محلی این بسته: `checkpoint/p4-compatible-deps-2026-11-10`�
 commit اصلاحات dependency و تست: `1eae3e7`، محلی و push نشده.
 وضعیت «همه اصلاحات سازگار تمام شده» یا پذیرش نهایی امنیت اعلام نمی‌شود.
 
+### اصلاح payload مدل Control در P4 — ۲۰۲۶-۱۱-۱۰
+
+پس از checkpoint قبلی، نقصی مستقل روی image موجود بازتولید شد: import مدل
+به‌علت نبود `integrations` شکست می‌خورد. Dockerfile فقط پوشه provider موردنیاز
+را کپی می‌کند؛ مالکیت ماژول و مرزهای معماری تغییر نکردند. تست جدید، import
+از payload جدا از checkout و رفتار fail-closed مدل غیرفعال را بررسی می‌کند.
+۲۱ تست مرتبط و Ruff پاس؛ صفر fail/skip/warning. این تست جای build کامل image
+را نمی‌گیرد و image قبلی هنوز این اصلاح را ندارد.
+
+دو probe محدود DNS-over-HTTPS نیز ناموفق بودند؛ تنظیم DNS/TLS، dependencyها
+یا سرویس‌های فعال تغییر نکردند. gate ساخت Control و pip-audit باز مانده‌اند.
+مبنای شروع `867d782`؛ checkpoint قبل ویرایش
+`checkpoint/p4-control-provider-start-867d782` و checkpoint پایان بسته
+`checkpoint/p4-control-provider-payload-2026-11-10` است. P4 همچنان باز است؛
+نه majorها اجرا شدند و نه push/merge. شرح خطا و فرمان‌ها در گزارش پذیرش است.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |

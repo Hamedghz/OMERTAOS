@@ -1,5 +1,59 @@
 # CAPO acceptance report
 
+## P4 Control provider payload repair - 2026-11-10
+
+Starting commit `867d78288890ed1c7cce157e66257be40e7ccce2`, clean branch
+`Radin/omerta-env-namespace`; pre-edit tag
+`checkpoint/p4-control-provider-start-867d782`. This remains compatible P4 work,
+not major-upgrade approval or a transition to P5.
+
+An independent read-only, network-disabled probe of the retained Control image
+`omertaos-control:p4-20261103` failed importing `control.clients.models` with
+`ModuleNotFoundError: integrations` (exit 1, 3.90s). The inspected tag still
+identifies `sha256:ce7942eebcd216c500ad3ff053cc60e6a9887439ceb096d8458bdfd819861c98`.
+Root cause is an implementation/packaging defect: `control/clients/models/client.py`
+imports `integrations.providers`, while the production Dockerfile omitted that
+source directory. Repository-mounted unit tests had hidden this deployment gap.
+
+`control/Dockerfile` now copies only `integrations/providers`, not the entire
+integration tree or Windows Bridge tooling. Provider ownership remains in
+Integrations, orchestration stays in Control, and host execution remains behind
+Runtime. There is no auth, API, schema, credential, dependency or topology change
+in this repair.
+
+The regression checks the production COPY entries and imports the actual client
+and provider from a temporary payload using `python -I -B`, without the checkout
+on the import path. It verifies the loaded provider belongs to that payload and
+that the disabled provider still fails closed. Existing model-client tests retain
+bounded timeout, redirect rejection, response validation and local-key behavior.
+This is **not a replacement for a production Docker build or live provider test**.
+
+| Gate | Actual result |
+|---|---|
+| `python -m pytest tests/architecture/test_quickstart_runtime.py tests/control/test_model_client.py -q -p no:cacheprovider` | Exit 0; 21 passed, 0 failed/skipped/warnings; 4.72s suite / 13.16s wall |
+| `ruff check --no-cache tests/architecture/test_quickstart_runtime.py` | Exit 0; 2.91s wall |
+
+Both commands used the existing pinned validation container, read-only workspace,
+no network, 1 GiB memory limit, 2 CPUs and temporary data/tmpfs. Minimum available
+RAM: 4104 MiB. Exact commands and sanitized results are in ignored
+`artifacts/p4/control-provider-reproduction.json` and
+`artifacts/p4/control-provider-validation.json`.
+
+Two bounded transport probes attempted documented JSON DNS-over-HTTPS endpoints
+without changing host/container DNS, weakening TLS, changing indexes or installing
+packages. Both failed: Cloudflare URLError (0.20s), Google URLError/OSError
+(0.14s). Evidence: `python-wheel-doh-probe.json` and
+`python-wheel-google-doh-probe.json` under `artifacts/p4/`.
+Endpoint references: [Cloudflare](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/),
+[Google](https://developers.google.com/speed/public-dns/docs/doh/json).
+
+The full canonical Control rebuild remains blocked by wheel-host access and was
+not rerun using alternate requirements or an overlay image. Existing image CVEs,
+pip-audit, final live acceptance and deferred major migrations remain open.
+No services, volumes, images or secrets were modified. Rollback is reversal of
+this Dockerfile/test repair only; it entails no data migration. Local checkpoint:
+`checkpoint/p4-control-provider-payload-2026-11-10`. Nothing pushed or merged.
+
 ## P4 scanner follow-up and dependency checkpoint - 2026-11-10
 
 Scope remains compatible repairs first, local checkpoint, and separate human

@@ -12,6 +12,7 @@ COPY control/requirements.docker.txt ./control/requirements.docker.txt
 RUN pip install --no-cache-dir --requirement ./control/requirements.docker.txt
 
 COPY control ./control
+COPY integrations/providers ./integrations/providers
 COPY schemas ./schemas
 COPY registry/models ./registry/models
 COPY policies ./policies
