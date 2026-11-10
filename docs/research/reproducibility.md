@@ -40,6 +40,12 @@ and pnpm owner-scoped overrides synchronized: modern named Minimatch/Glob APIs
 must not be imposed on legacy callable/callback consumers, or vice versa.
 The P4 acceptance report records actual config, matcher and schema regressions.
 
+Console explicitly anchors Next file tracing to the repository root derived
+from `next.config.mjs`, including local workspace packages. Do not remove
+unrelated ancestor lockfiles to suppress root-inference warnings. After changing
+this setting, validate a production build and its generated trace paths, not
+only the config object's value; this does not replace a container acceptance run.
+
 On hosts without the reference Python tools, use the repository validation
 image. It installs the hash-pinned dependency graph from
 `control/requirements.validation.lock` and runs as an unprivileged user:

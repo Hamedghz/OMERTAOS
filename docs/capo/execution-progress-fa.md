@@ -485,6 +485,26 @@ image جدید، stack زنده، native و benchmark در این batch اجرا
 پذیرش ثبت است؛ شواهد فقط E1 منتخب را تقویت می‌کنند. checkpoint پایان:
 `checkpoint/p4-major-migration-2026-11-10`؛ هیچ push یا merge انجام نشد.
 
+### اصلاح ریشه tracing کنسول در P4 — ۲۰۲۶-۱۱-۱۰
+
+مبنای شروع `48314cd`، checkpoint پیش از ویرایش
+`checkpoint/p4-tracing-root-start-48314cd` و کامیت اصلاح `79fe192` است.
+Next با وجود lockfile بیرون مخزن، ریشه را `/home/omerta` می‌گرفت؛ خروجی
+قبلی حتی یک ارجاع به باینری Node بیرون checkout داشت. ریشه اکنون از محل
+خود config به ریشه مخزن تعیین می‌شود؛ فایل بیرونی و مرزهای امنیتی تغییر نکردند.
+
+اجرای اول، ۴۲ پاس و یک شکست در fixture تازه داشت؛ مشکل URL مرورگر در
+jsdom با resolver واقعی Node رفع شد و شکست در گزارش حفظ شد. سپس suite
+کامل ۴۳ تست، build تولیدی بدون هشدار قبلی و بررسی ۹۶ manifest با ۸۵۸۰
+ارجاع پاس شدند؛ هیچ فایل گمشده یا مسیر بیرون مخزن، حتی پس از realpath، نبود.
+کمترین RAM available برابر ۲۷۶۳ MiB بود؛ اجراها ترتیبی بودند.
+
+این نتیجه جایگزین بند باز tracing root در بخش قبلی است، نه شواهد تازه برای
+Docker یا امنیت imageها. rebuild برنامه‌ها، پذیرش زنده نسخه جدید، DNS wheelها
+و audit کامل Python همچنان بازند. هیچ سرویس، image tag یا volume تغییر نکرد.
+checkpoint پایان `checkpoint/p4-console-tracing-root-2026-11-10` است؛
+P4 بسته نشده و هیچ push/merge انجام نشد.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
@@ -500,6 +520,7 @@ image جدید، stack زنده، native و benchmark در این batch اجرا
 | ۲۰۲۶-۱۱-۰۲ | بستن ارتقای تاریخی P3 | داده واقعی R6 بدون تغییر منبع clone و ارتقا یافت؛ credential و ردیف‌های قدیمی حفظ؛ ۴۲ تست و مسیر canonical پاس | تأیید جداگانه P4 برای بررسی و اصلاح تجمیعی امنیت/permission |
 | ۲۰۲۶-۱۱-۰۳ | checkpoint اصلاحات سازگار P4 | secret store و permissionها اصلاح؛ چهار image جدید و ۶۸ gate پذیرش تازه/restart پاس؛ شکست export با cache رفع؛ هشدارهای major و scanهای مسدود صریح ثبت | تصمیم majorها و تکمیل gateهای باز همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۰ | مهاجرت majorهای منتخب با مجوز جدا | `f47c8ad`؛ locked install/build و تست‌های مرتبط پاس، audit lockها و اسکن سورس بدون finding؛ خطاهای override رفع و کنترل سن انتشار سخت‌تر شد | رفع tracing root، دسترسی wheelها و gateهای image/security/live در همین P4؛ نه P5 یا push |
+| ۲۰۲۶-۱۱-۱۰ | رفع ریشه tracing کنسول | `79fe192`؛ ۴۳ تست و build و ۹۶ manifest پاس؛ fixture ناموفق ثبت و رفع؛ هشدار ریشه میزبان بسته شد | batch ترتیبی imageها، گیت‌های امنیتی و دسترسی wheelها در همین P4؛ نه P5 یا push |
 
 برای ادامه، به همین جدول سطر افزوده شود و وضعیت مرحله مرتبط فقط پس از ثبت
 نتیجه تغییر کند. این سند snapshot برنامه است؛ گزارش پذیرش مرجع جزئیات آزمایش

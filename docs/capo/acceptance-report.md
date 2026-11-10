@@ -1,5 +1,59 @@
 # CAPO acceptance report
 
+## P4 Console tracing-root repair - 2026-11-10
+
+Starting commit `48314cd7b48703b10f6a02acab52c76a8118b9fa`, clean branch
+`Radin/omerta-env-namespace`; pre-edit tag
+`checkpoint/p4-tracing-root-start-48314cd`. Repair commit: `79fe192`.
+This closes the workspace-root warning recorded in the preceding major batch,
+not the remaining P4 image/security or Python network gates.
+
+An independent call to the installed Next 15.5.28 config loader reproduced
+`outputFileTracingRoot=/home/omerta` rather than the checkout. Previous build
+metadata independently showed the same root, a worktree-specific relative app
+directory and one trace reference to the host Node binary outside the checkout.
+The command exited 0 despite this semantic defect. The external lockfile caused
+Next's root inference; no user-owned lockfile was edited or removed.
+
+`console/next.config.mjs` now derives the absolute repository tracing root from
+its own module location, not cwd or ancestor lockfiles. This includes the two
+local workspace packages without extending tracing to the home directory.
+See the official [Next 15 tracing-root documentation](https://nextjs.org/docs/15/app/api-reference/config/next-config-js/output).
+No dependency, API, auth, schema, security header, transpilation, privilege or
+service-topology change was made. This is build reproducibility, not isolation.
+
+The regression copies the real config into a temporary checkout beneath a
+foreign lockfile, loads it with the real installed Next normalizer from another
+cwd, and checks the root plus existing HSTS/strict-mode/webpack settings.
+Its first run failed because Vitest/jsdom transformed a `new URL` asset reference
+into a browser URL. Replacing fixture lookup with Node's `require.resolve`
+fixed the test harness without weakening the assertions; the failed run is kept.
+
+| Gate | Actual result | Wall seconds |
+|---|---|---|
+| Initial full Console suite | Exit 1; 42 passed, 1 failed, 0 skipped; fixture URL failure | 72.75 |
+| `corepack pnpm --dir console test --config vitest.config.mts --maxWorkers=2` after repair | Exit 0; 43 passed / 16 files, 0 failed/skipped; suite 66.79s | 75.59 |
+| `corepack pnpm --dir console build` | Exit 0; production compilation/typechecking/page generation; previous root warning absent | 444.36 |
+| Generated `required-server-files.json` and all `.nft.json` assertions | Exit 0; checkout root, relative app `console`, 96 manifests / 8580 references, 0 outside / missing | 1.16 |
+| Independent realpath probe of the same references | Exit 0; 8580 references, 0 symlink-resolved escapes; separate timing not retained | Not recorded |
+
+The final three-gate batch used the prior bounded Node environment and
+non-credential validation database URL, sequentially, with a 1 GiB available-RAM
+guard. Minimum available RAM: 2763 MiB. Disk stayed at about 12 GiB free.
+Reports, including exact final argv, warnings and trace assertions:
+ignored `artifacts/p4/tracing-root-validation.json` (failed attempt) and
+`tracing-root-final-validation.json` (successful batch); the local runner is
+`tracing-validation-runner.mjs`. No test/type/lint check was disabled.
+
+**Not run:** new application-image builds, live Docker acceptance, Python/Runtime
+suites, fresh vulnerability scans, browser E2E, native services or benchmarks.
+Existing Python wheel DNS and image/OS/binary advisory gates remain open and
+were not retried here. Earlier Docker acceptance and source scans do not attest
+this new tree. No running stack, secret, image tag or volume was modified.
+Rollback is a reviewed reversal of the config/test repair; no dependency or
+database rollback is needed. Checkpoint:
+`checkpoint/p4-console-tracing-root-2026-11-10`. Nothing pushed or merged; P4 open.
+
 ## P4 approved dependency-major migration - 2026-11-10
 
 The user separately approved controlled Zod, DeepmergeTS and Minimatch/Glob
