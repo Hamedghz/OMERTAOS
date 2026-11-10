@@ -25,7 +25,7 @@ import type {
   TaskRequestInput,
   TaskResult,
 } from './types.js';
-import { devKernelRequestSchema, taskRequestSchema } from './types.js';
+import { devKernelRequestSchema, formatValidationIssues, taskRequestSchema } from './types.js';
 import { shutdownTelemetry, startTelemetry } from './telemetry.js';
 import { registerConfigRoutes } from './routes/config.js';
 import { registerSealRoutes } from './routes/seal.js';
@@ -216,11 +216,7 @@ app.post<{ Body: DevKernelRequest }>('/api/dev/kernel', async (request, reply) =
       return reply.status(400).send({
         error: 'ValidationError',
         message: 'Invalid dev kernel request',
-        issues: error.issues.map((issue) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-          code: issue.code,
-        })),
+        issues: formatValidationIssues(error),
       });
     }
     throw error;
@@ -245,11 +241,7 @@ app.post<{ Body: TaskRequestInput }>('/v1/tasks', async (request, reply) => {
       return reply.status(400).send({
         error: 'ValidationError',
         message: 'Invalid task request',
-        issues: error.issues.map((issue) => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-          code: issue.code,
-        })),
+        issues: formatValidationIssues(error),
       });
     }
     throw error;

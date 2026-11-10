@@ -1,10 +1,18 @@
 import { z } from 'zod';
 
+export function formatValidationIssues(error: z.ZodError) {
+  return error.issues.map((issue) => ({
+    path: issue.path.join('.'),
+    message: issue.message,
+    code: issue.code === 'invalid_value' ? 'invalid_enum_value' : issue.code,
+  }));
+}
+
 export const taskRequestSchema = z
   .object({
     schemaVersion: z.string().min(1).default('1.0'),
     intent: z.string().min(1, 'intent is required'),
-    params: z.record(z.unknown()).default({}),
+    params: z.record(z.string(), z.unknown()).default({}),
     preferredEngine: z.enum(['auto', 'local', 'api', 'hybrid']).default('auto'),
     priority: z.enum(['low', 'normal', 'high']).default('normal'),
     sla: z
@@ -15,7 +23,7 @@ export const taskRequestSchema = z
       })
       .partial()
       .optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -48,7 +56,7 @@ export interface TaskResult {
 export const devKernelRequestSchema = z
   .object({
     message: z.string().min(1, 'message is required'),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 

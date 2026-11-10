@@ -4,6 +4,9 @@ import json
 import re
 from pathlib import Path
 
+from packaging.version import Version
+import yaml
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 NODE_VERSION = "22.23.2"
@@ -105,3 +108,27 @@ def test_console_bootstrap_tsconfig_can_emit_installer_artifact() -> None:
 
     assert compiler_options["noEmit"] is False
     assert compiler_options["allowImportingTsExtensions"] is False
+
+
+def test_major_security_migration_keeps_owner_scoped_dependency_contracts() -> None:
+    for app in ("console", "gateway", "integrations/windows-agentic-bridge/bridge-server"):
+        packages = _json(f"{app}/package-lock.json")["packages"]
+        zod = [package for name, package in packages.items() if name.endswith("/zod")]
+        assert zod
+        assert all(Version(package["version"]) >= Version("4.6.7") for package in zod)
+        for name, package in packages.items():
+            if not name.endswith(("/minimatch", "/glob")):
+                continue
+            version = Version(package.get("version", "0"))
+            if name.endswith("/minimatch") and version.major >= 9:
+                assert version == Version("11.0.5"), (app, name)
+            if name.endswith("/glob") and version.major >= 10:
+                assert version >= Version("14.0.2"), (app, name)
+
+    packages = _json("console/package-lock.json")["packages"]
+    assert Version(packages["node_modules/deepmerge-ts"]["version"]) >= Version("8.0.0")
+    assert Version(_json("console/package.json")["devDependencies"]["typescript"]) >= Version("5.5")
+    workspace = yaml.safe_load((REPO_ROOT / "console/pnpm-workspace.yaml").read_text())
+    assert workspace["overrides"] == _json("console/package.json")["overrides"]
+    assert workspace["minimumReleaseAgeStrict"] is True
+    assert not workspace.get("minimumReleaseAgeExclude")
