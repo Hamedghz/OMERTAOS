@@ -11,7 +11,7 @@ COPY runtime-daemon ./runtime-daemon
 WORKDIR /app/runtime-daemon
 RUN cargo build --locked --release
 
-FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171
+FROM debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc
 
 RUN useradd --system --uid 10001 --create-home runtime \
     && install -d -o runtime -g runtime -m 0700 /var/lib/omerta/runtime

@@ -1,5 +1,91 @@
 # CAPO acceptance report
 
+## P4 reviewed base-image refresh - 2026-11-10
+
+Starting HEAD `c57dfc9a4391bfef6ee332c0f294309bfed0a5df`, clean working tree;
+pre-edit tag `checkpoint/p4-base-refresh-start-c57dfc9`. Current branch remains
+`Radin/omerta-env-namespace`. Scope: compatible pinned-base refresh, not major
+application upgrades, final Docker acceptance or P5 synchronization.
+
+Registry metadata and sequential Linux/amd64 digest pulls succeeded for these
+publisher images. The generic Node tag was inspected only as preflight; the
+canonical `alpine3.24` tag was independently inspected and returned the same
+digest. No mutable `latest` reference was introduced into a Dockerfile.
+
+| Consumer | New immutable reference |
+|---|---|
+| Control | `python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b` |
+| Runtime final stage | `debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc` |
+| Gateway and Console, all stages | `node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85` |
+
+Read-only, network-disabled identity probes passed: Python 3.12.16 with pip
+25.0.1 (5.46s); Debian Perl `5.36.0-7+deb12u4` and zlib
+`1:1.2.13.dfsg-1` (2.89s); Node 22.23.2, npm 10.9.8, Alpine 3.24.2 (2.95s).
+The Runtime Perl patch matches the fix version recorded in the earlier scan;
+the old retained application image still has the older package. Node/npm
+contracts, Python minor line, pnpm version, Rust builder, dependency locks,
+auth, schemas, topology and volume names are unchanged by this refresh.
+
+### Base Scans Are Still Red
+
+Trivy 0.76.1 scanned each base sequentially with `image --image-src docker
+--scanners vuln --db-repository public.ecr.aws/aquasecurity/trivy-db:2
+--parallel 1 --timeout 5m --exit-code 1 --format json` and the existing private
+validation cache. DB update: `2026-11-10T10:23:24.039108641Z`. No advisory/severity
+filter or ignore was added. Counts are package/advisory occurrences in bases,
+not application-image counts or unique CVEs.
+
+| Base | Pull exit / seconds | Scan exit / seconds | Critical | High | Medium | Low |
+|---|---|---|---|---|---|---|
+| Python | 0 / 42.73 | 1 / 24.18 | 0 | 49 | 80 | 66 |
+| Debian | 0 / 44.53 | 1 / 12.38 | 1 | 34 | 95 | 85 |
+| Node | 0 / 48.78 | 1 / 29.58 | 1 | 15 | 16 | 1 |
+
+Debian's critical is the previously documented zlib/minizip applicability case,
+still retained without a waiver. Node's critical remains npm's bundled tar
+7.5.11, CVE-2026-59873, published fix 7.5.19. Python's pip remains 25.0.1;
+zero critical does not mean no vulnerabilities or a patched pip. No bundled
+package was deleted to hide findings. Minimum available RAM for pulls/scans:
+3939 MiB; base identity probes: 3904 MiB. Disk remained at about 12 GiB free.
+
+### Executed Contracts And Open Build Gate
+
+`test_quickstart_upstream_images_and_build_bases_are_digest_pinned` now checks
+the reviewed final-stage baseline and identical Node references in every stage,
+in addition to the existing digest-pinning requirements. These assertions guard
+pin consistency and selected-baseline regression, not vulnerability absence.
+
+| Gate | Actual result |
+|---|---|
+| `python -m pytest tests/architecture/test_javascript_toolchain.py tests/architecture/test_quickstart_runtime.py tests/control/test_model_client.py -q -p no:cacheprovider` | Exit 0; 25 passed, 0 failed/skipped/warnings; 5.47s suite / 16.28s wall |
+| `ruff check --no-cache tests/architecture/test_javascript_toolchain.py` | Exit 0; 3.40s wall |
+| `docker compose --project-directory /home/omerta/.codex/worktrees/09e8/OMERTAOS --project-name omerta-p4-validation --env-file /home/omerta/projects/OMERTAOS/.env -f deploy/docker/compose/quickstart.yml config --quiet` | Exit 0; 0.52s; rendering only |
+
+Python gates used the existing bounded, read-only, network-disabled validation
+container, with temporary data under `/tmp`; minimum available RAM 3821 MiB.
+A separate probe from the **new production Python base**, with all capabilities
+dropped and no-new-privileges, confirmed PyPI release metadata HTTP 200 but
+`files.pythonhosted.org` DNS `gaierror` (exit 1, 45.66s). Wheel HEAD was not
+attempted after failed resolution. A remote read-only DNS API lookup was also
+unavailable; no usable mapping was obtained or fabricated. No DNS/TLS, host,
+daemon or systemd setting was changed.
+
+Exact argv, durations and selected package findings are retained under ignored
+`artifacts/p4/`: `base-registry-preflight.json`, `node-base-preflight.json`,
+`base-image-inspection.json`, `base-image-identities.json`,
+`base-refresh-validation.json`, `python-base-transport.json`.
+
+**Not executed:** application image rebuilds, new live stack, arm64 acceptance,
+native deployment or benchmarks. Control rebuild/pip-audit remain network-blocked;
+other application rebuilds are deferred to the consolidated image-validation
+batch, not reported as network failures. Base scans and Compose rendering do
+not substitute for those gates. Existing application tags, running services,
+containers, volumes, credentials and keys were preserved; only the new public
+base images were added to the local cache. P4 remains open. Major migrations
+still require separate approval. Rollback is reversal of the four Dockerfile
+pin changes and the corresponding test baseline, without data migration or
+removing any image. Checkpoint: `checkpoint/p4-base-refresh-2026-11-10`.
+
 ## P4 Control provider payload repair - 2026-11-10
 
 Starting commit `867d78288890ed1c7cce157e66257be40e7ccce2`, clean branch

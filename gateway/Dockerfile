@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS deps
 
 WORKDIR /workspace
 
@@ -8,7 +8,7 @@ COPY shared/secret-provider-node ./shared/secret-provider-node
 WORKDIR /workspace/gateway
 RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
-FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
+FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS builder
 
 WORKDIR /workspace
 COPY --from=deps /workspace/gateway/node_modules ./gateway/node_modules
@@ -19,7 +19,7 @@ COPY shared/secret-provider-node ./shared/secret-provider-node
 WORKDIR /workspace/gateway
 RUN npm run build
 
-FROM node:22.23.2-alpine3.24@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
+FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production

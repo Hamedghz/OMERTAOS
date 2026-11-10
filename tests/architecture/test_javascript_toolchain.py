@@ -76,12 +76,25 @@ def test_quickstart_upstream_images_and_build_bases_are_digest_pinned() -> None:
     for image in upstream_images:
         assert re.fullmatch(r"\S+@sha256:[a-f0-9]{64}", image), image
 
-    for service in ("control", "runtime-daemon", "gateway", "console"):
+    node_base = (
+        f"node:{NODE_VERSION}-alpine3.24@sha256:"
+        "b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85"
+    )
+    reviewed_bases = {
+        "control": "python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+        "runtime-daemon": "debian:bookworm-slim@sha256:734a72b3d6142a71993b4bc580ca01d8ca687f77a2c422d96a961d3376b179bc",
+        "gateway": node_base,
+        "console": node_base,
+    }
+    for service, reviewed_base in reviewed_bases.items():
         dockerfile = (REPO_ROOT / service / "Dockerfile").read_text()
         bases = re.findall(r"^FROM (?:--platform=\S+ )?(\S+)", dockerfile, re.MULTILINE)
         assert bases
         for base in bases:
             assert re.fullmatch(r"\S+@sha256:[a-f0-9]{64}", base), base
+        assert bases[-1] == reviewed_base, service
+        if service in {"gateway", "console"}:
+            assert set(bases) == {reviewed_base}, service
 
     assert ".secrets-out/" in (REPO_ROOT / ".dockerignore").read_text().splitlines()
 

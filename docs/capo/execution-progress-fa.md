@@ -426,6 +426,28 @@ commit اصلاحات dependency و تست: `1eae3e7`، محلی و push نشد�
 `checkpoint/p4-control-provider-payload-2026-11-10` است. P4 همچنان باز است؛
 نه majorها اجرا شدند و نه push/merge. شرح خطا و فرمان‌ها در گزارش پذیرش است.
 
+### تازه‌سازی pin پایه‌های Docker در P4 — ۲۰۲۶-۱۱-۱۰
+
+Registry قابل دسترسی بود؛ سه پایه رسمی با digest دریافت و ترتیبی اسکن شدند.
+چهار Dockerfile به baseline جدید اشاره می‌کنند: Python همچنان در خط ۳.۱۲،
+Node و npm همان ۲۲.۲۳.۲ و ۱۰.۹.۸، Alpine برابر ۳.۲۴.۲ و Perl پایه Runtime
+برابر `5.36.0-7+deb12u4` است. Rust builder و pnpm تغییر نکردند.
+تست pinها baseline جدید و یکسان‌بودن Node در همه stageها را بررسی می‌کند.
+۲۵ تست مرتبط، Ruff و رندر Compose پاس شدند؛ build برنامه یا پذیرش زنده نیستند.
+
+اسکن پایه‌ها هنوز exit 1 دارد: Python صفر critical ولی ۴۹ high، Debian یک
+critical مربوط به zlib و Node یک critical مربوط به tar باندل npm دارند.
+شمارش کامل، محدودیت applicability و نسخه‌های دقیق در گزارش پذیرش ثبت شدند.
+هیچ بسته یا finding برای پاس شدن حذف نشد. image برنامه‌های قبلی تغییر نکردند.
+
+probe داخل پایه تازه Python نیز metadata با پاسخ ۲۰۰ و شکست DNS میزبان
+wheelها را نشان داد. rebuild Control و pip-audit همچنان مسدودند؛ rebuild
+سایر برنامه‌ها تا batch یکپارچه بعدی به تعویق افتاده، نه این‌که مردود یا پاس
+اعلام شوند. مجوز majorها و P5/push/merge هنوز داده نشده است.
+مبنا `c57dfc9`، checkpoint پیش از ویرایش
+`checkpoint/p4-base-refresh-start-c57dfc9` و checkpoint پایان بسته
+`checkpoint/p4-base-refresh-2026-11-10` است. volume و سرویس فعال تغییر نکردند.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
