@@ -1,4 +1,9 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 const nextConfig = {
+  // Include local workspace packages without inferring a root from host lockfiles.
+  outputFileTracingRoot: path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   transpilePackages: ["@aion/ui-core"],
   reactStrictMode: true,
   async headers() {

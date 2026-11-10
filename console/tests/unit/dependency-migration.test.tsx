@@ -1,7 +1,9 @@
 import { createRequire } from 'node:module';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
@@ -22,6 +24,44 @@ afterEach(() => {
 });
 
 describe('major dependency consumer compatibility', () => {
+  it('anchors Next tracing to the checkout despite external lockfiles and another cwd', () => {
+    const directory = fixtureDirectory();
+    const repository = path.join(directory, 'checkout');
+    const consoleDirectory = path.join(repository, 'console');
+    mkdirSync(consoleDirectory, { recursive: true });
+    writeFileSync(path.join(directory, 'package-lock.json'), '{}');
+    writeFileSync(path.join(consoleDirectory, 'pnpm-lock.yaml'), 'lockfileVersion: 9.0\n');
+    const configPath = path.join(consoleDirectory, 'next.config.mjs');
+    copyFileSync(require.resolve('../../next.config.mjs'), configPath);
+    const script = `
+      import { createRequire } from 'node:module';
+      import config from ${JSON.stringify(pathToFileURL(configPath).href)};
+      const require = createRequire(${JSON.stringify(require.resolve('next/package.json'))});
+      const load = require('next/dist/server/config').default;
+      const { PHASE_PRODUCTION_BUILD } = require('next/constants');
+      const normalized = await load(PHASE_PRODUCTION_BUILD, ${JSON.stringify(consoleDirectory)}, {
+        customConfig: config, silent: false,
+      });
+      console.log(JSON.stringify({
+        root: normalized.outputFileTracingRoot,
+        transpilePackages: normalized.transpilePackages,
+        strict: normalized.reactStrictMode,
+        headers: await normalized.headers(),
+        fallback: normalized.webpack({ resolve: { fallback: { existing: true } } }).resolve.fallback,
+      }));
+    `;
+    const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+      cwd: directory, encoding: 'utf8', timeout: 15000,
+    }));
+    expect(result.root).toBe(repository);
+    expect(result.transpilePackages).toContain('@aion/ui-core');
+    expect(result.strict).toBe(true);
+    expect(result.headers).toContainEqual({ source: '/:path*', headers: [
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+    ] });
+    expect(result.fallback).toEqual({ existing: true, fs: false });
+  });
+
   it('loads a Prisma config using its real DeepmergeTS dependency', async () => {
     const directory = fixtureDirectory();
     writeFileSync(path.join(directory, 'prisma.config.mjs'), `export default {
