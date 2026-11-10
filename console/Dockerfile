@@ -55,7 +55,13 @@ FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN apk add --no-cache curl
+ARG ALPINE_MIRROR=cdn
+RUN case "$ALPINE_MIRROR" in \
+      cdn) ;; \
+      kernel) sed -i 's|^https://dl-cdn\.alpinelinux\.org/alpine/|https://mirrors.edge.kernel.org/alpine/|' /etc/apk/repositories ;; \
+      *) echo "Unsupported ALPINE_MIRROR; expected cdn or kernel" >&2; exit 1 ;; \
+    esac \
+    && apk add --no-cache curl
 
 # Create non-root user for running the app
 RUN addgroup -g 1001 -S nodejs \

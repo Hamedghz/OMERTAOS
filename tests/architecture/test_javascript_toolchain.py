@@ -110,6 +110,20 @@ def test_console_bootstrap_tsconfig_can_emit_installer_artifact() -> None:
     assert compiler_options["allowImportingTsExtensions"] is False
 
 
+def test_node_image_alpine_mirror_selection_preserves_secure_defaults() -> None:
+    for app in ("gateway", "console"):
+        dockerfile = (REPO_ROOT / app / "Dockerfile").read_text()
+        assert "ARG ALPINE_MIRROR=cdn" in dockerfile
+        assert 'case "$ALPINE_MIRROR" in' in dockerfile
+        assert "cdn) ;;" in dockerfile
+        assert "https://mirrors.edge.kernel.org/alpine/" in dockerfile
+        assert '*) echo "Unsupported ALPINE_MIRROR; expected cdn or kernel" >&2; exit 1 ;;' in dockerfile
+        assert "&& apk add --no-cache curl" in dockerfile
+        assert "--allow-untrusted" not in dockerfile
+        assert "--no-check-certificate" not in dockerfile
+        assert "http://" not in dockerfile
+
+
 def test_major_security_migration_keeps_owner_scoped_dependency_contracts() -> None:
     for app in ("console", "gateway", "integrations/windows-agentic-bridge/bridge-server"):
         packages = _json(f"{app}/package-lock.json")["packages"]
