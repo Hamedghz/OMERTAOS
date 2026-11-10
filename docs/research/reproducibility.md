@@ -27,6 +27,19 @@ reproducible artifact because it can move.
 Pin dependency lockfiles and report any dependency-resolution failure. Do not
 substitute a static check for a blocked compilation or runtime test.
 
+Console uses TypeScript 5.9.3 for Zod 4's supported TypeScript range. Its
+`pnpm-lock.yaml` is canonical; the secondary npm lock is maintained separately
+and an npm dry-run is not evidence of a real pnpm installation. Use
+`corepack pnpm` when the global pnpm differs from the declared version; enabling
+host-wide Corepack shims is not required for that invocation.
+
+Keep `minimumReleaseAgeStrict: true` in the Console workspace. Do not accept
+automatically generated release-age exclusions to force a fresh version through;
+select a reviewed eligible release or report the install as blocked. Keep npm
+and pnpm owner-scoped overrides synchronized: modern named Minimatch/Glob APIs
+must not be imposed on legacy callable/callback consumers, or vice versa.
+The P4 acceptance report records actual config, matcher and schema regressions.
+
 On hosts without the reference Python tools, use the repository validation
 image. It installs the hash-pinned dependency graph from
 `control/requirements.validation.lock` and runs as an unprivileged user:

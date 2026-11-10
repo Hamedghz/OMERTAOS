@@ -96,7 +96,7 @@ P4 با مجوز کاربر آغاز شده و هنوز بسته نیست. پس 
 | P1 | بازبینی و انتقال تغییرات مفید checkout دیگر | چهار فایل منتقل شد؛ password از props کلاینت حذف شد؛ چهار تست Login در suite با ۳۶ تست پاس شد؛ build تولیدی موفق | تکمیل محلی؛ push نشده |
 | P2 / M4.1.3 | rebuild کنسول و Control، harness تکرارپذیر و رفع correlation زمان‌بندی | هر دو variant، ورود واقعی، echo و replay و context سه رویداد audit موفق؛ بررسی مقادیر حساس منتخب لاگ موفق؛ stack متوقف و شش volume حفظ شد | تکمیل محلی؛ push نشده |
 | P3 | restart، replay/fencing، persistence، backup و restore مجزا | نصب تازه، restart، backup/restore رمزگذاری‌شده و ارتقای clone داده واقعی R6 پاس؛ حدود شواهد در گزارش پذیرش | تکمیل محدود محلی؛ push نشده |
-| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | پذیرش عملکردی محدود پاس؛ اسکن imageها مردود، اصلاحات سازگار ادامه دارد، majorها مجوز جدا می‌خواهند |
+| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | majorهای منتخب با مجوز جدا مهاجرت و محلی بررسی شدند؛ audit lockها پاک، اسکن imageها هنوز مردود، Python و پذیرش Docker نسخه جدید باز |
 | P5 | checkpoint، تطبیق شواهد و آماده‌سازی تغییرات برای GitHub | diff و commitهای قابل مرور، گزارش pass/fail/blocked؛ push/merge فقط با مجوز مربوط | منتظر تأیید |
 | P6 / M5 | تصمیم درباره بازنشستگی aliasها | نبود مصرف فعال با scan/telemetry و عبور gateهای مهاجرت؛ rollback روشن | منتظر تأیید |
 | P7 | طرح native/WARLOCK و بررسی static اسکریپت‌ها | plan برگشت‌پذیر user/env/systemd/update/rollback/backup/restore؛ sudo و نصب سرویس مجوز جدا می‌خواهد | منتظر تأیید |
@@ -448,6 +448,43 @@ wheelها را نشان داد. rebuild Control و pip-audit همچنان مسد
 `checkpoint/p4-base-refresh-start-c57dfc9` و checkpoint پایان بسته
 `checkpoint/p4-base-refresh-2026-11-10` است. volume و سرویس فعال تغییر نکردند.
 
+### مهاجرت مصوب majorهای وابستگی در P4 — ۲۰۲۶-۱۱-۱۰
+
+کاربر پس از checkpoint سازگار، بررسی و اجرای Zod، DeepmergeTS و
+Minimatch/Glob را جداگانه تأیید کرد. این مجوز جایگزین عبارت‌های تاریخی
+«majorها منتظر تأییدند» در بخش‌های قبلی است؛ P5، push و merge مجاز نشدند.
+مبنا `ec76802`، tag پیش از ویرایش `checkpoint/p4-major-start-ec76802`
+و کامیت اصلاحات `f47c8ad` است؛ شاخه تغییر نکرد.
+
+سه برنامه Zod 4.6.7 دارند؛ recordها با قرارداد جدید سازگار و کد خطای enum
+در Gateway حفظ شد. Console برای سازگاری تایپ به TypeScript 5.9.3 ارتقا یافت،
+اما Node/npm/pnpm ثابت ماندند. DeepmergeTS 8.0.2 با مصرف‌کننده واقعی Prisma
+تست شد؛ Prisma 6.18.0 و schema تغییر نکردند. matcherهای مدرن Minimatch
+11.0.5 و Glob 14.0.4 دارند؛ API قدیمی ESLint/rimraf عمداً محفوظ است.
+
+یک خطای واقعی brace-expansion و باقی‌ماندن Glob قدیمی در lock ثانویه شناسایی
+و با override محدود به مالک رفع شد. استثنای سن انتشار که pnpm خودکار پیشنهاد
+کرده بود پیش از استفاده در نصب حذف شد؛ نسخه بالغ و حالت strict انتخاب شدند.
+هیچ finding، تست یا کنترل امنیتی برای پاس شدن حذف یا خاموش نشد.
+
+نصب locked و buildهای Gateway، Bridge و Console پاس شدند. تست‌ها: Gateway
+۳۱، Bridge چهار، Console یک suite کامل ۴۰تایی، سپس سه تست تقویت‌شده Policy
+و typecheck نهایی، و ۲۶ تست مرتبط معماری. اجرای کامل ۴۲تایی ادعا نمی‌شود.
+audit سه برنامه و lock ثانویه npm صفر advisory دادند؛ Trivy سورس ۹۷۲ فایل
+نیز صفر finding/secret گزارش کرد. این اسکن Python و imageهای برنامه را پوشش
+نمی‌دهد. کمترین RAM available در batch اصلی ۲۵۵۹ MiB بود؛ اجراها ترتیبی بودند.
+
+هشدار Next درباره انتخاب ریشه `/home/omerta` با lockfile بیرونی باز است؛
+فایل بیرونی دست‌نخورده ماند و اصلاح tracing root/rebuild باید در batch بعد
+انجام شود. هشدارهای deprecated ابزار قدیمی نیز حذف نشده‌اند. DNS wheelهای
+Python، rebuild Control، pip-audit و یافته‌های قبلی OS/binary باز هستند.
+image جدید، stack زنده، native و benchmark در این batch اجرا نشدند؛ پذیرش
+قدیمی Docker شاهد این majorهای جدید نیست. volume و سرویس فعال تغییر نکردند.
+
+جزئیات فرمان، زمان، نتیجه و rollback اتمیک manifest/lock/source در گزارش
+پذیرش ثبت است؛ شواهد فقط E1 منتخب را تقویت می‌کنند. checkpoint پایان:
+`checkpoint/p4-major-migration-2026-11-10`؛ هیچ push یا merge انجام نشد.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
@@ -462,6 +499,7 @@ wheelها را نشان داد. rebuild Control و pip-audit همچنان مسد
 | ۲۰۲۶-۱۱-۰۲ | مجوز ساخت کلید و ادامه P3 | کلید محافظت‌شده ساخته شد؛ backup امضاشده/رمزگذاری‌شده و restore شش volume و مسیر live پاس؛ ۳۶ تست و checkpoint محلی | baseline نسخه قدیمی و آزمون upgrade روی clone؛ نه P4 |
 | ۲۰۲۶-۱۱-۰۲ | بستن ارتقای تاریخی P3 | داده واقعی R6 بدون تغییر منبع clone و ارتقا یافت؛ credential و ردیف‌های قدیمی حفظ؛ ۴۲ تست و مسیر canonical پاس | تأیید جداگانه P4 برای بررسی و اصلاح تجمیعی امنیت/permission |
 | ۲۰۲۶-۱۱-۰۳ | checkpoint اصلاحات سازگار P4 | secret store و permissionها اصلاح؛ چهار image جدید و ۶۸ gate پذیرش تازه/restart پاس؛ شکست export با cache رفع؛ هشدارهای major و scanهای مسدود صریح ثبت | تصمیم majorها و تکمیل gateهای باز همین P4؛ نه P5 یا push |
+| ۲۰۲۶-۱۱-۱۰ | مهاجرت majorهای منتخب با مجوز جدا | `f47c8ad`؛ locked install/build و تست‌های مرتبط پاس، audit lockها و اسکن سورس بدون finding؛ خطاهای override رفع و کنترل سن انتشار سخت‌تر شد | رفع tracing root، دسترسی wheelها و gateهای image/security/live در همین P4؛ نه P5 یا push |
 
 برای ادامه، به همین جدول سطر افزوده شود و وضعیت مرحله مرتبط فقط پس از ثبت
 نتیجه تغییر کند. این سند snapshot برنامه است؛ گزارش پذیرش مرجع جزئیات آزمایش

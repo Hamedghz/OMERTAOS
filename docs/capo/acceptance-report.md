@@ -1,5 +1,146 @@
 # CAPO acceptance report
 
+## P4 approved dependency-major migration - 2026-11-10
+
+The user separately approved controlled Zod, DeepmergeTS and Minimatch/Glob
+major migrations after the compatible checkpoint. Starting commit:
+`ec76802608f8bd4795e3a8517c2d8af0f3662ddc`; pre-edit tag:
+`checkpoint/p4-major-start-ec76802`. Implementation: `f47c8ad` on unchanged
+branch `Radin/omerta-env-namespace`. This section supersedes earlier statements
+that these selected majors still await approval; P4 itself remains open.
+
+### Changes And Compatibility Findings
+
+- Gateway, Console and Bridge now lock Zod 4.6.7. Gateway/Bridge record schemas
+  use explicit string keys. Gateway retains the existing validation envelope,
+  dotted field paths and `invalid_enum_value` diagnostic code; default Zod
+  message wording is not promised byte-identical. No route, auth, tenant or
+  execution-privilege change was made, and no Zod 3 fallback was introduced.
+- Console TypeScript moves from 5.4.5 to 5.9.3, within major 5, for supported
+  Zod 4 typing. Node 22.23.2, npm 10.9.8 and pnpm 11.13.1 are unchanged.
+- Console overrides DeepmergeTS to 8.0.2 for the actual `@prisma/config` consumer.
+  Prisma/client remain 6.18.0; no database migration was run. Tests exercise
+  config loading, nested merging, input preservation and selected prototype keys.
+- Modern matcher owners use Minimatch 11.0.5 and Console Glob 14.0.4. ESLint 8
+  and rimraf 3 retain callable Minimatch 3.1.5 / callback Glob 7.2.3 APIs. This
+  is not retirement of deprecated legacy tooling or a universal Glob upgrade.
+
+An independent brace-pattern probe initially failed with exit 1:
+`TypeError: (0 , brace_expansion_1.expand) is not a function`. The old global
+brace-expansion v1 override had been forced into the modern named-API matcher.
+Scoping it to `<2`, retaining the existing v2 override and allowing modern v5
+fixed the consumer incompatibility. Regression tests exercise actual parent-
+resolved modern and legacy matchers, including braces, rather than just versions.
+
+The initial npm secondary Console lock also retained Glob 10.5.0 despite an
+exit-zero resolution command. Expanding the selector from `glob@>=10 <14` to
+`glob@>=10 <15` produced Glob 14.0.4 in both locks; the generated locks were
+inspected, not assumed correct from command success or edited by hand.
+
+During initial lock generation, pnpm automatically proposed a release-age
+exception for newly published Minimatch 11.0.6. It was removed **before an
+installation used it**. The mature 11.0.5 release was selected instead and
+`minimumReleaseAgeStrict: true` now rejects such silent policy relaxation.
+No final age exception, disabled integrity check, force/legacy-peer install,
+advisory ignore, dev-dependency exclusion or skipped failing test was used.
+
+Migration references: [Zod migration guide](https://zod.dev/v4/changelog),
+[DeepmergeTS changelog](https://github.com/RebeccaStevens/deepmerge-ts/blob/main/CHANGELOG.md),
+[Glob changelog](https://github.com/isaacs/node-glob/blob/main/changelog.md).
+Registry versions, engines and exports were also inspected before installation.
+
+### Executed Gates
+
+All following gates exited 0. Durations are wall seconds, not benchmark results.
+Commands ran sequentially with a 1 GiB available-memory stop guard. Main-batch
+minimum available RAM: 2559 MiB; final regressions: 3316 MiB; scan: 3987 MiB.
+Node builds used `CIRCLE_NODE_TOTAL=2` and
+`NODE_OPTIONS=--max-old-space-size=1536`. Prisma/build used the non-credential
+validation URL `postgresql://127.0.0.1:5432/omerta_validation`; no DB was started.
+
+| Command / gate | Actual result | Wall seconds |
+|---|---|---|
+| `npm ci --prefix gateway --no-audit --prefer-offline --fetch-retries=1 --fetch-timeout=120000` | Locked real installation | 52.12 |
+| `npm ci --prefix integrations/windows-agentic-bridge/bridge-server --no-audit --prefer-offline --fetch-retries=1 --fetch-timeout=120000` | Locked real installation | 48.17 |
+| `corepack pnpm --dir console install --frozen-lockfile --prefer-offline --network-concurrency=2 --child-concurrency=2` | Final canonical real installation | 12.18 |
+| `npm run build --prefix gateway` | TypeScript compilation | 30.37 |
+| `npm test --prefix gateway` | 31 passed / 9 files; 0 failed/skipped | 14.47 |
+| `npm run lint --prefix gateway` | Actual parser/matcher consumer passed | 25.66 |
+| `npm run build --prefix integrations/windows-agentic-bridge/bridge-server` | TypeScript compilation | 18.33 |
+| `npm test --prefix integrations/windows-agentic-bridge/bridge-server -- --run --maxWorkers=2` | 4 passed / 2 files; 0 failed/skipped | 6.35 |
+| `corepack pnpm --dir console test --config vitest.config.mts --maxWorkers=2` | 40 passed / 16 files; 0 failed/skipped | 81.62 |
+| `corepack pnpm --dir console exec prisma validate` | Actual config/schema validation | 13.65 |
+| `corepack pnpm --dir console prisma:generate` | Client 6.18.0 generated | 16.39 |
+| `corepack pnpm --dir console build` | Production build passed, root warning below | 500.36 |
+| `corepack pnpm --dir console exec vitest run tests/unit/policy-editor.test.tsx --config vitest.config.mts --maxWorkers=1` | Final strengthened test: 3 passed, 0 failed/skipped | 21.26 |
+| `corepack pnpm --dir console exec tsc --noEmit` | Final typecheck | 87.70 |
+| `python -m pytest tests/architecture/test_javascript_toolchain.py tests/architecture/test_quickstart_runtime.py tests/architecture/test_integration_consolidation.py -q -p no:cacheprovider` | 26 passed; 0 failed/skipped | 22.57 |
+| `ruff check --no-cache tests/architecture/test_javascript_toolchain.py` | Passed | 3.08 |
+| `python3 scripts/audit_environment_namespace.py --check` | 164 tokens; 93 reviewed legacy readers retained | 3.84 |
+
+Python/Ruff used the existing `omertaos-python-validation:local` image with
+read-only bind, no network, temporary `/tmp`, 1024 MiB RAM and 2 CPUs. Exact
+Docker argv are retained in the artifact below. The full Console suite ran
+before two additional invalid-budget cases and stronger submission assertions
+were added; only that three-test subset and typecheck ran afterward. Do not
+report a full 42-test Console run. The later changes were test-only.
+
+Registry audit commands used `--json --fetch-retries=0 --fetch-timeout=30000`:
+`npm audit --prefix gateway --package-lock-only` (6.82s), Bridge equivalent
+(7.44s), `corepack pnpm --dir console audit` (7.53s) and secondary
+`npm audit --prefix console --package-lock-only` (6.91s). Each reported zero
+known advisories, including development dependencies, for its own resolved
+graph. Counts from npm and pnpm are not interchangeable or evidence of images.
+
+A manifest-only temporary copy also passed
+`npm ci --prefix <temporary-copy>/console --dry-run --ignore-scripts --no-audit
+--fetch-retries=0 --fetch-timeout=30000` (9.62s). This is an **811-package
+install plan**, not another real installation; canonical Console uses pnpm.
+
+Trivy 0.76.1 `fs --scanners vuln,secret --db-repository
+public.ecr.aws/aquasecurity/trivy-db:2 --parallel 1 --timeout 5m --exit-code 1
+--format json <snapshot>` passed in 7.08s. Snapshot: 972 tracked regular working-
+tree files, including the staged new test, before this documentation update;
+manifest SHA-256 `a2a55395bc35513ea4b43dd56a8862236c21158eacec20443fe7aed6509428b0`.
+DB updated `2026-11-10T10:23:24.039108641Z`; zero reported vulnerabilities and
+zero detected secrets in the inspected scope. Two historical broken symlinks
+were excluded from the regular-file snapshot and recorded explicitly. Detected
+dependency targets were six npm/pnpm locks and Runtime Cargo.lock, **not Python
+requirements, container OS packages, ignored files or Git history**.
+
+### Warnings, Deferred Gates And Rollback
+
+- Console build inferred `/home/omerta` as workspace root because of an external
+  `/home/omerta/package-lock.json`. Build passed with this warning; tracing-root
+  reproducibility needs a focused config repair and rebuild in the next batch.
+  The external file was not removed and no type/lint/build-error check disabled.
+- Deprecated ESLint 8 and seven deprecated transitive packages remain warnings.
+  Initial Prisma postinstall warned about CLI installation; explicit real
+  config validation, client generation and production build later passed.
+- The prior Python wheel DNS blocker was not retried in this batch. Control
+  rebuild, complete Python production closure and pip-audit remain blocked.
+  Existing failed base/image scans, bundled npm-tar and other OS/binary findings
+  remain open; a clean application lock audit does not clear those findings.
+- Application-image rebuilds and live acceptance for these new majors are
+  **deferred/not run**, not passed. Earlier one-worker acceptance used older
+  source/images. Full repository Python/Runtime suites, browser E2E, native
+  services and benchmarks were not rerun for this dependency-only batch.
+
+Sanitized local reports under ignored `artifacts/p4/` retain exact argv, exit
+codes, durations, warnings, intermediate failures and provenance:
+`major-package-contracts.json`, `major-lock-generation.json`,
+`major-locked-installation.json`, `major-secondary-glob-lock.json`,
+`major-scoped-override-install.json`, `major-glob-selector-sync.json`,
+`major-validation-batch.json`, `major-final-regressions.json`,
+`major-source-scan.json`. No service or persistent Docker data was changed.
+The generated TypeScript build-info file was moved into ignored artifacts,
+not committed. Evidence improves only to selected **E1** compatibility/audit
+checks, not new deployed E2 acceptance or production/security certification.
+Rollback is a normal reviewed reversal of this dependency/source/test commit,
+restoring manifests and all locks together, followed by locked reinstall and
+affected tests; no schema/data rollback or volume operation is required.
+Checkpoint: `checkpoint/p4-major-migration-2026-11-10`. Nothing pushed or merged.
+
 ## P4 reviewed base-image refresh - 2026-11-10
 
 Starting HEAD `c57dfc9a4391bfef6ee332c0f294309bfed0a5df`, clean working tree;
