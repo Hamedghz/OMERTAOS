@@ -1,5 +1,90 @@
 # CAPO acceptance report
 
+## P4 isolated esbuild package-install feasibility - 2026-11-11
+
+After the user's resume, clean baseline `3410928` was checkpointed as
+`checkpoint/p4-esbuild-install-start-3410928` on the unchanged working branch.
+This increment implements and tests provider preparation plus an isolated
+consumer probe. **Canonical Console integration and P4 acceptance remain open.**
+
+`prepare_esbuild_provider.mjs` verifies the reviewed candidate and the MIT
+license digest from the previously verified source archive, refuses existing
+outputs/repository paths/non-private parents, and copies only into a new private
+external directory. The package has its own name/version
+`@omerta/esbuild-linux-x64@0.28.2-omerta.1`, `private: true`, no lifecycle scripts,
+the original license and unsigned provenance with `security_accepted: false`.
+No publisher identity, JS SRI or `esbuild.binaryHashes` was fabricated/replaced.
+Local `npm pack` normalized the packaged executable mode to 755; no installed
+copy or shared store was chmodded to hide that. Active execution uses a separate
+555 candidate mounted readonly at `/opt/omerta-tools/esbuild`, verified before
+installer/probe invocation. Installed Go copies are checked by digest/metadata.
+
+All commands ran sequentially in new task-owned directories. Tool versions were
+actually checked in the container: Node 22.23.2, npm 10.9.10, pnpm 11.13.1.
+The existing image ID was pinned, not rebuilt. Installation containers used
+UID/GID 1000, readonly root, dropped capabilities/no-new-privileges, 1 GiB/two
+CPUs/256 PIDs, private writable caches and no implicit volumes. Only registry
+installation/lock generation used bridge networking; functional probes and pack
+used no network. No user home, credentials, repo-wide bind or shared cache was
+exposed to installers. This is not Runtime isolation or a changed image UID.
+
+| Gate | Actual result / wall duration |
+|---|---|
+| `node --test tests/tooling/verify_esbuild_artifact.test.mjs tests/tooling/prepare_esbuild_provider.test.mjs` | Exit 0 / 3.304s; 23 passed, 0 failed/skipped |
+| Prepare actual provider / local `npm pack` | Both exit 0 / 1.361s and 18.065s; four package entries, 9,144,069-byte archive |
+| Native `npm install --package-lock-only` / separate clean `npm ci` | Both exit 0 / 79.182s and 16.679s; lock digest unchanged by clean install |
+| Native `pnpm install --lockfile-only` / separate `install --frozen-lockfile` | Both exit 0 / 161.791s and 85.042s; lock digest unchanged; actual esbuild postinstall enabled and executed |
+| npm CLI/async API/sync API/tsx ESM+CJS/Vite transform | Exit 0 / 11.363s; repeated from relocated app path, exit 0 / 11.596s |
+| pnpm same functional probe | Exit 0 / 11.460s; relocated copy exit 0 / 12.508s |
+| Second offline `npm pack` of the same provider | Exit 0; byte-identical SHA256 to the first archive, not a second Go build or an independent-host reproduction |
+
+Native overrides replace only `esbuild@0.28.2`'s Linux x64 optional dependency
+with the separately identified local tarball. Other optional packages, TLS,
+integrity, pnpm release-age strictness and build-script allowlisting were not
+disabled. The original JS tarball SRI was independently checked from the private
+npm cache; the installed `esbuild.binaryHashes` matched its manifest. Each probe
+checked the generated upstream CLI/API absolute-path override, observed the
+async service executable path, exercised the normal sync API, and inventoried
+every regular ELF under the fixture's node_modules. Each fixture contained one
+identified Go ELF, matching the candidate digest and `.go.buildinfo`; npm also
+had two native Rollup ELFs, pnpm one. Go-marker classification is not a universal
+binary analyzer; no all-platform/all-image coverage claim follows. The sync/tsx
+child paths were not independently syscall-traced. Relocation held the external
+tool path fixed; host relocation or final image portability was not proven.
+
+Provider tarball SHA256:
+`d14af949d1c6eacf2537bfda8c0e1ef51b2395fdf03ca4380f8d43add6370f62`.
+Its native integrity is
+`sha512-Gn78SEtfhBQGEVB0sEk8ipmOuY+IIVVMt4qxGcYwEZXUjwPoxjNRqcKCX8l/7uHJ0V/UEnIph85NUQhB0dI4+w==`.
+The license pin is
+`b40ec5baec7bb34fa5b1c09521fa3cd52d5fad7adafed74932a2010d3612a681`.
+Receipts, complete argv/exits/durations, experimental manifests/locks, package,
+raw warnings and inventories remain under
+`/home/omerta/.local/share/omerta-validation/esbuild-install-20261111-a/`,
+including `receipt.json`, `functional-audit/` and `pack-repeat-audit/`.
+Final CI-YAML selection/whitespace checks also exited zero; all 13 recorded
+ephemeral container IDs were absent. `source-final-review/receipt.json` retains
+the code fingerprints, static-check argv/results and absence inventory. Remote
+GitHub CI was not run.
+
+Warnings/failures/limits: pnpm recorded error-(23) retries and ~70s metadata
+requests; both affected commands eventually exited zero, without weakening TLS
+or using a substitute install. No application suite, full production build,
+fresh vulnerability scan, Python wheel gate, image export or live-stack test
+was run in this increment. The existing UNKNOWN x/sys advisory, Bandit findings
+and Python gates remain open. No clean security result is inferred from these
+functional passes. Primary free disk after fixtures was 8,473,243,648 bytes
+(7.9 GiB), below the 15 GiB heavy-export planning budget; the unchanged 3 GiB
+disk/1 GiB available-RAM guards did not trip. Install-phase minima were
+3,362,799,616 bytes available RAM and 8,537,411,584 bytes free disk.
+
+No canonical Console lock, Dockerfile, installed dependency, API/auth/schema,
+secret, persistent application service/volume, push or merge changed. The next
+integration must add consumer preflight/exit propagation and a reproducible
+artifact-input contract; an environment override alone is insufficient. This
+is E1 isolated tooling evidence, not a P4 completion or E0 Console upgrade.
+Rollback is a reviewed revert of tooling/CI changes; no data migration is needed.
+
 ## P4 candidate identity verifier and capacity recheck - 2026-11-11
 
 The user's latest approval is Stage A implementation/validation and a fresh

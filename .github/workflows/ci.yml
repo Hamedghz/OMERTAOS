@@ -97,7 +97,7 @@ jobs:
           corepack enable
           corepack prepare pnpm@11.13.1 --activate
       - name: Verify auditable compiler artifact identity controls
-        run: node --test tests/tooling/verify_esbuild_artifact.test.mjs
+        run: node --test tests/tooling/*.test.mjs
       - name: Gateway build and tests
         run: |
           npm ci --prefix gateway

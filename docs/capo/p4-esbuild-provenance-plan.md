@@ -11,7 +11,12 @@ The user subsequently authorized the outstanding implementation permissions.
 Implementation `fd95ecc` adds the Stage A builder, pinned inputs and regression
 tests. The subsequent Stage A identity verifier pins the reviewed candidate
 without installing it or claiming security acceptance; its 15 native Node
-regressions and actual-candidate check passed. Stage B remains unexecuted.
+regressions and actual-candidate check passed. After resume, isolated Stage B
+fixtures proved native npm/pnpm locks, separate clean locked installs and
+CLI/API/tsx/Vite behavior before/after app relocation; the local package also
+repacked identically. Canonical Console integration, consumer preflight and
+final image/security acceptance remain unexecuted/open. The acceptance report
+records this distinction; the isolated fixture is not a completed Stage B.
 This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
 Docker daemon changes. Current executable results belong in the acceptance
@@ -283,6 +288,8 @@ attempts still enforce the existing 3 GiB free-disk guard):
 The current 8.2 GiB exceeds the Stage A stop floor but is below the 15 GiB
 planning budget; retain the heavy Console export block. Do not equate more free
 space with an executed export or lower guards to try to pass.
+After the isolated fixtures and relocation copies, root/Docker had
+8,473,243,648 bytes free (7.9 GiB); no shared cache/volume cleanup was performed.
 The Python wheel DNS/production closure/pip-audit block and five existing low
 Bandit findings are independent open gates, not fixed by this proposal.
 

@@ -9,6 +9,7 @@
   "sha256": "332c847f63affcb51c6ac278f4bc26f38cb11ce4c6a066464248afa52ce0f461",
   "source_commit": "609683d892977362a0f99026cb74b96263d728a9",
   "compiler_version": "go1.27.4",
+  "license_sha256": "b40ec5baec7bb34fa5b1c09521fa3cd52d5fad7adafed74932a2010d3612a681",
   "build_metadata_present": true,
   "security_accepted": false,
   "open_advisory": "CVE-2026-39824",

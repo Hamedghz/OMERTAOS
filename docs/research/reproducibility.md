@@ -116,6 +116,42 @@ trusted local input; these checks do not defend against a malicious same-UID
 owner/root replacing it or changing the binary after verification. Console
 integration and a protected production tool location remain Stage B gates.
 
+Prepare a separate locally named provider for **isolated** installer validation:
+
+```bash
+node scripts/prepare_esbuild_provider.mjs \
+  /absolute/private/path/build-1/esbuild \
+  /absolute/verified-source/LICENSE.md /absolute/private/parent/new-provider
+```
+
+The output parent must already be canonical, caller-owned and private (700);
+the output must not exist or be inside this repository. The script verifies
+the binary and pinned source-license digest, preserves the license, creates a
+private package with unsigned provenance and never installs/publishes it.
+`npm pack /absolute/private/parent/new-provider --json --pack-destination=/absolute/private/artifacts`
+can then create a local tarball. Normal npm packaging changes executable mode
+to 755; keep the actively executed tool separately protected, not by chmodding
+shared installed/store hardlinks.
+
+The isolated 2026-11-11 fixture proved these **scoped** overrides with both
+native lock generators; do not paste them into Console without integration
+review. npm uses `overrides["esbuild@0.28.2"]["@esbuild/linux-x64"]`, pnpm uses
+workspace `overrides["esbuild@0.28.2>@esbuild/linux-x64"]`, each set to
+`file:../artifacts/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz`. Fresh fixtures
+used esbuild 0.28.2, tsx 4.23.15 and Vite 7.3.7. Native `npm ci` and
+`pnpm install --frozen-lockfile` passed without lock changes; build scripts and
+optional dependencies remained enabled. See the dated acceptance report and
+its retained exact container argv/manifests for reproduction.
+
+`scripts/probe_esbuild_installation.mjs` is a restricted diagnostic for those
+named fixtures, not an install hook or general consumer wrapper. Its container
+requires the protected tool at `/opt/omerta-tools/esbuild`, verifier/manifest
+beside the probe under `/inputs/`, and `/inputs/esbuild-publisher-package.json`
+extracted from the original SRI-verified JS tarball. It checks CLI/API override,
+async spawn path, sync transform, tsx ESM/CJS, Vite transform and installed ELF
+inventory. All probe output retains `security_accepted: false`; the existing
+advisory and full Console/image acceptance remain open.
+
 For a constrained host, image mode also accepts `--scratch-dir` pointing to an
 existing absolute, caller-owned, mode-700 directory outside the repo. It may use
 an existing executable RAM filesystem, but requires 512 MiB initially free;
