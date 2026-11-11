@@ -1,6 +1,6 @@
 # برنامه اجرا و دفتر پیشرفت OMERTAOS
 
-تاریخ وضعیت: ۲۰۲۶-۱۱-۱۰. این سند مرجع هماهنگی ادامه کار است؛ نتیجه تست
+تاریخ وضعیت: ۲۰۲۶-۱۱-۱۱. این سند مرجع هماهنگی ادامه کار است؛ نتیجه تست
 یا مجوز اجرای مرحله بعد را جایگزین نمی‌کند. وضعیت هر مرحله فقط با شواهد واقعی
 به‌روزرسانی می‌شود.
 
@@ -96,7 +96,7 @@ P4 با مجوز کاربر آغاز شده و هنوز بسته نیست. پس 
 | P1 | بازبینی و انتقال تغییرات مفید checkout دیگر | چهار فایل منتقل شد؛ password از props کلاینت حذف شد؛ چهار تست Login در suite با ۳۶ تست پاس شد؛ build تولیدی موفق | تکمیل محلی؛ push نشده |
 | P2 / M4.1.3 | rebuild کنسول و Control، harness تکرارپذیر و رفع correlation زمان‌بندی | هر دو variant، ورود واقعی، echo و replay و context سه رویداد audit موفق؛ بررسی مقادیر حساس منتخب لاگ موفق؛ stack متوقف و شش volume حفظ شد | تکمیل محلی؛ push نشده |
 | P3 | restart، replay/fencing، persistence، backup و restore مجزا | نصب تازه، restart، backup/restore رمزگذاری‌شده و ارتقای clone داده واقعی R6 پاس؛ حدود شواهد در گزارش پذیرش | تکمیل محدود محلی؛ push نشده |
-| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | majorهای منتخب با مجوز جدا مهاجرت و محلی بررسی شدند؛ audit lockها پاک، اسکن imageها هنوز مردود، Python و پذیرش Docker نسخه جدید باز |
+| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | majorهای منتخب و npm مصوب بررسی شدند؛ audit سه برنامه اصلی پاک، Desktop و Bridge UI هرکدام سه high و یک moderate؛ اسکن imageها مردود، export Console، Python و پذیرش Docker نسخه جدید باز |
 | P5 | checkpoint، تطبیق شواهد و آماده‌سازی تغییرات برای GitHub | diff و commitهای قابل مرور، گزارش pass/fail/blocked؛ push/merge فقط با مجوز مربوط | منتظر تأیید |
 | P6 / M5 | تصمیم درباره بازنشستگی aliasها | نبود مصرف فعال با scan/telemetry و عبور gateهای مهاجرت؛ rollback روشن | منتظر تأیید |
 | P7 | طرح native/WARLOCK و بررسی static اسکریپت‌ها | plan برگشت‌پذیر user/env/systemd/update/rollback/backup/restore؛ sudo و نصب سرویس مجوز جدا می‌خواهد | منتظر تأیید |
@@ -505,6 +505,53 @@ Docker یا امنیت imageها. rebuild برنامه‌ها، پذیرش زن�
 checkpoint پایان `checkpoint/p4-console-tracing-root-2026-11-10` است؛
 P4 بسته نشده و هیچ push/merge انجام نشد.
 
+### تعمیر build و هم‌راستایی مصوب npm در P4 — ۲۰۲۶-۱۱-۱۰ و ۱۱
+
+مبنای این بسته `46d36c5` بود. توقف واقعی `apk add curl` با timeout مستقل
+endpoint رسمی CDN بررسی شد؛ دو mirror موجود در فهرست رسمی Alpine پاسخ
+TLS معتبر دادند. در `20eb56f` فقط انتخاب محدود `cdn/kernel` افزوده شد؛
+پیش‌فرض، نسخه مخزن و کلیدهای امضا حفظ شدند و مقدار ناشناخته واقعاً در Docker
+رد شد. هیچ DNS، TLS یا کنترل امنیتی برای پاس شدن تغییر نکرد.
+
+Gateway ساخته شد، ولی اسکن آن یک critical مربوط به tar همراه npm داشت.
+Console در دریافت وابستگی با reset/timeout متوقف شد؛ `5e7c9da` تنظیمات
+انتقال را محدود کرد. نصب frozen و تولید Prisma در retry پاس شدند؛ آن build
+پس از تأیید ارتقای npm عمداً لغو شد تا image قدیمی دوباره تولید نشود.
+
+با مجوز جدا، `882b7ed` قرارداد npm را در پنج manifest/lock، شش stage داکر
+و دو job دارای Node در CI به ۱۰.۹.۱۰ برد. archive با integrity ناشر تطبیق
+داشت؛ npm/npx فعال میزبان و tar واقعی همراه آن اکنون ۱۰.۹.۱۰ و ۷.۵.۲۲ هستند.
+prefix کاربری backup شد؛ `/usr` تغییر نکرد. Node و Corepack pnpm ثابت‌اند.
+گراف و integrity هیچ وابستگی برنامه‌ای در lockها تغییر نکرد.
+
+۳۰ تست قرارداد، Gateway با ۳۱ تست، Bridge با چهار تست، build وب Desktop
+و Bridge UI و در نهایت هر ۴۳ تست Console پاس شدند. دو تست قدیمی اصلاح و
+سه تست منفی اضافه شدند؛ timeout اولیه Prisma مستقل بررسی و fixtureهای
+Node در محیط Node اجرا شدند. timeout و assertion حذف یا افزایش نیافتند؛
+اجرای محلی نهایی Console یک‌worker بود. شکست‌های قبلی در گزارش حفظ شدند.
+
+image جدید Gateway ساخته شد و probe آن npm برابر ۱۰.۹.۱۰ و tar برابر
+۷.۵.۲۲ را تأیید کرد. اسکن تازه آن صفر critical، سیزده high، سیزده medium
+و یک low داشت؛ finding مربوط به tar رفع شده ولی اسکن همچنان مردود است.
+در Console نصب frozen، Prisma، build تولیدی Next و کامپایل bootstrap پاس
+شدند؛ export با رسیدن دیسک به ۲٫۹۸۶ GiB توسط محافظ ۳ GiB لغو شد: exit 130،
+نه build موفق. تگ باقی‌مانده مستقلاً شناسایی شد؛ probe اول timeout شد و
+تکرار عین همان probe پس از دسترسی اولیه به image پاس شد: ۹۶ manifest،
+۸۵۸۰ reference و صفر مسیر مفقود، npm برابر ۱۰.۹.۱۰ و tar برابر ۷.۵.۲۲.
+اسکن آن دو critical مربوط به Go داخل esbuild و ۶۳ high دارد؛ build و
+پذیرش زنده همچنان تأیید نشده‌اند. حداقل RAM batch ساخت برابر ۳۰۱۹ MiB بود.
+هیچ stack جدید، native یا benchmark اجرا نشده است. امنیت imageها، Python
+و پذیرش نهایی P4 همچنان بازند؛ محافظ‌ها کاهش نیافتند و هیچ cache، image یا
+volume برای عبور از gate حذف نشد. هیچ push/merge انجام نشد.
+
+نصب‌های میزبان با `--no-audit` اجرا شده بودند و به‌تنهایی شاهد audit نیستند؛
+ممیزی مستقل هر پنج lock npm و lock اصلی pnpm انجام شد. Gateway، Console
+و Bridge server صفر finding داشتند؛ Desktop و Bridge UI هرکدام سه high و
+یک moderate در Vite، Browserslist، source-map-js و baseline-browser-mapping
+دارند. این وابستگی‌ها با patch ابزار تغییر نکردند؛ اصلاحشان هنوز باقی است.
+شکست اولیه probe و هر دو audit مردود حفظ شدند. checkpoint محلی:
+`checkpoint/p4-npm-alignment-2026-11-11`؛ مرحله P4 بسته نشده است.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
@@ -521,6 +568,7 @@ P4 بسته نشده و هیچ push/merge انجام نشد.
 | ۲۰۲۶-۱۱-۰۳ | checkpoint اصلاحات سازگار P4 | secret store و permissionها اصلاح؛ چهار image جدید و ۶۸ gate پذیرش تازه/restart پاس؛ شکست export با cache رفع؛ هشدارهای major و scanهای مسدود صریح ثبت | تصمیم majorها و تکمیل gateهای باز همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۰ | مهاجرت majorهای منتخب با مجوز جدا | `f47c8ad`؛ locked install/build و تست‌های مرتبط پاس، audit lockها و اسکن سورس بدون finding؛ خطاهای override رفع و کنترل سن انتشار سخت‌تر شد | رفع tracing root، دسترسی wheelها و gateهای image/security/live در همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۰ | رفع ریشه tracing کنسول | `79fe192`؛ ۴۳ تست و build و ۹۶ manifest پاس؛ fixture ناموفق ثبت و رفع؛ هشدار ریشه میزبان بسته شد | batch ترتیبی imageها، گیت‌های امنیتی و دسترسی wheelها در همین P4؛ نه P5 یا push |
+| ۲۰۲۶-۱۱-۱۱ | تعمیر انتقال build و ارتقای مصوب npm | `20eb56f`، `5e7c9da`، `882b7ed`؛ npm/npx میزبان ۱۰.۹.۱۰، lockها و تست‌ها پاس؛ Gateway ساخته شد؛ export Console با محافظ دیسک لغو ولی probe یکسان تگ باقی‌مانده در retry پاس شد؛ tar در هر دو artifact finding ندارد، اسکن‌ها همچنان مردود | ظرفیت دیسک بدون حذف خودکار، export موفق Console و هشدارهای باقی‌مانده، Python و پذیرش زنده در همین P4؛ نه P5 یا push |
 
 برای ادامه، به همین جدول سطر افزوده شود و وضعیت مرحله مرتبط فقط پس از ثبت
 نتیجه تغییر کند. این سند snapshot برنامه است؛ گزارش پذیرش مرجع جزئیات آزمایش

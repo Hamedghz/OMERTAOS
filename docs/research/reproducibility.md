@@ -34,6 +34,13 @@ For a user-owned host installation, follow the prefix-safe setup in
 `CONTRIBUTING.md` before locked application installs. Do not upgrade system
 prefixes implicitly or confuse the declared npm pin with a measured image scan.
 
+Node image builds accept `--build-arg ALPINE_MIRROR=kernel` when the publisher
+CDN is unreachable locally. The default is `cdn`; only the listed HTTPS
+kernel.org mirror is accepted, with the same release paths and signing keys.
+Unknown values fail closed. Apply the flag to one Gateway/Console build at a
+time; it does not change host DNS, bypass TLS/signatures, pin OS-package versions,
+or establish live-stack acceptance. Retain transport failures alongside retries.
+
 Console uses TypeScript 5.9.3 for Zod 4's supported TypeScript range. Its
 `pnpm-lock.yaml` is canonical; the secondary npm lock is maintained separately
 and an npm dry-run is not evidence of a real pnpm installation. Use

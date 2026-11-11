@@ -1,5 +1,159 @@
 # CAPO acceptance report
 
+## P4 transport repairs and approved npm patch - 2026-11-10/11
+
+Branch remains `Radin/omerta-env-namespace`. Starting HEAD `46d36c5` was clean;
+pre-edit tag `checkpoint/p4-images-start-46d36c5`. Local repairs:
+`20eb56f` (reviewed Alpine mirror), `5e7c9da` (bounded Console fetch profile),
+`882b7ed` (separately approved npm 10.9.10 alignment). No P5/push/merge approval
+is implied. This section supersedes earlier statements about the active npm pin.
+
+### Reproduced Failures
+
+| Gate | Actual result / classification |
+|---|---|
+| Initial Gateway image build | Locked installation and compilation passed; publisher CDN probe timed out at 20.01s while `apk add curl` remained pending. Owned build deliberately canceled, exit 130 / 467.29s; environment transport, not a compiler defect. Console not attempted in that batch. |
+| Official mirror probes | kernel.org and IUT HTTPS HEAD returned 200 in 1.71s / 0.62s, with DNS/TCP/TLS observed. Probes alone are not package acceptance. |
+| Mirror-selected Gateway build, source `20eb56f` | Exit 0 / 190.13s; `omertaos-gateway:p4-major-20eb56f`, ID `sha256:6d73a7a952861afc33392daa0d7ef01523a5ef66c64c6a066e4dfb2b6a4e8a9b`. Network-disabled payload probe passed, 6.67s; still npm 10.9.8 and UID 0. |
+| That Gateway image's vulnerability scan | Exit 1 / 41.21s: 1 critical, 15 high, 16 medium, 1 low. Critical: bundled tar 7.5.11, CVE-2026-59873, fixed floor 7.5.19. No findings ignored. |
+| Initial mirror-selected Console build | Exit 1 / 265.68s during frozen install: registry.npmjs.org resets/timeouts, then a secondary pnpm error-message setter exception. No compiler failure observed. |
+| Console retry, source `5e7c9da` | Frozen install completed (273.8s), Prisma generation passed (28.6s), Next started. Deliberately canceled after npm-upgrade approval, exit 130 / 660.96s, to avoid exporting a superseded image; no Console export claimed. |
+| Initial npm-patch architecture batch | 25 passed / 2 failed, 23.12s wall: obsolete blanket `npm install` ban and concurrency-4 literal. Updated with three negative regressions; no test removed or xfailed. |
+| Initial npm-patch Console full suite | 42 passed / 1 failed, 79.13s wall: Prisma fixture exceeded the unchanged 5000ms timeout under concurrent local load. Independent five-test file passed, 11.24s suite. |
+
+`ALPINE_MIRROR=cdn|kernel` keeps the publisher CDN as default and permits only
+the HTTPS kernel.org endpoint from the [official mirror list](https://mirrors.alpinelinux.org/).
+Version paths and signing keys are unchanged. Actual negative Docker builds
+rejected an unsupported value with expected exit 1 (7.02s / 24.05s).
+No arbitrary URL, HTTP fallback, untrusted signature mode, DNS/daemon edit or
+TLS relaxation was introduced. Local successful builds explicitly select
+`--build-arg ALPINE_MIRROR=kernel`; default-CDN local acceptance remains blocked.
+
+Console now uses prefer-offline cache lookup, network concurrency 2, child
+concurrency 2, one retry and 120000ms fetch timeout. Frozen locks, integrity and
+strict release-age policy remain enabled. The deps-stage Prisma missing-schema
+warning was retained; the builder subsequently generated from the real schema.
+Both canceled builds have explicit ownership/cancellation receipts and terminal
+BuildKit records, not inferred completion from an observation timeout.
+
+### npm Alignment Evidence
+
+The user explicitly approved the host/Docker/CI/lock patch. Pre-edit tag:
+`checkpoint/p4-npm-start-5e7c9da`. The downloaded npm 10.9.10 archive matched
+its [publisher integrity metadata](https://registry.npmjs.org/npm/10.9.10).
+Active npm/npx are 10.9.10 and actual bundled tar is 7.5.22 in the user-owned
+Node prefix; the old package and npm/npx links were backed up in the protected
+validation directory first. `/usr` was untouched. Node stays 22.23.2 and
+canonical `corepack pnpm` stays 11.13.1; system pnpm was not replaced.
+
+All five manifests/npm locks agree on the npm pin. Generated comparisons found
+no package-set, version, artifact, integrity or dependency-edge change, only root
+npm-engine metadata. All six Node Docker stages and two Node CI jobs explicitly
+install the patch and assert the active version; remote CI was not executed.
+Docker Gateway installation still requires audited `npm ci`. New mutation
+tests reject unlocked installs, `--no-audit` and global `npm@latest`; no blanket
+permission for arbitrary tool installs was added.
+
+The host locked-install commands used `--no-audit` to separate installation
+from advisory requests; those installs alone are not audit evidence. Fresh,
+sequential lock audits were therefore run explicitly after the image checks.
+Their results are recorded separately below, including failures; no failed
+audit is converted into an install success or waived.
+
+| Completed host gate | Actual result / wall seconds |
+|---|---|
+| Architecture/packaging contracts; Ruff; namespace | Exit 0 each: 30 passed / 16.06s; Ruff / 3.31s; 164 tokens and 93 reviewed legacy readers / 2.13s |
+| Gateway locked install, build, tests, lint | Exit 0 each; 31 tests; 50.78 / 25.56 / 15.24 / 24.00s |
+| Desktop shell locked install and web build | Exit 0 each; 40.19 / 50.32s; not native/Tauri acceptance |
+| Bridge server locked install, build, tests | Exit 0 each; 4 tests; 45.59 / 15.79 / 6.65s |
+| Bridge UI locked install and web build | Exit 0 each; 40.94 / 11.78s |
+| Console frozen install and final full suite | Exit 0 each; 12.95s install; 43 passed / 16 files, 110.36s wall / 102.34s suite |
+
+Node-only config/Prisma fixtures now select the actual Node environment using
+the documented [Vitest per-file control](https://vitest.dev/guide/environment).
+Assertions and the 5000ms timeout remain intact; the final local Console suite
+used one worker, not skipped cases or a globally extended timeout. Desktop shell
+and Bridge UI have no unit-test script; no test count is invented for them.
+No additional host Console production build was run for this patch. In Docker,
+frozen installation (208.2s), Prisma generation (30.0s), production Next build
+(447.6s) and bootstrap TypeScript compilation (27.5s) all passed. This is not a
+successful image export or live Console acceptance.
+
+All builds/installations/suites were sequential. Completed host batch minimum
+available RAM: 3875 MiB; Console retry: 3950 MiB. Earlier image work minimum:
+3278 MiB and 7.90 GiB free disk. New builds keep 1 GiB RAM / 3 GiB disk stop
+guards. The new image batch observed a minimum 3019 MiB available RAM and
+2.986 GiB free disk: the disk guard fired during Console export. It was not
+disabled or lowered, and no images, build cache or volumes were deleted.
+
+### npm-Patched Image Results
+
+| Gate at source `882b7ed` | Actual result / boundary |
+|---|---|
+| Compose quiet rendering | Exit 0 / 1.69s; not live acceptance |
+| Gateway/Console unsupported-mirror Docker checks | Expected exit 1 / 109.11s and 18.94s; both rejection gates passed |
+| Gateway build | Exit 0 / 274.66s; tag `omertaos-gateway:p4-npm-882b7ed`, ID `sha256:3e9f2337a7449730ef4def7b8be3aab3349df42af692e8ef718c6f741093c53d` |
+| Gateway readonly, network-disabled payload probe | Exit 0 / 8.62s; actual Node 22.23.2, npm 10.9.10, tar 7.5.22, Zod 4.6.7 and packaged shared provider; UID remains 0 |
+| Gateway fresh vulnerability scan | Exit 1 / 41.55s; 0 critical, 13 high, 13 medium, 1 low; no tar finding, but not a clean scan |
+| Console build/export | Exit 130 / 1436.12s; `free disk below 3 GiB`; BuildKit record `xwm6x7p4lzdkgyzakp98815ml` is Canceled despite completed compilation and a surviving tag |
+| Console surviving export identity | Tag `omertaos-console:p4-npm-882b7ed`, ID `sha256:69a84187fbf9b7820c61eb342d4ce3381f1fe3f3eebef31d75b743e821114928`; revision label verified independently; identity does not override the canceled build |
+| Console surviving-export payload probe | Exit 143 / 60.11s, bounded timeout, no output; not accepted and not attributed to a proven application defect |
+| Identical Console payload-probe retry after cold image access | Exit 0 / 8.06s with the same 60s limit, assertions and resources; npm 10.9.10 / tar 7.5.22, UID 1001, Next 15.5.28, Prisma 6.18.0; 96 trace manifests / 8580 references, zero missing |
+| Console surviving-export vulnerability scan | Exit 1 / 151.01s; 2 critical, 63 high, 73 medium, 7 low, 2 unknown; no tar finding; both critical findings are CVE-2025-68121 in two esbuild paths bundling Go 1.23.12 |
+
+Gateway's scan used Trivy 0.76.1 with database UpdatedAt
+`2026-11-10T10:23:24.039108641Z`; no advisory/severity filtering or ignore was
+used. Console used the same database. The identical probe passed after the
+initial cold-access timeout; the cause of that timeout was not proven and its
+failed receipt is preserved. The selected critical bundled-tar remediation is
+supported for the host, this Gateway image and the independently inspected
+surviving Console artifact, not the unchanged publisher base. Console's build
+remains canceled: a working tagged payload and scan do not establish an exit-zero
+export, live startup, health or authenticated request flow. Remaining Gateway
+high findings include musl, zlib and bundled JavaScript tooling. No
+production/security certification is implied.
+
+### Separate Fresh Lock Audits
+
+| Command | Actual result / wall seconds |
+|---|---|
+| `npm audit --json --prefix gateway` | Exit 0 / 8.04s; zero findings |
+| `npm audit --json --prefix console` | Exit 0 / 5.16s; zero findings in the secondary lock |
+| `npm audit --json --prefix console/desktop-shell` | Exit 1 / 8.66s; 3 high, 1 moderate |
+| `npm audit --json --prefix integrations/windows-agentic-bridge/bridge-server` | Exit 0 / 4.63s; zero findings |
+| `npm audit --json --prefix integrations/windows-agentic-bridge/bridge-ui` | Exit 1 / 5.34s; 3 high, 1 moderate |
+| `corepack pnpm --dir console audit --json` | Exit 0 / 5.79s; zero findings in the canonical lock |
+
+Desktop and Bridge UI report Vite, Browserslist and source-map-js as high,
+baseline-browser-mapping as moderate. Their package graphs were unchanged by
+the npm-engine patch; this patch did not repair those separate dependency
+findings. No automatic `audit fix`, force install, dev-dependency exclusion or
+severity suppression was used. These failures remain P4 work, not passing gates.
+The final targeted batch observed 4130 MiB minimum available RAM and 3.913 GiB
+minimum free disk. No complete test suite or image scan was repeated in it.
+
+Python wheel access was last blocked on November 10 and was not retried in this
+npm-only batch. pip-audit/full production
+closure, Runtime refresh, OS/binary findings and final live acceptance remain
+open. No native services, benchmarks or new live stack were run. P4 is open.
+
+Exact argv, warnings, exits and durations are retained under ignored
+`artifacts/p4/`: `major-image-builds.json`, `major-image-cancellation.json`,
+`alpine-mirror-transport.json`, `major-image-mirror-builds.json`,
+`major-image-checks.json`, `console-image-fetch-retry.json`,
+`console-npm-upgrade-cancellation.json`, `npm-host-patch.json`,
+`npm-patch-validation.json`, `npm-patch-final-validation.json`,
+`npm-console-unit-retry.json`, `npm-patched-image-builds.json`,
+`npm-patched-image-checks.json`, `npm-console-canceled-export.json`,
+`npm-console-canceled-export-checks.json`, `npm-final-targeted-checks.json`.
+Failed/canceled receipts were not overwritten.
+Rollback is a reviewed reversal of all npm manifests/locks/CI/Docker pins plus
+restoring the user-prefix backup; it restores a known vulnerable tool and is not
+automatic security remediation. No schema/data rollback is needed. Existing
+services, other workers' image tags, secrets and persistent volumes were preserved.
+Local completion checkpoint: `checkpoint/p4-npm-alignment-2026-11-11`.
+Nothing pushed or merged.
+
 ## P4 Console tracing-root repair - 2026-11-10
 
 Starting commit `48314cd7b48703b10f6a02acab52c76a8118b9fa`, clean branch
