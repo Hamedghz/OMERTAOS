@@ -123,6 +123,10 @@ def test_node_image_alpine_mirror_selection_preserves_secure_defaults() -> None:
         assert "--no-check-certificate" not in dockerfile
         assert "http://" not in dockerfile
 
+    console = (REPO_ROOT / "console/Dockerfile").read_text()
+    assert "pnpm install --frozen-lockfile --prefer-offline --network-concurrency=2 --child-concurrency=2" in console
+    assert "--fetch-retries=1 --fetch-timeout=120000" in console
+
 
 def test_major_security_migration_keeps_owner_scoped_dependency_contracts() -> None:
     for app in ("console", "gateway", "integrations/windows-agentic-bridge/bridge-server"):
