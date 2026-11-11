@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from packaging.version import Version
+import pytest
 import yaml
 
 
@@ -158,3 +159,29 @@ def test_major_security_migration_keeps_owner_scoped_dependency_contracts() -> N
     assert workspace["overrides"] == _json("console/package.json")["overrides"]
     assert workspace["minimumReleaseAgeStrict"] is True
     assert not workspace.get("minimumReleaseAgeExclude")
+
+
+@pytest.mark.parametrize("app", [
+    "console/desktop-shell",
+    "integrations/windows-agentic-bridge/bridge-ui",
+])
+def test_auxiliary_ui_locks_keep_security_floors_without_a_vite_major_change(app: str) -> None:
+    manifest = _json(f"{app}/package.json")
+    packages = _json(f"{app}/package-lock.json")["packages"]
+    assert manifest["devDependencies"]["vite"] == "^6.4.6"
+    assert packages[""]["devDependencies"]["vite"] == "^6.4.6"
+    floors = {
+        "vite": "6.4.6",
+        "baseline-browser-mapping": "2.11.0",
+        "browserslist": "4.28.7",
+        "source-map-js": "1.2.2",
+    }
+    for name, minimum in floors.items():
+        if name != "vite":
+            assert manifest["overrides"][name] == f"^{minimum}"
+        versions = [Version(package["version"]) for path, package in packages.items()
+                    if path.endswith(f"node_modules/{name}")]
+        assert versions, (app, name)
+        assert all(version >= Version(minimum) for version in versions), (app, name)
+        if name == "vite":
+            assert all(version.major == 6 for version in versions), app
