@@ -60,6 +60,18 @@ unrelated ancestor lockfiles to suppress root-inference warnings. After changing
 this setting, validate a production build and its generated trace paths, not
 only the config object's value; this does not replace a container acceptance run.
 
+`pnpm --dir console prisma:generate` no longer implicitly enables Prisma's
+missing-engine-checksum opt-out. Keep skip/ignore flags unset during acceptance;
+missing checksum/download access must be reported as blocked, not bypassed.
+Cached engine generation is not evidence of a fresh verified engine download.
+
+For compiled Go tools such as esbuild, registry audit results and a scanner
+exit zero do not establish stdlib coverage. Require an actual `gobinary` result
+with identified stdlib metadata. Publisher esbuild 0.28.x binaries can omit Go
+build information; keep this gate unavailable/red rather than treating no
+analysis as no findings. See the dated P4 acceptance report before any claim of
+remediation, custom source rebuild or new image acceptance.
+
 On hosts without the reference Python tools, use the repository validation
 image. It installs the hash-pinned dependency graph from
 `control/requirements.validation.lock` and runs as an unprivileged user:

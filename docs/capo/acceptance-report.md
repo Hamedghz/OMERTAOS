@@ -1,5 +1,96 @@
 # CAPO acceptance report
 
+## P4 Console tooling and checksum-integrity repairs - 2026-11-11
+
+Starting clean HEAD `7f95781`, same `Radin/omerta-env-namespace` branch;
+pre-edit tag `checkpoint/p4-console-tooling-start-7f95781`. P4 remains open.
+Local implementation: `52bc6e5` (Prisma checksum defaults) and `1b3f314`
+(supported tsx-owner update; not a Go CVE-remediation claim).
+
+The actual installed tsx 4.20.6 resolved esbuild 0.25.11. A direct `rootfs`
+scan independently reproduced Go 1.23.12 / CVE-2025-68121: scanner exit 1,
+0.84s; 1 critical, 25 high, 30 medium, 3 low, 1 unknown. An earlier filesystem
+scan exited 0 but analyzed no Go binary; it was rejected as coverage, not
+reported as a clean scan. See [Trivy's Go scanning contract](https://trivy.dev/docs/latest/coverage/language/golang/).
+
+tsx is updated within major 4 to 4.23.15 using its publisher-supported
+`~0.28.0` esbuild dependency, not an incompatible override. Canonical pnpm locks
+esbuild 0.28.1; the secondary npm lock resolves 0.28.2 and deduplicates the old
+platform dependency subtree. Node/npm/pnpm, React, Next, Prisma and application
+runtime dependency declarations are unchanged. No manual lock editing, release-
+age exception, force/legacy-peer install or integrity bypass was used.
+
+**Unresolved binary provenance:** the actual 0.28.1 ELF and optional platform
+binary lack `.go.buildinfo`; `readelf` confirms Go sections but no build-info
+section. Rootfs Trivy 0.76.1 exits 0 with no Go analysis. The validation wrapper
+correctly exits 1 rather than claiming remediation. The publisher's
+[release Makefile](https://raw.githubusercontent.com/evanw/esbuild/v0.28.1/Makefile)
+deliberately modifies the Go linker to omit build information; the same
+limitation is discussed by the [Trivy maintainer](https://github.com/aquasecurity/trivy/discussions/11246).
+No blanket false-positive waiver, heuristic compiler-version claim or scanner
+suppression was accepted. No compiler/linker was modified or run here; the
+inspected publisher artifact already omits the metadata. Upgrading this
+owner is functional maintenance, **not proof that the Go CVE is repaired**.
+The old image findings and unexamined new binary stdlib remain open. A separate
+decision on an auditable source rebuild with pinned unmodified Go, retained
+metadata/SBOM and sufficient disk was requested; a custom esbuild source rebuild
+has not been approved or attempted in this batch.
+
+An independent VM probe also reproduced a pre-existing wrapper defect:
+`run-prisma-generate.cjs` injected `PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1`
+without a caller request. The repair removes that implicit opt-out. It preserves
+normal Prisma error propagation and does not override an explicitly supplied
+operator environment; it is not a sandbox or a prohibition on all direct Prisma
+invocations. Real wrapper generation succeeded without either skip/ignore flag,
+using available engine files; this does not prove a new remote engine download
+or injected checksum-failure recovery.
+
+| Sequential gate | Actual result / wall seconds |
+|---|---|
+| Initial `pnpm update` attempt | Exit 1 / 4.13s; unsupported `--child-concurrency`, before installation. Receipt retained; supported `install --lockfile-only` used instead, not an unknown-option override |
+| Canonical / secondary lock generation | Exit 0 / 50.40s and 13.53s |
+| Real canonical frozen installation | Exit 0 / 15.69s; build permissions and strict release-age policy unchanged |
+| New compiled-binary scan | Scanner exit 0 but no Go analysis; coverage wrapper exit 1 / 0.95s; not accepted |
+| Real `corepack pnpm --dir console prisma:generate` | Exit 0 / 21.30s; implicit checksum opt-out absent |
+| Related architecture / changed-test Ruff | Exit 0 / 37.09s and 2.66s; 33 tests, zero failed/skipped |
+| Console full suite, one worker | Exit 0 / 95.51s; 45 passed in 16 files, 87.96s suite; includes two actual typed ESM/CJS tsx CLI fixtures |
+| Bootstrap TypeScript compilation | Exit 0 / 13.44s |
+| Canonical / secondary Console audits | Exit 0 / 5.39s and 4.42s; zero reported advisories, not binary stdlib coverage |
+| Console production build | Exit 0 / 255.19s; compilation, lint/type checks and page generation completed |
+| Generated trace assertions | 96 manifests / 8580 references, zero missing or symlink-resolved paths outside the checkout; post-build check not separately timed |
+| Newly collected wrapper regressions | Exit 0 / 8.49s; 3 passed in 2.70s suite; default child env, nonzero exit propagation and invalid-URL rejection |
+
+The first three wrapper tests used `.test.ts`, outside the existing `.test.tsx`
+collection pattern. The new file was renamed to match the existing convention,
+then all three ran explicitly. They were **not** in the 45-test suite above;
+no single full-suite run of 48 tests is claimed. No assertion, timeout or global
+collection rule was weakened, and the full suite/build was not repeated after
+the test-only filename correction. No production-build warning other than the
+package-manager command echo was retained.
+
+Minimum available RAM / free disk in the functional batch: 3439 MiB / 3.727 GiB;
+focused wrapper run: 4278 MiB / 3.856 GiB. Stop guards remained 1 GiB RAM and
+3 GiB disk and did not fire. Namespace/auth/tenant/execution privileges and the
+schema are unchanged. This provides E1 wrapper/default and selected consumer
+evidence, not E2 live-stack or clean binary/image acceptance.
+
+Local ignored receipts: `console-tooling-baseline.json`,
+`console-esbuild-old-rootfs.json`, `console-tooling-validation.json` (CLI failure),
+`console-tooling-validation-retry.json` (coverage failure),
+`console-esbuild-new-rootfs.json`, `console-tooling-functional-validation.json`,
+`prisma-wrapper-regression.json`.
+The latter explicitly reuses the successful locked-install gates, retains the
+failed security gate, and continues only independent functional checks. An
+overall failed result must not be described as full acceptance.
+
+No new Docker image build, live stack, Python/Runtime suite, browser/native
+acceptance, benchmark, push or merge. Existing images/volumes and other workers'
+services were not changed; no cleanup or system-wide Go installation occurred.
+Rollback requires reviewed reversals and locked reinstallation; reverting the
+wrapper would restore the implicit checksum bypass, and reverting the owner
+would restore the old known-vulnerable binary. No schema/data rollback applies.
+Checkpoint: `checkpoint/p4-console-tooling-2026-11-11`.
+
 ## P4 auxiliary UI dependency repairs - 2026-11-11
 
 Starting clean HEAD `411f4e1`, unchanged branch `Radin/omerta-env-namespace`;
