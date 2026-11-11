@@ -1,5 +1,143 @@
 # CAPO acceptance report
 
+## P4 auditable esbuild candidate - 2026-11-11
+
+User approval extended to the outstanding implementation permissions. Starting
+clean HEAD `1b4d691`, unchanged branch `Radin/omerta-env-namespace`, pre-edit tag
+`checkpoint/p4-esbuild-builder-start-1b4d691`. Local implementation commits:
+`fd95ecc` (builder/inputs/tests), `ee57a83` (bounded private scratch), `534c993`
+(Python 3.10 timestamp compatibility), `4f80260` (scanner version notation and
+separate audit logs). P4 remains open; Console integration has not happened.
+
+### Implementation and verified inputs
+
+`scripts/build_auditable_esbuild.py` builds a separate candidate from source
+commit `609683d892977362a0f99026cb74b96263d728a9`, esbuild 0.28.2, source archive
+SHA256 `04cb2d38fb6af093577aa8bf174add7286099b65ef7854480cbbb8ff061cef1f`.
+It checks digests before extraction, bounds downloads/expanded size, defers
+safe internal symlinks, rejects escapes/hardlinks, sanitizes the Go environment,
+checks module sums, repeats the build and requires metadata/positive Go scan
+coverage. No upstream compiler/linker patch, source-dependency upgrade, integrity
+exception, severity filter or suppressed finding was used.
+
+The pinned Go archive still appears in official download metadata, but both
+official download endpoints returned HTTP 404; independent HEAD and bounded GET
+requests reproduced it. The explicit official-image transport succeeded with
+Linux amd64 digest
+`docker.io/library/golang@sha256:ea30e25680a5470bac02b08bb0e0a735fb75bd0ab7d431b9b95ee0abef362586`.
+The [publisher Dockerfile](https://raw.githubusercontent.com/docker-library/golang/6aa5c5f09346fb65fdefa941a23eb3cb25ba7b1a/1.27/alpine3.24/Dockerfile)
+declares the same Go 1.27.4 archive/hash. This host verified the OCI input and
+executed that compiler; it did not verify the inaccessible tarball or its GPG
+signature locally. A module-proxy metadata request returned 200, but a later
+request timed out; it was not used as a substitute verified toolchain.
+
+Compiler commands use non-root ephemeral containers with no implicit volumes,
+readonly root, all capabilities dropped, no-new-privileges, two CPUs, 1 GiB RAM
+and 256 PIDs. Networking is disabled except during checksum-verified module
+download. Only private task directories are writable. Each owned container ID
+is checked after execution; timeout cleanup can remove only that invocation's
+ephemeral container, never a stack/volume. This is not OMERTA Runtime isolation.
+
+### Actual results
+
+The final producer run used source commit `534c993` with a clean worktree.
+Code-only validation after the final verifier repair did not rerun Go builds or
+upstream suites. The affected scan/coverage/SBOM audit ran separately, retaining
+the original producer receipt unchanged.
+
+| Gate | Actual result |
+|---|---|
+| Final builder suite on host Python 3.10 | Exit 0 / 0.91s wall; 30 tests; fixture subtest labels do not add standalone test counts |
+| Same suite on reference Python 3.11 | Exit 0 / 7.88s wall; 30 passed, 26 subtests passed in 0.67s, no failed/skipped tests |
+| Ruff on the two changed Python files | Exit 0 / 2.71s |
+| Bandit on the builder, no exclusions | Exit 1 / 5.39s; B404 import at line 17 and B603 argv subprocess at line 137, both low/high-confidence; no parse errors or suppression |
+| Pinned compiler version and module download/verification | Exit 0; actual Go 1.27.4, Linux/amd64, unchanged pinned x/sys module; exact argv/timing in producer receipt |
+| Candidate build 1 / build 2 | Both exit 0, 6.182s / 5.035s with this task's retained cache; identical SHA256, not a benchmark |
+| ELF, Go metadata and executable version | Exit 0; `.go.buildinfo`, Go 1.27.4, Linux/amd64/v1, CGO=0, x/sys version/sum and esbuild 0.28.2 identified |
+| Complete selected upstream Go suite | Exit 0 / 154.823s; 16 package results `ok`, 14 packages without test files, zero failed packages; individual case/skip counts not emitted by default `go test` |
+| Fresh-DB candidate scan after version-notation repair | Exit 1 / 0.325s; positive `gobinary`/`stdlib` analysis, 0 critical/high/medium/low and 1 UNKNOWN finding; not clean security acceptance |
+| Positive Go coverage verifier | Passed / 0.001s; exact compiler version required; no analysis or a different patch version still fails |
+| CycloneDX SBOM | Exit 0 / 0.477s; source module remains honestly `(devel)`, not relabeled as a detected Go module release |
+| Linux dependency graph / binary symbol inventory | Exit 0 / 4.225s and 12.956s; Unix package present, Windows package and vulnerable symbol absent |
+
+The candidate is 16,504,125 bytes; both builds hash to
+`332c847f63affcb51c6ac278f4bc26f38cb11ce4c6a066464248afa52ce0f461`.
+The fresh DB was downloaded at `2026-11-11T11:36:29.212625593Z`, updated at
+`2026-11-10T19:01:23.081219346Z`, 1,759,350,784 bytes, SHA256
+`cf7fa3086682e8f77298ca8178419a530f97d7c4bd3ac203a64f2977f82e94a6`.
+It was within the unchanged 24-hour freshness requirement during scanning.
+
+**Remaining advisory:** CVE-2026-39824 / GO-2026-5024 in old x/sys. The
+[Go security report](https://pkg.go.dev/vuln/GO-2026-5024) identifies
+`golang.org/x/sys/windows.NewNTUnicodeString`, fixed in v0.44.0. The actual
+Linux dependency graph excludes that package and the unstripped binary's symbol
+inventory excludes it/the function. This supports Linux-only non-applicability
+review, not another-platform claim, a signed VEX, accepted waiver or general
+exploit-prevention proof. The raw finding and aggregate audit exit 1 remain;
+no dependency was silently upgraded just to clear the scanner.
+
+### Failures, safeguards and scope
+
+- Initial direct-archive run `esbuild-p4-20261111-a` blocked before extraction
+  on the reproduced HTTP 404. Compiler/source pins were not weakened.
+- Official-image run `-b` acquired verified source but rejected its legitimate
+  internal browser-fixture symlink. Extraction was repaired with deferred,
+  root-contained links and negative escape/write-through tests, not unrestricted
+  tar extraction.
+- Run `-c` built/identified both artifacts, then the unchanged primary-disk
+  3 GiB guard stopped upstream tests: exit 143 after 157.947s. This is not a
+  passed upstream suite. Only that stopped run's generated `tmp` tree was
+  relocated with all 876 entries verified before removing its old copy; the
+  preserved copy is in `/dev/shm`. Its original Go cache was retained and a
+  verified copy used in private existing `/run/user/1000` RAM storage. No mount
+  flags, systemd/daemon config, other-worker cache or volume was changed.
+- First separate DB download also hit the primary-disk guard because its
+  default `/tmp` staged data on root. The retry put data and TMPDIR in a new
+  private non-executable `/dev/shm` cache; download exited 0. Python 3.10 then
+  rejected Go's nine-digit timestamp. A precision-normalization compatibility
+  repair feeds the standard ISO parser; the completed DB was verified without
+  another download. Future/older-than-24h data still fails.
+- The first positive scan used stdlib `v1.27.4`; the original verifier expected
+  no `v` prefix and incorrectly rejected coverage. Strict equivalent version
+  notations now work, with a wrong-version regression. That repair does not
+  remove the actual UNKNOWN advisory or turn its scanner exit into success.
+- Early batches exposed one incomplete archive-test fixture and one misplaced
+  test assertion (`KeyError`, then `NameError`); both were repaired and retained
+  as failed attempts. The initial two diagnostic pytest/Ruff dispatches briefly
+  overlapped; all subsequent consolidated batches/builds were sequential. No
+  simultaneous image builds occurred.
+
+Final producer minima: available RAM 2,225,344,512 bytes; primary free disk
+3,286,958,080 bytes; dedicated scratch free 445,702,144 bytes. The primary
+3 GiB/RAM 1 GiB guards were not lowered. Dedicated cache storage requires
+512 MiB initially and stops below 64 MiB; existing executable mount flags were
+checked, not changed. Scanner DB data uses a separate no-exec RAM filesystem.
+RAM-backed caches are volatile, not persistent backups/research DB snapshots.
+
+Raw records: ignored `artifacts/p4/esbuild-builder-*-validation.json`,
+`esbuild-fresh-db*.json`, `esbuild-candidate-audit.json`; private producer
+`/home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-d/receipt.json`
+and separate `scan-audit/` JSON/logs/SBOM. Exact producer invocation:
+
+```bash
+python3 scripts/build_auditable_esbuild.py --run --compiler-image \
+  --scratch-dir /run/user/1000/omerta-esbuild-p4-20261111 \
+  --source-archive /home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-b/source.tar.gz \
+  --work-dir /home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-d \
+  --trivy /home/omerta/.local/share/omerta-validation/tools/p4/trivy \
+  --trivy-cache /dev/shm/omerta-esbuild-trivy-20261111-retry
+```
+
+Use a new work directory on reproduction; RAM directories/DB need provisioning
+again after reboot. No Console lock, installed dependency, application image,
+auth/API/schema or data-store change occurred. Console/Control/Gateway/Runtime
+suites and live acceptance were not rerun because those modules are unchanged;
+their earlier failed/blocked gates remain. No native install, benchmark, secret
+operation, persistent-volume deletion, push or merge occurred. Rollback is a
+reviewed revert of tooling/guide commits; existing dependencies/data need no
+migration. The installed publisher binaries still lack accepted provenance;
+Stage B integration and final Docker acceptance remain open.
+
 ## P4 acceptance-child cleanup repair - 2026-11-11
 
 Starting clean HEAD `f89d504`; pre-edit tag

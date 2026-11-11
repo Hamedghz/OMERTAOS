@@ -1,7 +1,8 @@
 # P4 auditable esbuild rebuild proposal
 
-Date: 2026-11-11. Status: **Stage A implementation authorized and in validation;
-Console integration and final image acceptance remain open**.
+Date: 2026-11-11. Status: **candidate built, upstream tests and scan coverage
+verified; raw advisory gate failed; Console integration and final image
+acceptance remain open**.
 Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 `Radin/omerta-env-namespace`; pre-edit checkpoint
 `checkpoint/p4-esbuild-plan-start-63f6f6e`.
@@ -291,7 +292,8 @@ future esbuild repair requires successful coverage and vulnerability gates for
 the actual distributed binary/image, not just a clean source audit, SBOM creation
 or successful version command. Full P4 and later phases remain separately gated.
 
-Validation of this document: `git diff --check` exited 0; a read-only Node check
+Validation of the original planning-only revision `1b4d691`: `git diff --check`
+exited 0; a read-only Node check
 of both changed Markdown documents exited 0 with nine existing local link
 targets and balanced code fences. No application suites, compiler build, image
 export, vulnerability scan or live acceptance were rerun for this docs-only
