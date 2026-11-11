@@ -55,10 +55,12 @@ def verify_digest(path, expected):
 
 
 class ResourceGuard:
-    def __init__(self, directory):
+    def __init__(self, directory, scratch=None):
         self.directory = directory
+        self.scratch = scratch
         self.minimum_ram_bytes = None
         self.minimum_disk_bytes = None
+        self.minimum_scratch_bytes = None
 
     def check(self):
         available = next(int(line.split()[1]) * 1024
@@ -71,6 +73,11 @@ class ResourceGuard:
             raise BuildBlocked("available RAM below 1 GiB")
         if space < 3 * GIB:
             raise BuildBlocked("available disk below 3 GiB")
+        if self.scratch:
+            free = shutil.disk_usage(self.scratch).free
+            self.minimum_scratch_bytes = min(self.minimum_scratch_bytes or free, free)
+            if free < 64 * 1024 ** 2:
+                raise BuildBlocked("dedicated scratch filesystem below 64 MiB free")
 
 
 def signal_group(child, sig):
@@ -90,6 +97,7 @@ class Runner:
     def save(self):
         self.report["minimum_available_ram_bytes"] = self.guard.minimum_ram_bytes
         self.report["minimum_free_disk_bytes"] = self.guard.minimum_disk_bytes
+        self.report["minimum_free_scratch_bytes"] = self.guard.minimum_scratch_bytes
         (self.work / "receipt.json").write_text(json.dumps(self.report, indent=2) + "\n")
 
     def step(self, label, operation):
@@ -242,7 +250,7 @@ def extract_verified(archive, spec, destination, guard):
     return root
 
 
-def build_environment(work, compiler):
+def build_environment(work, compiler, scratch=None):
     forbidden = ("GOFLAGS", "GOROOT", "GOWORK", "GOPRIVATE", "GONOSUMDB", "GONOPROXY",
                  "GOPROXY", "GOSUMDB", "GOTOOLCHAIN", "GOENV", "GODEBUG", "GOEXPERIMENT")
     require(not any(os.environ.get(key) for key in forbidden), "inherited Go override rejected")
@@ -254,8 +262,11 @@ def build_environment(work, compiler):
                    "GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1"}
     for key, subdirectory in (("GOCACHE", "go-cache"), ("GOMODCACHE", "modules"),
                               ("GOTMPDIR", "tmp"), ("GOPATH", "gopath"), ("HOME", "home")):
-        directory = work / subdirectory
-        directory.mkdir(mode=0o700)
+        directory = (scratch or work) / subdirectory
+        directory.mkdir(mode=0o700, exist_ok=scratch is not None)
+        require(directory.is_dir() and not directory.is_symlink()
+                and directory.stat().st_uid == os.getuid() and not directory.stat().st_mode & 0o077,
+                "Go scratch directory must be private and owned")
         environment[key] = str(directory)
     environment["TMPDIR"] = environment["GOTMPDIR"]
     return environment
@@ -300,8 +311,10 @@ def tree_hashes(root):
             for path in sorted(root.rglob("*")) if path.is_file()}
 
 
-def container_go_argv(work, environment, image, cidfile, argv, cwd, network):
+def container_go_argv(work, environment, image, cidfile, argv, cwd, network, scratch=None):
     def mapped(value):
+        if scratch and (str(value) == str(scratch) or str(value).startswith(str(scratch) + "/")):
+            return str(value).replace(str(scratch), "/scratch", 1)
         if str(value) == str(work):
             return "/work"
         return str(value).replace(str(work), "/work", 1) if str(value).startswith(str(work) + "/") else str(value)
@@ -313,6 +326,8 @@ def container_go_argv(work, environment, image, cidfile, argv, cwd, network):
                "--user", f"{os.getuid()}:{os.getgid()}",
                "--mount", f"type=bind,src={work},dst=/work",
                "--workdir", mapped(cwd), "--entrypoint", "/usr/local/go/bin/go"]
+    if scratch:
+        command.extend(["--mount", f"type=bind,src={scratch},dst=/scratch"])
     for key, value in environment.items():
         if key not in ("PATH", "GOROOT"):
             command.extend(["--env", f"{key}={mapped(value)}"])
@@ -321,8 +336,9 @@ def container_go_argv(work, environment, image, cidfile, argv, cwd, network):
 
 
 class GoCompiler:
-    def __init__(self, runner, inputs, *, image):
+    def __init__(self, runner, inputs, *, image, scratch=None):
         self.runner, self.inputs, self.image = runner, inputs, image
+        self.scratch = scratch
 
     def run(self, label, argv, *, cwd=None, timeout=180, network=False):
         if not self.image:
@@ -330,7 +346,7 @@ class GoCompiler:
                                        cwd=cwd, timeout=timeout)
         cidfile = self.runner.work / f"go-{uuid.uuid4().hex}.cid"
         command = container_go_argv(self.runner.work, self.runner.environment, self.image,
-                                    cidfile, argv, cwd or self.runner.work, network)
+                                    cidfile, argv, cwd or self.runner.work, network, self.scratch)
         try:
             return self.runner.command(label, command, timeout=timeout)
         finally:
@@ -347,7 +363,7 @@ class GoCompiler:
                                         ["/usr/bin/docker", "rm", "--force", cid], guard=False)
 
 
-def build(runner, inputs, node, readelf, scanner, cache, local_inputs, compiler_image=False):
+def build(runner, inputs, node, readelf, scanner, cache, local_inputs, compiler_image=False, scratch=None):
     work = runner.work
     runner.report["inputs"] = inputs
     runner.report["builder_sha256"] = sha256(Path(__file__))
@@ -376,7 +392,7 @@ def build(runner, inputs, node, readelf, scanner, cache, local_inputs, compiler_
         roots[name] = runner.step(f"extract verified {name}", lambda: extract_verified(
             archive, spec, work / name, runner.guard))
     source = roots["source"]
-    go = GoCompiler(runner, inputs, image=image)
+    go = GoCompiler(runner, inputs, image=image, scratch=scratch)
     _, version = go.run("compiler version", ["version"])
     require(version.strip() == f"go version {inputs['compiler_version']} linux/amd64", "unexpected compiler")
     require((source / "version.txt").read_text().strip() == inputs["esbuild_version"], "source version mismatch")
@@ -449,9 +465,18 @@ def main(argv=None):
     parser.add_argument("--compiler-archive", type=Path, help="optional local archive; same pinned SHA256 required")
     parser.add_argument("--source-archive", type=Path, help="optional local archive; same pinned SHA256 required")
     parser.add_argument("--compiler-image", action="store_true", help="explicitly use the pinned official Go image instead of the compiler archive")
+    parser.add_argument("--scratch-dir", type=Path, help="optional owned private executable scratch/cache directory for image mode")
     args = parser.parse_args(argv)
     require(args.run, "--run is required; no operations performed")
     require(not (args.compiler_image and args.compiler_archive), "choose only one compiler transport")
+    if args.scratch_dir:
+        scratch = args.scratch_dir
+        require(args.compiler_image and scratch.is_absolute() and scratch == scratch.resolve()
+                and scratch.is_dir() and not scratch.is_relative_to(ROOT)
+                and scratch.stat().st_uid == os.getuid() and not scratch.stat().st_mode & 0o077,
+                "image scratch must be an absolute private owned directory outside the repo")
+        require(not os.statvfs(scratch).f_flag & os.ST_NOEXEC, "executable scratch filesystem required; do not change mount flags")
+        require(shutil.disk_usage(scratch).free >= 512 * 1024 ** 2, "scratch needs 512 MiB initial free space")
     require(platform.system() == "Linux" and platform.machine() == "x86_64", "Linux x64 host required")
     require(args.work_dir.is_absolute() and args.work_dir == args.work_dir.resolve()
             and not args.work_dir.is_relative_to(ROOT) and not args.work_dir.exists(), "new external absolute work directory required")
@@ -460,16 +485,16 @@ def main(argv=None):
     node, readelf = shutil.which("node"), shutil.which("readelf")
     require(node and readelf, "Node and readelf are required")
     inputs = json.loads(INPUTS.read_text())
-    guard = ResourceGuard(args.work_dir.parent)
+    guard = ResourceGuard(args.work_dir.parent, args.scratch_dir)
     guard.check()
     args.work_dir.mkdir(mode=0o700)
     os.umask(0o077)
     runner = Runner(args.work_dir, {}, guard)
     try:
-        runner.environment = build_environment(args.work_dir, args.work_dir / "compiler/go")
+        runner.environment = build_environment(args.work_dir, args.work_dir / "compiler/go", args.scratch_dir)
         runner.report["build_environment"] = runner.environment
         build(runner, inputs, node, readelf, str(args.trivy), args.trivy_cache,
-              {"compiler": args.compiler_archive, "source": args.source_archive}, args.compiler_image)
+              {"compiler": args.compiler_archive, "source": args.source_archive}, args.compiler_image, args.scratch_dir)
         runner.report["status"] = "passed"
     except BuildBlocked as exc:
         runner.report["status"] = "blocked"

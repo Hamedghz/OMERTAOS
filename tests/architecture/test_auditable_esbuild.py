@@ -47,7 +47,8 @@ class AuditableEsbuildTests(unittest.TestCase):
                 + "".join(f"\tbuild\t{key}={value}\n" for key, value in self.inputs["target"].items()))
 
     def runner(self):
-        guard = Mock(minimum_ram_bytes=4 * builder.GIB, minimum_disk_bytes=4 * builder.GIB)
+        guard = Mock(minimum_ram_bytes=4 * builder.GIB, minimum_disk_bytes=4 * builder.GIB,
+                     minimum_scratch_bytes=None)
         return builder.Runner(self.root, {"PATH": "/usr/bin:/bin"}, guard)
 
     def test_input_manifest_matches_reviewed_plan(self):
@@ -278,3 +279,29 @@ class AuditableEsbuildTests(unittest.TestCase):
             builder.main(["--run", "--work-dir", str(self.root / "new"), "--trivy", "/fixture/trivy",
                           "--trivy-cache", "/fixture/cache", "--compiler-image", "--compiler-archive", "/fixture/go.tgz"])
         self.assertFalse((self.root / "new").exists())
+
+    def test_external_scratch_is_mapped_without_changing_mount_security(self):
+        scratch = self.root / "ram-scratch"
+        scratch.mkdir(mode=0o700)
+        work = self.root / "work"
+        work.mkdir(mode=0o700)
+        with patch.dict(os.environ, {}, clear=True):
+            env = builder.build_environment(work, work / "go", scratch)
+        self.assertEqual(env["GOCACHE"], str(scratch / "go-cache"))
+        command = builder.container_go_argv(work, env, "fixture-image", work / "fixture.cid",
+                                            ["test"], work, False, scratch)
+        self.assertIn(f"type=bind,src={scratch},dst=/scratch", command)
+        self.assertIn("GOCACHE=/scratch/go-cache", command)
+        self.assertIn("TMPDIR=/scratch/tmp", command)
+        self.assertFalse(any("exec=" in part or "privileged" in part for part in command))
+
+    def test_scratch_guard_does_not_relax_the_primary_disk_guard(self):
+        guard = builder.ResourceGuard(self.root, self.root / "scratch")
+        with patch.object(Path, "read_text", return_value="MemAvailable: 4194304 kB\n"), \
+                patch.object(builder.shutil, "disk_usage", side_effect=[Mock(free=3 * builder.GIB - 1)]), \
+                self.assertRaisesRegex(builder.BuildBlocked, "3 GiB"):
+            guard.check()
+        with patch.object(Path, "read_text", return_value="MemAvailable: 4194304 kB\n"), \
+                patch.object(builder.shutil, "disk_usage", side_effect=[Mock(free=4 * builder.GIB), Mock(free=1)]), \
+                self.assertRaisesRegex(builder.BuildBlocked, "scratch"):
+            guard.check()

@@ -1,14 +1,53 @@
 # P4 auditable esbuild rebuild proposal
 
-Date: 2026-11-11. Status: **planning only; implementation not started**.
+Date: 2026-11-11. Status: **Stage A implementation authorized and in validation;
+Console integration and final image acceptance remain open**.
 Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 `Radin/omerta-env-namespace`; pre-edit checkpoint
 `checkpoint/p4-esbuild-plan-start-63f6f6e`.
 
-The user's approval covers preparation of this proposal. Building the custom
-artifact and changing its installation contract require separate approval and
-adequate storage. This document does not close P4 or authorize P5, publishing,
-stack startup, cleanup, host-wide installation or Docker daemon changes.
+The user subsequently authorized the outstanding implementation permissions.
+Implementation `fd95ecc` adds the Stage A builder, pinned inputs and regression
+tests. This approval does not waive resource guards or authorize deleting
+persistent volumes/shared caches, publishing, P5, host-wide installation or
+Docker daemon changes. Current executable results belong in the acceptance
+report; the original proposal below is not itself acceptance evidence.
+
+### Reviewed transport adjustment
+
+The direct compiler archive returned HTTP 404 through both `go.dev` and
+`dl.google.com`; independent HEAD and bounded GET requests reproduced it even
+though official metadata still lists its version and hash. No compiler downgrade
+or checksum bypass was accepted. The explicit `--compiler-image` option instead
+uses the official Linux amd64 Go 1.27.4 image pinned to
+`docker.io/library/golang@sha256:ea30e25680a5470bac02b08bb0e0a735fb75bd0ab7d431b9b95ee0abef362586`.
+The [pinned publisher Dockerfile](https://raw.githubusercontent.com/docker-library/golang/6aa5c5f09346fb65fdefa941a23eb3cb25ba7b1a/1.27/alpine3.24/Dockerfile)
+declares the same compiler archive/hash. OCI digest verification is not a claim
+that this host downloaded or verified the original tarball or its GPG signature.
+
+Compiler invocations use separate ephemeral containers: caller UID/GID, readonly
+root, no capabilities, no-new-privileges, 1 GiB memory, two CPUs and 256 PIDs.
+Only module download has bridge networking; other Go commands use no network.
+Only the private work directory is writable. The image must declare no implicit
+volumes; timeout cleanup may force-remove only the privately recorded container
+ID from that invocation, never a stack or volume. This is build containment, not
+evidence of successful OMERTA Runtime Linux isolation.
+
+Verified local archives may alternatively be supplied with `--compiler-archive`
+and `--source-archive`; the original SHA256 remains mandatory before copying
+and extraction. There is no automatic fallback to a different compiler/image.
+The source contains one relative internal browser-fixture symlink. Extraction
+defers links until regular files are complete, permits only targets inside the
+archive root, and rejects escaping links, hardlinks and writes through links.
+
+The first upstream Go test attempt stopped at the unchanged 3 GiB primary-disk
+guard. The optional `--scratch-dir` now separates Go caches/temporary executables
+onto an existing private, executable filesystem; no mount flags are modified.
+It requires 512 MiB initially free and stops below 64 MiB scratch headroom.
+The existing 3 GiB primary-output-disk and 1 GiB host-RAM guards remain intact.
+Only this task's stopped test temporary files were relocated with a verified
+copy retained; existing user files, shared caches and persistent volumes were
+not pruned. RAM-backed caches/data are volatile, not persistence evidence.
 
 ## Problem and decision
 
@@ -111,8 +150,9 @@ compatibility floor, not evidence of its publisher's compiler version.
 Receipt contract: argv, source/OMERTA commit SHAs, compiler/archive/binary hashes,
 generated-source diff, Go module JSON, target, sanitized build environment,
 start/end/duration/exit for each command, tests passed/failed/skipped, resource
-minimums, SBOM and scanner metadata. Store receipts under a fresh ignored
-`artifacts/p4/` run directory; commit only a sanitized summary after review.
+minimums, SBOM and scanner metadata. The implementation stores private receipts
+beside the new external work directory's logs; ignored `artifacts/p4/` may hold
+aggregate validation summaries. Commit only a sanitized summary after review.
 Unsigned local provenance must not be described as signed enterprise attestation.
 
 ## Stage B: controlled integration, not a silent binary substitution
@@ -219,7 +259,8 @@ falls below 3 GiB; never lower guards to pass. Retain partial logs/artifacts and
 report cancellation as failure, including an interrupted export with a surviving
 image tag. Do not touch another worker's process groups or services.
 
-Approved capacity paths to choose **before** implementation:
+Capacity paths to choose **before heavy Console image export** (bounded Stage A
+attempts still enforce the existing 3 GiB free-disk guard):
 
 1. Operator supplies an adequately sized mounted destination. Read-only check
    `findmnt -T PATH` and `df -B1 PATH`; the task may use a new owned directory
@@ -245,7 +286,7 @@ Reverting to an opaque/vulnerable binary restores a known limitation and cannot
 be called successful security remediation. Human review remains required before
 merge or production use; no push, merge or publication is part of this work.
 
-This planning change has no runtime or evidence-level upgrade. Completion of the
+The proposal alone has no runtime or evidence-level upgrade. Completion of the
 future esbuild repair requires successful coverage and vulnerability gates for
 the actual distributed binary/image, not just a clean source audit, SBOM creation
 or successful version command. Full P4 and later phases remain separately gated.

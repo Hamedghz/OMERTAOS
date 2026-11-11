@@ -72,6 +72,40 @@ build information; keep this gate unavailable/red rather than treating no
 analysis as no findings. See the dated P4 acceptance report before any claim of
 remediation, custom source rebuild or new image acceptance.
 
+An auditable esbuild candidate can be built separately from Console after
+approval using the pinned Stage A tool. It requires Docker, Node, readelf and a
+fresh Trivy 0.76.1 database. Use a **new** absolute private directory outside the
+repository; it never updates an existing dependency installation or database:
+
+```bash
+python3 scripts/build_auditable_esbuild.py --run --compiler-image \
+  --work-dir /absolute/private/path/new-esbuild-run \
+  --trivy /absolute/path/to/trivy \
+  --trivy-cache /absolute/path/to/existing-fresh-trivy-cache
+```
+
+`--compiler-image` explicitly chooses the digest-pinned official Go 1.27.4
+image; without it the original pinned compiler archive is required. The direct
+archive returned 404 locally. Optional `--compiler-archive` / `--source-archive`
+reuse operator-supplied archives only if their original pinned SHA256 matches.
+No system-wide Go install, compiler patch, insecure TLS or checksum bypass is
+used. Receipts/logs stay in the work directory; outputs and failed attempts are
+preserved. Stop conditions remain available RAM below 1 GiB or disk below 3 GiB.
+The tool returns nonzero for failed/blocked gates and requires positive Go
+metadata/scan coverage, a fresh DB, a repeat-build digest and upstream Go tests.
+Passing Stage A alone is not Console integration or final Docker acceptance.
+See the [reviewed plan and limits](../capo/p4-esbuild-provenance-plan.md).
+
+For a constrained host, image mode also accepts `--scratch-dir` pointing to an
+existing absolute, caller-owned, mode-700 directory outside the repo. It may use
+an existing executable RAM filesystem, but requires 512 MiB initially free;
+execution stops below 64 MiB scratch space, 1 GiB available host RAM, or 3 GiB
+free on the primary output filesystem. Go caches, module cache and temporary
+test executables use that directory. No mount flags are changed: a `noexec`
+scratch filesystem is rejected. RAM-backed storage is volatile and is not a
+backup. A new scanner DB may separately use non-executable RAM storage for data
+only, with memory monitoring; the tool never refreshes a shared DB itself.
+
 On hosts without the reference Python tools, use the repository validation
 image. It installs the hash-pinned dependency graph from
 `control/requirements.validation.lock` and runs as an unprivileged user:
