@@ -10,7 +10,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 NODE_VERSION = "22.23.2"
-NPM_VERSION = "10.9.8"
+NPM_VERSION = "10.9.10"
 PNPM_VERSION = "11.13.1"
 
 NPM_APPS = (
@@ -69,6 +69,14 @@ def test_ci_and_container_images_use_the_canonical_node_version() -> None:
     assert re.search(rf"FROM {re.escape(image)}@sha256:[a-f0-9]{{64}} AS runner", gateway)
     assert console.count(f"FROM {image}") == 3
     assert f"corepack prepare pnpm@{PNPM_VERSION} --activate" in console
+    npm_install = f"npm install --global npm@{NPM_VERSION} --ignore-scripts --no-fund"
+    assert ci.count(npm_install) == 2
+    assert gateway.count(npm_install) == 3
+    assert console.count(npm_install) == 3
+    version_guard = f'test "$(npm --version)" = "{NPM_VERSION}"'
+    assert ci.count(version_guard) == 2
+    assert gateway.count(version_guard) == 3
+    assert console.count(version_guard) == 3
 
 
 def test_quickstart_upstream_images_and_build_bases_are_digest_pinned() -> None:

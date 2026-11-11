@@ -1,6 +1,8 @@
 # Stage 1: install dependencies with pnpm
 FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS deps
 
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
+
 WORKDIR /workspace
 
 # Enable pnpm via corepack so the image uses the same package manager version
@@ -20,6 +22,8 @@ RUN --mount=type=cache,id=omerta-console-pnpm-v11,target=/pnpm/store,sharing=loc
 
 # Stage 2: build (Next.js + Prisma generate)
 FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS builder
+
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
 
 WORKDIR /workspace
 RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
@@ -52,6 +56,8 @@ RUN pnpm exec tsc --project scripts/tsconfig.json
 
 # Stage 3: runtime image
 FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS runner
+
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
 
 WORKDIR /app
 ENV NODE_ENV=production

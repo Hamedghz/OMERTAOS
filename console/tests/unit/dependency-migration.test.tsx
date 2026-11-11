@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { createRequire } from 'node:module';
 import { copyFileSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';

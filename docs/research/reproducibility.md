@@ -19,13 +19,20 @@ reproducible artifact because it can move.
 | Area | Reference |
 |---|---|
 | Python | 3.11; project metadata allows 3.11–3.12 |
-| Gateway/Console | Node.js 22.23.2 and npm 10.9.8; Console declares pnpm 11.13.1 |
+| Gateway/Console | Node.js 22.23.2 and npm 10.9.10; Console declares pnpm 11.13.1 |
 | Runtime | Rust stable |
 | Containers | Docker Engine with Compose v2 |
 | Native acceptance | Compatible Linux host with systemd |
 
 Pin dependency lockfiles and report any dependency-resolution failure. Do not
 substitute a static check for a blocked compilation or runtime test.
+
+The pinned Node publisher image/archive still bundles npm 10.9.8. Canonical
+Node Docker stages and CI explicitly patch the tool to npm 10.9.10 and assert
+its active version; this does not mean the original base-image scan is clean.
+For a user-owned host installation, follow the prefix-safe setup in
+`CONTRIBUTING.md` before locked application installs. Do not upgrade system
+prefixes implicitly or confuse the declared npm pin with a measured image scan.
 
 Console uses TypeScript 5.9.3 for Zod 4's supported TypeScript range. Its
 `pnpm-lock.yaml` is canonical; the secondary npm lock is maintained separately

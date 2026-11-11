@@ -1,5 +1,7 @@
 FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS deps
 
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
+
 WORKDIR /workspace
 
 COPY gateway/package.json gateway/package-lock.json ./gateway/
@@ -9,6 +11,8 @@ WORKDIR /workspace/gateway
 RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci
 
 FROM --platform=$BUILDPLATFORM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS builder
+
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
 
 WORKDIR /workspace
 COPY --from=deps /workspace/gateway/node_modules ./gateway/node_modules
@@ -20,6 +24,8 @@ WORKDIR /workspace/gateway
 RUN npm run build
 
 FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS runner
+
+RUN --mount=type=cache,target=/root/.npm,sharing=locked npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
 
 WORKDIR /app
 ENV NODE_ENV=production

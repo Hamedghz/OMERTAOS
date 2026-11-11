@@ -29,9 +29,22 @@ product-owned configuration.
 
 ## Development setup
 
-Reference versions are Python 3.11, Node.js 22.23.2, npm 10.9.8, pnpm 11.13.1
+Reference versions are Python 3.11, Node.js 22.23.2, npm 10.9.10, pnpm 11.13.1
 for Console, Rust stable, and Docker Compose v2. The repository `.node-version`
 and `.nvmrc` files are authoritative for Node.js.
+
+The Node 22.23.2 archive bundles an older npm. Before installing application
+dependencies, patch npm to 10.9.10 in the active **user-owned** Node prefix:
+
+```bash
+npm install --global --prefix "${NODE_PREFIX:?Set NODE_PREFIX to your active user-owned Node prefix}" npm@10.9.10 --ignore-scripts --no-fund
+npm --version
+```
+
+Do not use a system prefix such as `/usr` without administrator approval.
+The CI workflow and every Node Docker stage explicitly apply the same npm pin;
+application dependency installation remains locked and separate from this tool
+upgrade. Node and Console's pnpm version do not change.
 
 ```bash
 git clone --branch CAPO https://github.com/Hamedghz/OMERTAOS.git

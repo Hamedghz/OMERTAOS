@@ -108,8 +108,28 @@ def test_gateway_image_uses_locked_audited_dependency_install() -> None:
         "RUN --mount=type=cache,target=/root/.npm,sharing=locked npm ci"
         in dockerfile
     )
-    assert "npm install" not in dockerfile
+    pinned_tool_install = "npm install --global npm@10.9.10 --ignore-scripts --no-fund"
+    assert dockerfile.count(pinned_tool_install) == 3
+    assert "npm install" not in dockerfile.replace(pinned_tool_install, "")
     assert "--no-audit" not in dockerfile
+
+
+@pytest.mark.parametrize("unsafe_install", [
+    "npm install",
+    "npm ci --no-audit",
+    "npm install --global npm@latest",
+])
+def test_gateway_install_contract_rejects_unlocked_or_unaudited_installs(
+    monkeypatch, tmp_path, unsafe_install,
+) -> None:
+    dockerfile = (REPO_ROOT / "gateway" / "Dockerfile").read_text()
+    directory = tmp_path / "gateway"
+    directory.mkdir()
+    (directory / "Dockerfile").write_text(dockerfile + f"\nRUN {unsafe_install}\n")
+    monkeypatch.setitem(globals(), "REPO_ROOT", tmp_path)
+
+    with pytest.raises(AssertionError):
+        test_gateway_image_uses_locked_audited_dependency_install()
 
 
 def test_control_image_includes_the_model_client_http_dependency() -> None:
@@ -178,7 +198,8 @@ def test_console_image_uses_locked_reusable_dependency_install() -> None:
 
     assert "target=/pnpm/store,sharing=locked" in dockerfile
     assert "pnpm install --frozen-lockfile" in dockerfile
-    assert "--network-concurrency=4 --child-concurrency=2" in dockerfile
+    assert "--network-concurrency=2 --child-concurrency=2" in dockerfile
+    assert "--fetch-retries=1 --fetch-timeout=120000" in dockerfile
     assert "--no-verify-store-integrity" not in dockerfile
 
 
