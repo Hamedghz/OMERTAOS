@@ -594,6 +594,22 @@ pnpm، esbuild برابر ۰٫۲۸٫۱ و lock ثانویه npm برابر ۰٫�
 Python، اسکن image و پذیرش زنده همچنان بازند. checkpoint محلی:
 `checkpoint/p4-console-tooling-2026-11-11`؛ نه P5 و نه push/merge.
 
+### تعمیر cleanup ابزار پذیرش در P4 — ۲۰۲۶-۱۱-۱۱
+
+با checkpoint شروع `checkpoint/p4-acceptance-cleanup-start-f89d504`، بازبینی
+پنج finding قبلی Bandit یک race واقعی در توقف child نشان داد. چهار حالت
+SIGTERM/SIGKILL در دو harness ابتدا ناموفق بازتولید شدند؛ `a2e1926` فقط
+ProcessLookupError را مدیریت می‌کند تا wait، cleanup فرایند دوم و ثبت gate
+ادامه یابد. خطای timeout/resource و PermissionError همچنان خطا هستند.
+
+دو suite با ۳۰ تست و ۱۵ subtest و Ruff پاس شدند. Bandit همچنان همان پنج
+finding کم‌خطر را دارد و گزارش کلی failed است؛ هیچ exclusion یا waiver جدید
+اضافه نشد. PyPI resolve شد ولی files.pythonhosted.org همچنان exit 2 داشت؛
+گیت wheel، closure تولیدی و pip-audit مسدود مانده‌اند. حداقل RAM برابر
+۴۳۳۹ MiB و دیسک برابر ۳٫۷۸۴ GiB بود. هیچ image، stack، secret یا volume
+تغییر نکرد؛ نه push/merge و نه P5. checkpoint محلی:
+`checkpoint/p4-acceptance-cleanup-2026-11-11`؛ P4 همچنان باز است.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
@@ -613,6 +629,7 @@ Python، اسکن image و پذیرش زنده همچنان بازند. checkpoi
 | ۲۰۲۶-۱۱-۱۱ | تعمیر انتقال build و ارتقای مصوب npm | `20eb56f`، `5e7c9da`، `882b7ed`؛ npm/npx میزبان ۱۰.۹.۱۰، lockها و تست‌ها پاس؛ Gateway ساخته شد؛ export Console با محافظ دیسک لغو ولی probe یکسان تگ باقی‌مانده در retry پاس شد؛ tar در هر دو artifact finding ندارد، اسکن‌ها همچنان مردود | ظرفیت دیسک بدون حذف خودکار، export موفق Console و هشدارهای باقی‌مانده، Python و پذیرش زنده در همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۱ | بستن auditهای دو UI بدون تغییر major | `402428d`؛ ۳۲ تست، نصب‌های locked، build و typecheck پاس؛ audit Desktop و Bridge UI اکنون صفر finding؛ هشدار قدیمی Tailwind ثبت شد | هشدارهای image/Go/esbuild، ظرفیت دیسک، Python و پذیرش زنده در همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۱ | اصلاح checksum و بررسی زنجیره tsx | `52bc6e5` و `1b3f314`؛ تولید Prisma، ۳۳ قرارداد، ۴۵ تست suite و سه تست جدا، build و trace پاس؛ پوشش اسکن Go نامعتبر و نتیجه کلی failed باقی ماند | تصمیم درباره طرح بازسازی ممیزی‌پذیر، ظرفیت دیسک، Python و پذیرش زنده؛ نه P5 یا push |
+| ۲۰۲۶-۱۱-۱۱ | رفع race توقف child در ابزار پذیرش | `a2e1926`؛ چهار race بازتولید و اصلاح شد؛ ۳۰ تست و ۱۵ subtest و Ruff پاس؛ پنج finding Bandit باقی و DNS فایل‌های Python همچنان ناموفق | تصمیم esbuild، دسترسی wheel، فضای دیسک و پذیرش نهایی P4؛ نه P5 یا push |
 
 برای ادامه، به همین جدول سطر افزوده شود و وضعیت مرحله مرتبط فقط پس از ثبت
 نتیجه تغییر کند. این سند snapshot برنامه است؛ گزارش پذیرش مرجع جزئیات آزمایش

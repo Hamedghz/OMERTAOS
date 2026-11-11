@@ -1,5 +1,58 @@
 # CAPO acceptance report
 
+## P4 acceptance-child cleanup repair - 2026-11-11
+
+Starting clean HEAD `f89d504`; pre-edit tag
+`checkpoint/p4-acceptance-cleanup-start-f89d504`; unchanged working branch.
+Repair `a2e1926` changes only the environment-parity/encrypted-recovery harnesses
+and their tests, not Control/Runtime execution or authorization.
+
+Review of the five existing Bandit findings exposed an independent cleanup
+defect: a child exiting between timeout/poll and `killpg` raised
+`ProcessLookupError`, masking the original failure and potentially skipping
+the other pipeline child, descriptor closure and gate recording. New deterministic
+tests reproduced both SIGTERM and SIGKILL races in both harnesses before repair:
+exit 1, four failed subcases, two parent cases passed and 27 deselected; pytest
+2.61s, command wall duration not retained. No real host PID was signaled by the
+race simulations.
+
+A shared helper catches only the documented
+[process-not-found exception](https://docs.python.org/3/library/exceptions.html#ProcessLookupError).
+The existing communicate/wait paths then reap children and record exits;
+timeout/resource failures remain failures even if a racing child exited zero.
+Permission errors still propagate. Argv execution, process groups, memory
+threshold, timeouts, ciphertext handling and service opt-ins are unchanged.
+This does not guarantee cleanup after arbitrary OS errors or escaping process
+groups and is not Runtime isolation or a new backup/restore acceptance result.
+
+| Sequential gate | Actual result / wall seconds |
+|---|---|
+| Both complete affected suites | Exit 0 / 9.78s; 30 tests and 15 subtests passed in 4.45s, no failed/skipped tests; includes real bounded-child timeout and synthetic stream checks |
+| Ruff on four changed Python files | Exit 0 / 2.66s |
+| Bandit on the two affected harnesses, existing B101/B105 exclusions | Exit 1 / 4.76s; same five low/high-confidence findings (two B404 imports, three B603 argv subprocess calls), zero parse errors, zero `nosec` |
+| `timeout 15s getent ahosts files.pythonhosted.org` | Exit 2; still unresolved; wall duration not retained |
+| `timeout 15s getent ahosts pypi.org` | Exit 0 / 0.003380237s; resolves, not wheel-download acceptance |
+
+The selected subprocess calls were inspected as operator-harness argv calls
+with default `shell=False`, not remote request execution. They were not removed,
+hidden behind another execution mechanism or declared universally safe to clear
+Bandit. The scanner gate and aggregate receipt remain failed; no new exclusion,
+severity filter or waiver. A full-repository Bandit run was not repeated here.
+Python wheel downloads, production closure and pip-audit remain network-blocked;
+no DNS change, insecure TLS fallback or weaker dependency check substituted them.
+
+Exact final argv, outputs, timings, findings and the prior failure/DNS summary:
+ignored `artifacts/p4/acceptance-cleanup-validation.json`. Minimum available
+RAM/free disk: 4339 MiB / 3.784 GiB; 1 GiB RAM / 3 GiB disk guards did not fire.
+Tests used the existing readonly, network-disabled, 1 GiB/2-CPU validation image.
+No image build, persistent service, secret/key operation, volume change,
+native deployment, benchmark, system-package install, push or merge occurred.
+The esbuild provenance decision, image/resource blockers and final P4 live
+acceptance remain open; no P5 transition is authorized by this repair.
+Rollback is a reviewed reversal of the harness/test patch, restoring the known
+cleanup defect; no schema/data rollback applies. Local checkpoint:
+`checkpoint/p4-acceptance-cleanup-2026-11-11`.
+
 ## P4 Console tooling and checksum-integrity repairs - 2026-11-11
 
 Starting clean HEAD `7f95781`, same `Radin/omerta-env-namespace` branch;
