@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import re
 import shutil
 import signal
 import stat
@@ -306,6 +307,18 @@ def verify_scan_coverage(payload, inputs):
             "scanner did not identify the expected Go stdlib")
 
 
+def parse_metadata_time(value):
+    require(isinstance(value, str) and len(value) <= 64, "invalid database timestamp")
+    # Go emits nanoseconds; Python 3.10's ISO parser accepts at most microseconds.
+    normalized = re.sub(r"(\.\d{6})\d+(?=(?:Z|[+-]\d{2}:\d{2})$)", r"\1", value)
+    try:
+        parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BuildFailure("invalid database timestamp") from exc
+    require(parsed.tzinfo is not None, "database timestamp needs a timezone")
+    return parsed
+
+
 def tree_hashes(root):
     return {str(path.relative_to(root)): sha256(path)
             for path in sorted(root.rglob("*")) if path.is_file()}
@@ -439,7 +452,7 @@ def build(runner, inputs, node, readelf, scanner, cache, local_inputs, compiler_
     require(f"Version: {inputs['trivy_version']}" in scanner_version, "scanner version mismatch")
     db = cache / "db/trivy.db"
     db_metadata = json.loads((cache / "db/metadata.json").read_text())
-    updated = datetime.fromisoformat(db_metadata["UpdatedAt"].replace("Z", "+00:00"))
+    updated = parse_metadata_time(db_metadata["UpdatedAt"])
     require(0 <= (datetime.now(timezone.utc) - updated).total_seconds() <= 86400,
             "scanner database is not fresh within 24 hours")
     runner.report["scanner_database"] = {"metadata": db_metadata, "sha256": sha256(db)}

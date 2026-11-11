@@ -305,3 +305,12 @@ class AuditableEsbuildTests(unittest.TestCase):
                 patch.object(builder.shutil, "disk_usage", side_effect=[Mock(free=4 * builder.GIB), Mock(free=1)]), \
                 self.assertRaisesRegex(builder.BuildBlocked, "scratch"):
             guard.check()
+
+    def test_database_nanosecond_timestamp_uses_standard_iso_parser(self):
+        actual = builder.parse_metadata_time("2026-11-10T19:01:23.081219346Z")
+        self.assertEqual(actual.microsecond, 81219)
+        self.assertEqual(actual.isoformat(), "2026-11-10T19:01:23.081219+00:00")
+        self.assertEqual(actual, builder.parse_metadata_time("2026-11-10T19:01:23.081219346+00:00"))
+        for invalid in ("not-a-date", "2026-11-10T19:01:23", "2026-99-10T19:01:23Z"):
+            with self.subTest(invalid=invalid), self.assertRaises(builder.BuildFailure):
+                builder.parse_metadata_time(invalid)
