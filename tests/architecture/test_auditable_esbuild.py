@@ -187,6 +187,11 @@ class AuditableEsbuildTests(unittest.TestCase):
                 builder.verify_scan_coverage(payload, self.inputs)
         builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
             {"Name": "stdlib", "Version": "1.27.4"}]}]}, self.inputs)
+        builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
+            {"Name": "stdlib", "Version": "v1.27.4"}]}]}, self.inputs)
+        with self.assertRaises(builder.BuildFailure):
+            builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
+                {"Name": "stdlib", "Version": "v1.23.12"}]}]}, self.inputs)
 
     def test_resource_guards_fail_before_child_start(self):
         runner = self.runner()
@@ -314,3 +319,13 @@ class AuditableEsbuildTests(unittest.TestCase):
         for invalid in ("not-a-date", "2026-11-10T19:01:23", "2026-99-10T19:01:23Z"):
             with self.subTest(invalid=invalid), self.assertRaises(builder.BuildFailure):
                 builder.parse_metadata_time(invalid)
+
+    def test_audit_logs_preserve_original_build_receipt(self):
+        original = self.root / "receipt.json"
+        original.write_text("original-build-receipt\n")
+        runner = self.runner()
+        audit = builder.Runner(self.root, runner.environment, runner.guard, self.root / "audit")
+        audit.command("audit child", [sys.executable, "-c", "print('audit-only')"])
+        self.assertEqual(original.read_text(), "original-build-receipt\n")
+        self.assertTrue((self.root / "audit/receipt.json").exists())
+        self.assertFalse((self.root / "01.stdout").exists())

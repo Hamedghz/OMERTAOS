@@ -89,8 +89,13 @@ def signal_group(child, sig):
 
 
 class Runner:
-    def __init__(self, work, environment, guard):
+    def __init__(self, work, environment, guard, log_directory=None):
         self.work, self.environment, self.guard = work, environment, guard
+        self.logs = log_directory or work
+        if log_directory is not None:
+            require(log_directory.is_absolute() and log_directory.is_relative_to(work)
+                    and log_directory != work and not log_directory.exists(), "new private audit log directory required")
+            log_directory.mkdir(mode=0o700)
         self.report = {"status": "running", "stage": "P4-esbuild-A",
                        "started_at": datetime.now(timezone.utc).isoformat(), "gates": [],
                        "installation_changed": False, "live_acceptance": False}
@@ -99,7 +104,7 @@ class Runner:
         self.report["minimum_available_ram_bytes"] = self.guard.minimum_ram_bytes
         self.report["minimum_free_disk_bytes"] = self.guard.minimum_disk_bytes
         self.report["minimum_free_scratch_bytes"] = self.guard.minimum_scratch_bytes
-        (self.work / "receipt.json").write_text(json.dumps(self.report, indent=2) + "\n")
+        (self.logs / "receipt.json").write_text(json.dumps(self.report, indent=2) + "\n")
 
     def step(self, label, operation):
         entry = {"gate": label, "status": "running"}
@@ -124,8 +129,8 @@ class Runner:
         index, started = len(self.report["gates"]), time.monotonic()
         child = None
         failure = None
-        with (self.work / f"{index:02d}.stdout").open("wb") as out, \
-                (self.work / f"{index:02d}.stderr").open("wb") as err:
+        with (self.logs / f"{index:02d}.stdout").open("wb") as out, \
+                (self.logs / f"{index:02d}.stderr").open("wb") as err:
             try:
                 if guard:
                     self.guard.check()
@@ -164,7 +169,7 @@ class Runner:
         print(f"{label}: {entry['status']} exit={entry.get('exit_code')}", flush=True)
         if failure is not None:
             raise failure
-        return child.returncode, (self.work / entry["stdout_file"]).read_text()
+        return child.returncode, (self.logs / entry["stdout_file"]).read_text()
 
 
 class HTTPSRedirects(urllib.request.HTTPRedirectHandler):
@@ -300,9 +305,9 @@ def verify_go_metadata(text, inputs):
 
 def verify_scan_coverage(payload, inputs):
     results = [result for result in payload.get("Results", []) if result.get("Type") == "gobinary"]
+    version = inputs["compiler_version"].removeprefix("go")
     require(any(any(pkg.get("Name") == "stdlib"
-                    and pkg.get("Version", "").removeprefix("go")
-                    == inputs["compiler_version"].removeprefix("go")
+                    and pkg.get("Version") in (version, "v" + version, "go" + version)
                     for pkg in result.get("Packages", [])) for result in results),
             "scanner did not identify the expected Go stdlib")
 
