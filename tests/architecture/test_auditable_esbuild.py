@@ -40,10 +40,11 @@ class AuditableEsbuildTests(unittest.TestCase):
                          "maximum_expanded_bytes": 100}
 
     def metadata(self):
+        update = self.inputs.get("module_update", {"version": "v0.0.0-fixture", "sum": "h1:fixture"})
         return (f"/private/esbuild: {self.inputs['compiler_version']}\n"
                 "\tpath\tgithub.com/evanw/esbuild/cmd/esbuild\n"
                 "\tmod\tgithub.com/evanw/esbuild\t(devel)\n"
-                "\tdep\tgolang.org/x/sys\tv0.0.0-fixture\th1:fixture\n"
+                f"\tdep\tgolang.org/x/sys\t{update['version']}\t{update['sum']}\n"
                 + "".join(f"\tbuild\t{key}={value}\n" for key, value in self.inputs["target"].items()))
 
     def runner(self):
@@ -54,6 +55,9 @@ class AuditableEsbuildTests(unittest.TestCase):
     def test_input_manifest_matches_reviewed_plan(self):
         self.assertEqual(self.inputs["schema_version"], 1)
         self.assertEqual(self.inputs["esbuild_version"], "0.28.2")
+        self.assertEqual(self.inputs["module_update"]["path"], "golang.org/x/sys")
+        self.assertEqual(self.inputs["module_update"]["version"], "v0.44.0")
+        self.assertEqual(self.inputs["module_update"]["go_version"], "1.25.0")
         for name in ("source", "compiler"):
             self.assertTrue(self.inputs[name]["url"].startswith("https://"))
             self.assertRegex(self.inputs[name]["sha256"], r"^[0-9a-f]{64}$")
@@ -180,18 +184,109 @@ class AuditableEsbuildTests(unittest.TestCase):
             with self.subTest(metadata=bad), self.assertRaises(builder.BuildFailure):
                 builder.verify_go_metadata(bad, self.inputs)
 
+    def test_metadata_requires_the_exact_reviewed_module_version_and_checksum(self):
+        update = self.inputs["module_update"]
+        for bad in (self.metadata().replace(update["version"], "v0.43.0"),
+                    self.metadata().replace(update["sum"], "h1:unreviewed")):
+            with self.subTest(metadata=bad), self.assertRaisesRegex(builder.BuildFailure, "dependency"):
+                builder.verify_go_metadata(bad, self.inputs)
+
     def test_scan_zero_without_correct_go_coverage_is_rejected(self):
         for payload in ({}, {"Results": []}, {"Results": [{"Type": "npm"}]},
                         {"Results": [{"Type": "gobinary", "Packages": [{"Name": "stdlib", "Version": "1.23.12"}]}]}):
             with self.subTest(payload=payload), self.assertRaisesRegex(builder.BuildFailure, "stdlib"):
                 builder.verify_scan_coverage(payload, self.inputs)
-        builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
-            {"Name": "stdlib", "Version": "1.27.4"}]}]}, self.inputs)
-        builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
-            {"Name": "stdlib", "Version": "v1.27.4"}]}]}, self.inputs)
+        for stdlib in ("1.27.4", "v1.27.4"):
+            builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
+                {"Name": "stdlib", "Version": stdlib},
+                {"Name": "golang.org/x/sys", "Version": "v0.44.0"}]}]}, self.inputs)
         with self.assertRaises(builder.BuildFailure):
             builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
                 {"Name": "stdlib", "Version": "v1.23.12"}]}]}, self.inputs)
+
+    def test_scan_requires_actual_reviewed_dependency_coverage_even_without_findings(self):
+        for packages in ([], [{"Name": "golang.org/x/sys", "Version": "v0.43.0"}]):
+            with self.subTest(packages=packages), self.assertRaisesRegex(builder.BuildFailure, "dependency"):
+                builder.verify_scan_coverage({"Results": [{"Type": "gobinary", "Packages": [
+                    {"Name": "stdlib", "Version": "1.27.4"}, *packages]}]}, self.inputs)
+
+    def module_fixture(self):
+        source = self.root / "source"
+        source.mkdir()
+        (source / "go.mod").write_text("module fixture\n\ngo 1.13\n")
+        (source / "go.sum").write_text("old fixture checksum\n")
+        original = builder.tree_hashes(source)
+        texts = {"go.mod": "module fixture\n\ngo 1.25.0\nrequire golang.org/x/sys v0.44.0\n",
+                 "go.sum": "old fixture checksum\nreviewed fixture checksum\n"}
+        import hashlib
+
+        update = {**self.inputs["module_update"], "original": original,
+                  "updated": {name: hashlib.sha256(text.encode()).hexdigest() for name, text in texts.items()}}
+        go = Mock()
+
+        def native_run(label, argv, **kwargs):
+            if argv[:2] == ["mod", "edit"]:
+                (source / "go.mod").write_text(texts["go.mod"])
+                return 0, ""
+            (source / "go.sum").write_text(texts["go.sum"])
+            return 0, json.dumps({"Path": update["path"], "Version": update["version"],
+                                  "Sum": update["sum"], "GoModSum": update["go_mod_sum"]})
+
+        go.run.side_effect = native_run
+        return source, update, go, native_run
+
+    def test_reviewed_module_update_uses_native_parser_and_records_only_pinned_file_changes(self):
+        source, update, go, _ = self.module_fixture()
+        runner = self.runner()
+        builder.apply_module_update(go, runner, source, {"module_update": update})
+        self.assertEqual(go.run.call_args_list[0].args[1],
+                         ["mod", "edit", "-go=1.25.0", "-require=golang.org/x/sys@v0.44.0", "-toolchain=none"])
+        self.assertTrue(go.run.call_args_list[1].kwargs["network"])
+        self.assertEqual(runner.report["module_update"], update)
+        self.assertIn("upstream/go.mod", runner.report["module_update_diff"])
+
+    def test_module_update_rejects_changed_upstream_before_any_child(self):
+        source, update, go, _ = self.module_fixture()
+        (source / "go.mod").write_text("unreviewed source\n")
+        with self.assertRaisesRegex(builder.BuildFailure, "SHA256"):
+            builder.apply_module_update(go, self.runner(), source, {"module_update": update})
+        go.run.assert_not_called()
+
+    def test_module_update_rejects_unapproved_module_or_malformed_pins_before_any_child(self):
+        source, update, go, _ = self.module_fixture()
+        for key, value in (("path", "unapproved.example/module"), ("sum", "invalid"),
+                           ("updated", {"go.mod": "0" * 64})):
+            with self.subTest(key=key), self.assertRaises(builder.BuildFailure):
+                builder.apply_module_update(go, self.runner(), source, {"module_update": {**update, key: value}})
+        go.run.assert_not_called()
+
+    def test_module_update_rejects_wrong_resulting_file_hash(self):
+        source, update, go, _ = self.module_fixture()
+        update["updated"]["go.sum"] = "0" * 64
+        with self.assertRaisesRegex(builder.BuildFailure, "SHA256"):
+            builder.apply_module_update(go, self.runner(), source, {"module_update": update})
+
+    def test_module_update_rejects_unexpected_download_identity(self):
+        source, update, go, native = self.module_fixture()
+
+        def wrong_identity(label, argv, **kwargs):
+            code, raw = native(label, argv, **kwargs)
+            return code, raw.replace(update["sum"], "h1:unexpected")
+
+        go.run.side_effect = wrong_identity
+        with self.assertRaisesRegex(builder.BuildFailure, "identity mismatch"):
+            builder.apply_module_update(go, self.runner(), source, {"module_update": update})
+
+    def test_module_update_rejects_changes_outside_the_two_module_files(self):
+        source, update, go, native = self.module_fixture()
+
+        def extra_change(label, argv, **kwargs):
+            (source / "unexpected.go").write_text("package unreviewed\n")
+            return native(label, argv, **kwargs)
+
+        go.run.side_effect = extra_change
+        with self.assertRaisesRegex(builder.BuildFailure, "unrelated source"):
+            builder.apply_module_update(go, self.runner(), source, {"module_update": update})
 
     def test_resource_guards_fail_before_child_start(self):
         runner = self.runner()

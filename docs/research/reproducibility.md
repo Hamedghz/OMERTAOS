@@ -96,6 +96,15 @@ metadata/scan coverage, a fresh DB, a repeat-build digest and upstream Go tests.
 Passing Stage A alone is not Console integration or final Docker acceptance.
 See the [reviewed plan and limits](../capo/p4-esbuild-provenance-plan.md).
 
+The approved downstream recipe now applies the pinned `module_update` using
+native Go tools: x/sys v0.44.0 and minimum module Go 1.25.0, with the compiler
+still Go 1.27.4 and esbuild still 0.28.2. Original/updated go.mod and go.sum
+digests, sumdb checksums and rejection of unrelated source edits are mandatory.
+This intentionally differs from upstream's old-Go compatibility contract.
+The old consumer binary/archive pins are not automatically updated by this
+recipe change; a newly built candidate needs its own verified evidence before
+promotion. A clean registry audit is not that evidence.
+
 The recorded Linux x64 candidate also has a dependency-free identity check:
 
 ```bash

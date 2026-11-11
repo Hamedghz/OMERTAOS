@@ -301,6 +301,9 @@ def verify_go_metadata(text, inputs):
         require(f"\tbuild\t{key}={value}" in lines, "binary target metadata mismatch")
     require(any(line.startswith("\tdep\tgolang.org/x/sys\t") for line in lines),
             "dependency build metadata missing")
+    if update := inputs.get("module_update"):
+        require(f"\tdep\t{update['path']}\t{update['version']}\t{update['sum']}" in lines,
+                "reviewed dependency build metadata mismatch")
 
 
 def verify_scan_coverage(payload, inputs):
@@ -310,6 +313,50 @@ def verify_scan_coverage(payload, inputs):
                     and pkg.get("Version") in (version, "v" + version, "go" + version)
                     for pkg in result.get("Packages", [])) for result in results),
             "scanner did not identify the expected Go stdlib")
+    if update := inputs.get("module_update"):
+        require(any(any(pkg.get("Name") == update["path"]
+                        and pkg.get("Version") in (update["version"], update["version"].removeprefix("v"))
+                        for pkg in result.get("Packages", [])) for result in results),
+                "scanner did not identify the reviewed Go dependency")
+
+
+def apply_module_update(go, runner, source, inputs):
+    update = inputs.get("module_update")
+    if not update:
+        return
+    require(update["path"] == "golang.org/x/sys"
+            and re.fullmatch(r"v\d+\.\d+\.\d+", update["version"])
+            and re.fullmatch(r"\d+\.\d+\.\d+", update["go_version"]),
+            "invalid reviewed module update")
+    for key in ("sum", "go_mod_sum"):
+        require(re.fullmatch(r"h1:[A-Za-z0-9+/]{43}=", update[key]), "invalid module checksum pin")
+    for state in ("original", "updated"):
+        require(set(update[state]) == {"go.mod", "go.sum"}
+                and all(re.fullmatch(r"[a-f0-9]{64}", value) for value in update[state].values()),
+                "invalid reviewed module file pins")
+    before = tree_hashes(source)
+    original_text = {name: (source / name).read_text() for name in update["original"]}
+    for name, digest in update["original"].items():
+        verify_digest(source / name, digest)
+    go.run("apply reviewed downstream Go module edit", ["mod", "edit", f"-go={update['go_version']}",
+           f"-require={update['path']}@{update['version']}", "-toolchain=none"], cwd=source)
+    _, raw = go.run("download reviewed checksum-verified dependency",
+        ["mod", "download", "-json", f"{update['path']}@{update['version']}"], cwd=source, network=True)
+    module = json.loads(raw)
+    require(all(module.get(key) == update[value] for key, value in (
+        ("Path", "path"), ("Version", "version"), ("Sum", "sum"), ("GoModSum", "go_mod_sum"))),
+        "downloaded dependency identity mismatch")
+    for name, digest in update["updated"].items():
+        verify_digest(source / name, digest)
+    after = tree_hashes(source)
+    require({key: value for key, value in before.items() if key not in update["original"]}
+            == {key: value for key, value in after.items() if key not in update["updated"]},
+            "module update changed unrelated source")
+    runner.report["module_update"] = update
+    runner.report["module_update_diff"] = "".join("".join(difflib.unified_diff(
+        text.splitlines(keepends=True), (source / name).read_text().splitlines(keepends=True),
+        fromfile=f"upstream/{name}", tofile=f"omerta/{name}")) for name, text in original_text.items())
+    runner.save()
 
 
 def parse_metadata_time(value):
@@ -425,6 +472,8 @@ def build(runner, inputs, node, readelf, scanner, cache, local_inputs, compiler_
     require({key: value for key, value in before.items() if key != "cmd/esbuild/version.go"}
             == {key: value for key, value in baseline.items() if key != "cmd/esbuild/version.go"},
             "version generator changed other source files")
+    apply_module_update(go, runner, source, inputs)
+    baseline = tree_hashes(source)
     go.run("download checksum-verified modules", ["mod", "download"], cwd=source, network=True)
     go.run("module checksum verification", ["mod", "verify"], cwd=source)
     go.run("module inventory", ["list", "-m", "-json", "all"], cwd=source)

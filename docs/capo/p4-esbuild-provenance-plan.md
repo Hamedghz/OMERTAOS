@@ -25,6 +25,28 @@ weakening noexec or the disk guard. The user then separately authorized review
 and a limited rebuild with x/sys v0.44.0 and its Go 1.25 minimum, keeping esbuild
 and compiler versions fixed; existing candidate pins stay unchanged until new
 build/test/scan evidence is available. No heavy image build/export is authorized.
+
+### Approved downstream module repair
+
+The structured native-Go probe passed with the same Go 1.27.4 compiler. The
+only upstream source-file changes were `go.mod` and `go.sum`: minimum Go
+1.13 becomes 1.25.0, x/sys becomes v0.44.0, and two sumdb-verified checksums are
+added while the old checksum lines remain. Upstream intentionally keeps its
+older Go floor; this is a disclosed OMERTA downstream variant, not an unchanged
+publisher build or proof of compatibility with those old OS/toolchains.
+The [official advisory](https://pkg.go.dev/vuln/GO-2026-5024) identifies the
+Windows symbol and fixed module version; [the module's own go.mod](https://raw.githubusercontent.com/golang/sys/v0.44.0/go.mod)
+requires Go 1.25.0. Source/archive and compiler pins are unchanged.
+
+`module_update` in the build-input manifest records the observed original and
+updated file hashes plus both Go checksums. The builder uses native
+`go mod edit` and checksum-verified download, rejects any other source change,
+records the downstream diff and requires the exact new dependency in binary
+metadata and positive scanner coverage. It never patches scanner rules or
+changes the security result to pass. The focused batch passed 38 tests and
+33 subtests plus Ruff; Bandit remained nonzero with its unsuppressed low findings.
+New candidate build/test/scan results must be recorded separately; the old
+consumer identity/archive pins are deliberately still in force at this point.
 This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
 Docker daemon changes. Current executable results belong in the acceptance

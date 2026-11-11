@@ -1,5 +1,36 @@
 # CAPO acceptance report
 
+## P4 approved x/sys module repair implementation - 2026-11-11
+
+The user separately approved review/upgrade to x/sys v0.44.0, its minimum Go
+adjustment and a limited rebuild, with esbuild/compiler versions fixed and no
+heavy image export, deletion of data or waiver. Clean source baseline `91f4be1`
+was checkpointed as `checkpoint/p4-esbuild-xsys-start-91f4be1`.
+
+Native Go 1.27.4 edited the verified source archive's module files in a new
+private probe. Checksum-verified module download, `go mod verify` and module
+inventory all exited zero. Only go.mod/go.sum changed; the reviewed input
+manifest records their actual pre/post SHA256 and both native Go checksums.
+The module now requires Go 1.25.0 rather than upstream's intentional Go 1.13;
+this is an explicitly downstream Linux x64 variant, not unchanged upstream.
+
+The builder implements that structured edit with fail-closed input/output
+hash checks, download identity checks, rejection of unrelated source edits and
+exact x/sys identity in binary metadata/scanner coverage. The focused Python
+batch passed 38 tests and 33 subtests (pytest 0.57s), Ruff exited zero. Bandit
+exited 1 with unsuppressed low findings; aggregate security status remains red.
+Logs/argv/timings are under
+`/home/omerta/.local/share/omerta-validation/esbuild-xsys-20261111-probe/` and
+`esbuild-xsys-20261111-unit/`. The optional JSON advisory endpoint returned
+HTTP 403; the official pkg.go.dev advisory and immutable v0.44.0 go.mod were
+read successfully instead. This is not a successful build or new scan yet.
+
+The user also explicitly approved moving only this task's old private
+`/run/user/1000/omerta-esbuild-p4-20261111/go-cache` to a new private data-only
+RAM location with full content preservation/comparison. No shared cache,
+mount flag or resource threshold may be changed. Active old candidate/Console
+pins stay unchanged until new executable evidence is available.
+
 ## P4 full npm disk-backed acceptance follow-up - 2026-11-11
 
 The remaining full Console npm install gate from `b38b78d` is now **passed**;

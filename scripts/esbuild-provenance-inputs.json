@@ -23,5 +23,20 @@
     "maximum_expanded_bytes": 536870912
   },
   "target": {"GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1", "CGO_ENABLED": "0"},
+  "module_update": {
+    "path": "golang.org/x/sys",
+    "version": "v0.44.0",
+    "go_version": "1.25.0",
+    "sum": "h1:ildZl3J4uzeKP07r2F++Op7E9B29JRUy+a27EibtBTQ=",
+    "go_mod_sum": "h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=",
+    "original": {
+      "go.mod": "2d48dbed6151e653adc9ab5d8869cba012d167f13352e45880e59104e1e02b9b",
+      "go.sum": "f2881c3c2d9d03858770bf7713c82ff7564c0893685cf708e49a111e5fd66ab2"
+    },
+    "updated": {
+      "go.mod": "191f8986720f835c77f02dcdd9c21e372fb4f50b43594e43c3234a424a00573c",
+      "go.sum": "b1eb4b3cf8bce01b77b3086514cecaf83061e6a6c5562158603b1110eb14b665"
+    }
+  },
   "trivy_version": "0.76.1"
 }
