@@ -1,8 +1,9 @@
 # P4 auditable esbuild rebuild proposal
 
-Date: 2026-11-11. Status: **candidate built, upstream tests and scan coverage
-verified; raw advisory gate failed; controlled Console pnpm integration
-validated locally with full locked npm/pnpm installs, image acceptance remains open**.
+Date: 2026-11-11. Status: **new downstream x/sys candidate passed repeat builds,
+upstream tests and raw advisory scan; promotion to Console awaits approval.
+Old active candidate remains advisory-red; full locked npm/pnpm consumers were
+validated for that old identity. Image acceptance remains open**.
 Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 `Radin/omerta-env-namespace`; pre-edit checkpoint
 `checkpoint/p4-esbuild-plan-start-63f6f6e`.
@@ -45,8 +46,15 @@ records the downstream diff and requires the exact new dependency in binary
 metadata and positive scanner coverage. It never patches scanner rules or
 changes the security result to pass. The focused batch passed 38 tests and
 33 subtests plus Ruff; Bandit remained nonzero with its unsuppressed low findings.
-New candidate build/test/scan results must be recorded separately; the old
-consumer identity/archive pins are deliberately still in force at this point.
+The subsequent clean `60ca943` run passed both builds with SHA256
+`b42f2f5152ca473b735aafe681f65589f1b5462c7790787f7173e3103d32ce7e`, 16 upstream
+test packages and a fresh raw Trivy scan (exit 0, zero reported findings,
+positive stdlib/x/sys coverage), plus CycloneDX generation. The exact logs,
+timings and approved content-verified private cache relocation are recorded
+in the acceptance report. The old consumer identity/archive pins are deliberately
+still in force: promotion is not automatic and the new producer identity is
+not yet aligned with consumers. Existing old install evidence does not validate
+the new candidate's npm/pnpm integration or images.
 This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
 Docker daemon changes. Current executable results belong in the acceptance

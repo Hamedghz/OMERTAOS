@@ -1,5 +1,76 @@
 # CAPO acceptance report
 
+## P4 x/sys candidate rebuild and raw scan - 2026-11-11
+
+The approved limited rebuild **passed** from clean commit
+`60ca9434a167adb53d97951b57a9999e5b56f631`. This is a new, separately retained
+Linux x64 downstream candidate, not a replacement of the active Console input.
+esbuild remains 0.28.2 and the digest-pinned official compiler remains Go 1.27.4.
+Native Go applied the reviewed x/sys v0.44.0 / minimum Go 1.25.0 module edit;
+the pinned pre/post hashes, sumdb checksums and unchanged other-source check passed.
+
+The user-authorized cache relocation preserved 3,792 files / 304,767,820 bytes
+in 4,050 entries. SHA256, type, ownership, mode, mtime and xattrs matched before
+and after copying; the original duplicate alone was removed after verification.
+The data-only copy remains at
+`/dev/shm/omerta-esbuild-go-cache-preserved-20261111-xsys/go-cache`.
+The original scratch's other directories were untouched. Copy exited 0 in
+1.274s; the full relocation took 59.481s. The new private executable scratch
+started with 810,594,304 free bytes. This volatile copy is not backup or reboot
+recovery evidence. No shared cache, volume, mount flags or guards changed.
+
+| Gate | Actual result |
+|---|---|
+| Native module download / `go mod verify` / inventory | All exit 0; exact reviewed version/checksums |
+| First / second `go build -p=1 -mod=readonly -trimpath -buildvcs=false` | Exit 0 / 194.046s and exit 0 / 5.890s; identical SHA256 |
+| ELF / `go version -m` / `esbuild --version` | Exit 0; build-info present, Go 1.27.4, x/sys v0.44.0, esbuild 0.28.2 |
+| `go test -p=1 -parallel=1 -mod=readonly ./cmd/... ./internal/... ./pkg/...` | Exit 0 / 289.043s; 16 packages passed, 14 report no test files, 0 failed; no individual test-count claim |
+| Raw Trivy 0.76.1 binary scan, `--exit-code 1 --list-all-pkgs`, no waiver/filter | Exit 0 / 0.881s; 0 reported vulnerabilities; positive gobinary coverage for stdlib v1.27.4 and x/sys v0.44.0 |
+| CycloneDX SBOM | Exit 0 / 0.676s; both exact Go components present |
+
+New binary: 16,521,573 bytes, SHA256
+`b42f2f5152ca473b735aafe681f65589f1b5462c7790787f7173e3103d32ce7e`.
+The raw database was updated `2026-11-10T19:01:23.081219346Z`, within the
+unchanged 24-hour bound at scan time; its actual SHA256 is
+`cf7fa3086682e8f77298ca8178419a530f97d7c4bd3ac203a64f2977f82e94a6`.
+The main module remains `(devel)`; this is not a signed publisher release.
+Minimum available host RAM was 1,995,952,128 bytes, primary disk free
+3,556,712,448 bytes and executable scratch free 338,944,000 bytes. No guard
+tripped. No compiler containers remained running after the run.
+
+Exact argv, exit codes, timing, source diff, raw scan/SBOM and logs are in
+`/home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-xsys/receipt.json`;
+full relocation manifests/receipt are in the sibling
+`esbuild-cache-relocation-20261111-xsys/` directory. The limited reproduction was:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/build_auditable_esbuild.py \
+  --run --compiler-image \
+  --source-archive /home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-d/source.tar.gz \
+  --work-dir /home/omerta/.local/share/omerta-validation/NEW-esbuild-xsys-run \
+  --scratch-dir /absolute/private/executable/NEW-scratch \
+  --trivy /home/omerta/.local/share/omerta-validation/tools/p4/trivy \
+  --trivy-cache /absolute/private/fresh-trivy-cache
+```
+
+Use new private directories, a fresh database and the existing resource guards;
+the recorded directories are retained evidence, not reusable empty workspaces.
+An optional resource-observation command initially exited 125 because this
+Docker CLI does not support `docker stats --filter`; retrying with the inspected
+private container ID succeeded. This was not a failed build/test or a relaxed gate.
+
+The previous candidate still has its retained raw advisory, and active binary,
+provider/archive, lock and Docker-context pins still select that old candidate.
+The new recipe is not yet an accepted end-to-end CI producer/consumer chain:
+its output identity differs from those existing consumer pins. Controlled
+promotion under a new OMERTA provider identity is a separate approval step;
+do not overwrite the old archive/context or treat it as already remediated.
+Bandit's two unsuppressed low findings remain exit 1. Full image scans,
+Python closure, heavy export, ARM and final live acceptance remain open.
+Only the new candidate's raw advisory gate moved to pass (E1); this is not P4
+completion, successful Runtime isolation, production/security certification or
+independent-host reproducibility. No persistent service/image/volume was changed.
+
 ## P4 approved x/sys module repair implementation - 2026-11-11
 
 The user separately approved review/upgrade to x/sys v0.44.0, its minimum Go

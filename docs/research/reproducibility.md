@@ -105,6 +105,16 @@ The old consumer binary/archive pins are not automatically updated by this
 recipe change; a newly built candidate needs its own verified evidence before
 promotion. A clean registry audit is not that evidence.
 
+The clean `60ca943` limited run now supplies that candidate-only evidence:
+equal builds with SHA256
+`b42f2f5152ca473b735aafe681f65589f1b5462c7790787f7173e3103d32ce7e`, 16 upstream
+test packages passed, positive stdlib/x/sys scan coverage and a zero-finding raw
+scan with a database under 24 hours old. The dated acceptance report includes
+exact argv, timings and receipt paths. The active consumer manifests below
+still select the previous binary; they are not evidence of installing this
+new candidate. Until approved promotion aligns the identities/locks/contexts,
+the new CI producer recipe is not a validated end-to-end consumer chain.
+
 The recorded Linux x64 candidate also has a dependency-free identity check:
 
 ```bash
