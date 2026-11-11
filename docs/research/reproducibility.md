@@ -205,11 +205,16 @@ reviewed revert of the integration and a locked reinstall/rebuild of affected
 Console tooling, not a database or volume change.
 
 The full Console pnpm installation and 48 collected tests passed in the dated
-controlled-integration run. Full `npm ci` remains blocked: the disk attempt
-timed out fetching a registry tarball; a bounded RAM-backed retry hit default
-noexec and was not weakened to pass. Re-run the same locked npm command in a
-new private **executable disk-backed** mirror with sufficient disk/network
-headroom; do not treat the smaller prior fixture as full Console npm acceptance.
+controlled-integration run. The initial full npm attempts timed out on the
+registry or hit default noexec; those failed receipts remain recorded. The
+subsequent **executable disk-backed** clean `npm ci --include=dev
+--prefer-offline --fetch-timeout=120000 --fetch-retries=1` passed without changing
+either lock or the manifest. It reused only the task-owned disposable fixture,
+after a compressed snapshot and complete content comparison of its previous
+generated dependencies; no checkout dependencies, caches or volumes were
+deleted. Installed CLI/API/tsx/Vite, guarded Prisma generation and a separate
+zero-finding npm audit passed. This is full npm installation/selected-consumer
+evidence, not a second 48-test run, a clean Go scan or final image acceptance.
 
 For a constrained host, image mode also accepts `--scratch-dir` pointing to an
 existing absolute, caller-owned, mode-700 directory outside the repo. It may use

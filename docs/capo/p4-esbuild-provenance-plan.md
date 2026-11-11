@@ -2,7 +2,7 @@
 
 Date: 2026-11-11. Status: **candidate built, upstream tests and scan coverage
 verified; raw advisory gate failed; controlled Console pnpm integration
-validated locally, full npm/image acceptance remains open**.
+validated locally with full locked npm/pnpm installs, image acceptance remains open**.
 Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 `Radin/omerta-env-namespace`; pre-edit checkpoint
 `checkpoint/p4-esbuild-plan-start-63f6f6e`.
@@ -20,6 +20,11 @@ lock generation preserves unrelated versions and introduces a separately
 pinned, ignored archive input plus an external protected executable. Final
 image/security acceptance remains open. The acceptance report
 records this distinction; the isolated fixture is not a completed Stage B.
+The later full disk-backed npm install/consumer/audit follow-up passed without
+weakening noexec or the disk guard. The user then separately authorized review
+and a limited rebuild with x/sys v0.44.0 and its Go 1.25 minimum, keeping esbuild
+and compiler versions fixed; existing candidate pins stay unchanged until new
+build/test/scan evidence is available. No heavy image build/export is authorized.
 This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
 Docker daemon changes. Current executable results belong in the acceptance

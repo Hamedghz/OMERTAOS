@@ -1,5 +1,54 @@
 # CAPO acceptance report
 
+## P4 full npm disk-backed acceptance follow-up - 2026-11-11
+
+The remaining full Console npm install gate from `b38b78d` is now **passed**;
+the earlier failed attempts below remain historical evidence, not rewritten
+receipts. No application or dependency code changed in this follow-up.
+Checkpoint: `checkpoint/p4-esbuild-npm-disk-start-b38b78d`.
+
+Reinspection found only the root ext4 disk with about 3.8 GiB free, no separate
+disk. The successful, exclusively task-owned pnpm fixture had 876 MiB of
+generated dependencies and the inspected files had no shared hardlinks. Its
+262 public source files matched the current checkout; no running container
+used it. A 208,959,411-byte compressed dependency snapshot was retained in a
+new private directory on the existing **noexec** `/dev/shm` filesystem, then
+fully compared with the original (tar exit 0 / 152.477s; compare exit 0 /
+17.933s). This is volatile preservation, not a persistent backup claim.
+
+Native npm 10.9.10 validates its lock then replaces only the disposable
+fixture's generated node_modules, per its inspected `lib/commands/ci.js`.
+That ordinary clean-install lifecycle recovered enough headroom without
+deleting any user files, shared/private cache, failed receipt or Docker volume.
+The protected compiler, original checkout node_modules and live services were
+unchanged. The 3 GiB disk / 1 GiB available-host-RAM guards and container
+security profile remained intact; no mount flags or script/integrity settings
+were relaxed.
+
+| Gate | Actual result |
+|---|---|
+| `npm ci --include=dev --prefer-offline --fetch-timeout=120000 --fetch-retries=1` | Exit 0 / 120.541s; 664 packages installed on executable disk, lifecycle scripts enabled |
+| Both locks and manifest hashes | Byte-identical before/after the clean install |
+| Installed provider digest, CLI, sync/async API, tsx and Vite transform | Exit 0 / 5.074s; candidate identity/version matched, no registry-provider substitution |
+| `npm audit --include=dev --audit-level=low --json` | Exit 0 / 6.741s; 0 findings across all reported severities |
+| Guarded `npm run prisma:generate` | Exit 0 / 9.982s; public dummy URL, no database connection/checksum bypass |
+| Actual installed `.bin/esbuild --version` | Exit 0 / 2.626s; 0.28.2 |
+
+All gates ran sequentially. No unit suite was repeated: the prior 48 Console
+tests are pnpm evidence, not a new npm test-suite result. Deprecation warnings
+remain, and npm also reported retirement of an advisory endpoint; the explicit
+audit nevertheless returned valid metadata and exit zero. This registry audit
+does not analyze the embedded Go binary or clear its retained UNKNOWN advisory.
+Minimum available RAM in the install batch was 2,440,036,352 bytes; minimum free
+disk across install/postchecks was 3,637,317,632 bytes. No guard tripped.
+
+Exact argv, timings, public-source comparison count, snapshot path/digest and
+raw stdout/stderr are retained under
+`/home/omerta/.local/share/omerta-validation/esbuild-console-20261111-e/`
+in `receipt.json` and `postcheck/receipt.json`. The successful mirror is now
+npm-managed; the earlier pnpm run/snapshot remain separate evidence. No heavy
+build, image export, live acceptance or security waiver was performed.
+
 ## P4 controlled Console compiler integration - 2026-11-11
 
 Approved scope: connect the reviewed candidate to Console, both native locks,
