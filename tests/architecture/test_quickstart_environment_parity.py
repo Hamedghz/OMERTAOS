@@ -4,7 +4,7 @@ import copy
 import json
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from scripts.validate_environment_aliases import AliasGroup
 from scripts import validate_quickstart_environment_parity as parity
@@ -106,6 +106,34 @@ class QuickstartParityTests(unittest.TestCase):
                        timeout=0.01, guard=False)
         self.assertIn("timeout", str(error.exception))
         self.assertLess(runner.report["gates"][-1]["exit_code"], 0)
+
+    def test_exit_race_during_abort_still_reaps_and_records_child(self):
+        for raced_signal in (parity.signal.SIGTERM, parity.signal.SIGKILL):
+            with self.subTest(signal=raced_signal):
+                runner = parity.Runner()
+                child = Mock(pid=12345, returncode=0)
+                expired = parity.subprocess.TimeoutExpired(["synthetic-child"], 2)
+                child.communicate.side_effect = (
+                    [expired, expired, (b"", b"")]
+                    if raced_signal == parity.signal.SIGKILL else [expired, (b"", b"")]
+                )
+
+                def signal_group(pid, sig):
+                    if sig == raced_signal:
+                        raise ProcessLookupError("synthetic child already exited")
+
+                with patch.object(parity.subprocess, "Popen", return_value=child), \
+                     patch.object(parity.os, "killpg", side_effect=signal_group), \
+                     self.assertRaisesRegex(parity.AcceptanceFailure, "timeout"):
+                    runner.run("synthetic exit race", ["synthetic-child"], timeout=0, guard=False)
+                self.assertEqual(runner.report["gates"][-1]["exit_code"], 0)
+                self.assertEqual(child.communicate.call_count,
+                                 3 if raced_signal == parity.signal.SIGKILL else 2)
+
+    def test_signal_permission_errors_are_not_silently_ignored(self):
+        with patch.object(parity.os, "killpg", side_effect=PermissionError("synthetic permission failure")), \
+             self.assertRaises(PermissionError):
+            parity.signal_process_group(Mock(pid=12345), parity.signal.SIGTERM)
 
     def test_normalization_ignores_only_dynamic_fields(self):
         first = {"status": "OK", "taskId": "one", "engine": {"route": "runtime"},

@@ -197,12 +197,12 @@ def pipeline(runner, label, producer, consumer, *, output=None, timeout=600):
     finally:
         for child in children:
             if child.poll() is None:
-                os.killpg(child.pid, signal.SIGTERM)
+                parity.signal_process_group(child, signal.SIGTERM)
         for child in children:
             try:
                 child.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                os.killpg(child.pid, signal.SIGKILL)
+                parity.signal_process_group(child, signal.SIGKILL)
                 child.wait()
         if handle is not None:
             handle.close()

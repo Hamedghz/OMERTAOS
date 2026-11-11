@@ -46,6 +46,14 @@ def require(condition: bool, message: str) -> None:
         raise AcceptanceFailure(message)
 
 
+def signal_process_group(child, sig):
+    """A child can exit between a timeout/poll result and the signal."""
+    try:
+        os.killpg(child.pid, sig)
+    except ProcessLookupError:
+        pass
+
+
 def compose_dollars(value, *, encode: bool):
     """Translate Compose's escaped config output to/from logical process strings."""
     if isinstance(value, str):
@@ -172,11 +180,11 @@ class Runner:
                     require(time.monotonic() - started < timeout, f"{label}: timeout")
         except BaseException as exc:
             failure = exc
-            os.killpg(child.pid, signal.SIGTERM)
+            signal_process_group(child, signal.SIGTERM)
             try:
                 out, err = child.communicate(timeout=15)
             except subprocess.TimeoutExpired:
-                os.killpg(child.pid, signal.SIGKILL)
+                signal_process_group(child, signal.SIGKILL)
                 out, err = child.communicate()
         self.report["gates"].append({"gate": label, "command": command,
                                      "exit_code": child.returncode,

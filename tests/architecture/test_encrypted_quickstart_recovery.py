@@ -181,6 +181,29 @@ class EncryptedRecoveryTests(unittest.TestCase):
             encrypted.pipeline(runner, "synthetic timeout", sleeper, sleeper, timeout=0.01)
         self.assertTrue(all(code is not None and code != 0 for code in runner.report["gates"][-1]["exit_codes"]))
 
+    def test_exit_race_in_pipeline_cleanup_does_not_abandon_the_second_child(self):
+        for raced_signal in (encrypted.signal.SIGTERM, encrypted.signal.SIGKILL):
+            with self.subTest(signal=raced_signal):
+                runner = Runner()
+                first, second = Mock(pid=12345, returncode=0), Mock(pid=12346, returncode=0)
+                first.poll.return_value = second.poll.return_value = None
+                if raced_signal == encrypted.signal.SIGKILL:
+                    first.wait.side_effect = [encrypted.subprocess.TimeoutExpired("synthetic-child", 10), 0]
+
+                def signal_group(pid, sig):
+                    if pid == first.pid and sig == raced_signal:
+                        raise ProcessLookupError("synthetic child already exited")
+
+                with patch.object(runner, "memory", side_effect=[None, AcceptanceFailure("synthetic resource stop")]), \
+                     patch.object(encrypted.subprocess, "Popen", side_effect=[first, second]), \
+                     patch.object(encrypted.os, "killpg", side_effect=signal_group), \
+                     self.assertRaisesRegex(AcceptanceFailure, "synthetic resource stop"):
+                    encrypted.pipeline(runner, "synthetic exit race", ["synthetic-producer"], ["synthetic-consumer"])
+                self.assertTrue(first.wait.called)
+                second.wait.assert_called_once_with(timeout=10)
+                first.stdout.close.assert_called_once()
+                self.assertEqual(runner.report["gates"][-1]["exit_codes"], [0, 0])
+
     def test_opt_in_required_before_key_generation_or_docker_commands(self):
         with patch.object(encrypted, "Crypto") as crypto, self.assertRaises(AcceptanceFailure):
             encrypted.main(["--env-file", "fixture.env", "--key-dir", "/tmp/keys", "--backup-dir", "/tmp/backup",
