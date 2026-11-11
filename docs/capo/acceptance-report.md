@@ -1,5 +1,57 @@
 # CAPO acceptance report
 
+## P4 candidate identity verifier and capacity recheck - 2026-11-11
+
+The user's latest approval is Stage A implementation/validation and a fresh
+disk check, not Stage B installation or a new image export. Baseline `13a1ba0`,
+unchanged branch `Radin/omerta-env-namespace`; pre-edit checkpoint
+`checkpoint/p4-esbuild-provider-start-13a1ba0`.
+
+Added `scripts/verify_esbuild_artifact.mjs` and a reviewed candidate identity
+manifest, native Node regression tests, and a CI step for those tests. The
+verifier checks canonical path, parent/file ownership and permissions, ELF
+magic, size/SHA256, path identity during hashing and exact executable version
+before returning a result. It has no dependency installation, consumer runner,
+environment fallback or security-acceptance side effect. The metadata assertion
+is bound to the already reviewed candidate digest, not independently parsed Go
+metadata. The manifest is unsigned trusted repository input; malicious root or
+the same UID remains outside this check's threat boundary. A protected installed
+tool location and actual installer/CLI/API behavior are still Stage B work.
+
+Sequential validation from `12:16:12` to `12:16:24 UTC`:
+
+| Command / gate | Actual result |
+|---|---|
+| `node --test tests/tooling/verify_esbuild_artifact.test.mjs` | Exit 0 / 1.079s wall; 15 passed, 0 failed/skipped; version execution mocked in synthetic unit fixtures |
+| `node scripts/verify_esbuild_artifact.mjs /home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-d/build-1/esbuild` | Exit 0 / 0.373s; actual candidate digest/API match, `identity_verified: true`, **`security_accepted: false`**, CVE-2026-39824 retained |
+| `python -m pytest tests/architecture/test_javascript_toolchain.py -q -p no:cacheprovider` in the existing pinned validation image | Exit 0 / 11.334s wall; 9 passed in 2.45s, no failed/skipped tests; not a remote CI run |
+| `git diff --check` | Exit 0 / 0.019s before documentation update |
+
+The container used image
+`sha256:c331a64733e79326508520146ac5526757ce447c7728e7f4be87dbf244fcd2d7`,
+non-root UID/GID 1000, readonly repository/root, no network/capabilities,
+no-new-privileges, 1 GiB RAM/two CPUs, 256 PIDs and a bounded private `/tmp`.
+Its uniquely named test container was checked absent afterward. Exact argv,
+exits, durations and raw logs are retained outside the repository at
+`/home/omerta/.local/share/omerta-validation/esbuild-p4-20261111-d/identity-verifier-audit/receipt.json`.
+
+The requested fresh `df` check found **8,779,223,040 bytes (8.2 GiB)** free on
+root and `/var/lib/docker`, both `/dev/sda2`; DockerRootDir is `/var/lib/docker`.
+Available RAM at inspection was 3,254,708 KiB. During this validation the minimum
+observed available RAM/free root space were 3,312,705,536 / 8,778,977,280 bytes.
+Space has improved from the prior 3.1 GiB; no cleanup was performed by this task.
+Root remains 97% used and below the plan's conservative **15 GiB** heavy Console
+export budget. This is not a measured export peak or a lowered stop threshold.
+
+Only identity/tooling evidence is added (E1); there is no new image/live-runtime
+acceptance. The prior raw vulnerability gate (one UNKNOWN advisory), two low
+builder Bandit findings and independent Python wheel/production gates are not
+cleared or rerun by this check. Full application suites, compiler rebuild,
+Stage B install, image export, live acceptance, native deployment and benchmarks
+were not run in this increment. No lockfile, installed dependency, application
+API/schema/auth, secret, persistent service/volume, push or merge changed.
+Rollback is a reviewed revert of these tooling/CI changes; no data migration.
+
 ## P4 auditable esbuild candidate - 2026-11-11
 
 User approval extended to the outstanding implementation permissions. Starting

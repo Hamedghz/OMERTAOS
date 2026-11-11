@@ -96,6 +96,26 @@ metadata/scan coverage, a fresh DB, a repeat-build digest and upstream Go tests.
 Passing Stage A alone is not Console integration or final Docker acceptance.
 See the [reviewed plan and limits](../capo/p4-esbuild-provenance-plan.md).
 
+The recorded Linux x64 candidate also has a dependency-free identity check:
+
+```bash
+node --test tests/tooling/verify_esbuild_artifact.test.mjs
+node scripts/verify_esbuild_artifact.mjs /absolute/private/path/build-1/esbuild
+```
+
+`scripts/esbuild-linux-x64-artifact.json` pins the separately reviewed build's
+size, SHA256, source and compiler identity. The verifier requires a canonical
+absolute path, trusted parent permissions, a non-writable executable regular
+file, matching platform/ELF bytes/digest and a bounded matching `--version`.
+Missing or changed inputs exit nonzero without upstream fallback. It is a
+known-artifact identity check, not a generic Go metadata parser or signature
+verifier. Exit zero does **not** mean security acceptance: the current output
+explicitly says `security_accepted: false` and retains CVE-2026-39824.
+It neither installs the candidate nor runs a consumer command. The manifest is
+trusted local input; these checks do not defend against a malicious same-UID
+owner/root replacing it or changing the binary after verification. Console
+integration and a protected production tool location remain Stage B gates.
+
 For a constrained host, image mode also accepts `--scratch-dir` pointing to an
 existing absolute, caller-owned, mode-700 directory outside the repo. It may use
 an existing executable RAM filesystem, but requires 512 MiB initially free;

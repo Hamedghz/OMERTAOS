@@ -9,7 +9,10 @@ Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 
 The user subsequently authorized the outstanding implementation permissions.
 Implementation `fd95ecc` adds the Stage A builder, pinned inputs and regression
-tests. This approval does not waive resource guards or authorize deleting
+tests. The subsequent Stage A identity verifier pins the reviewed candidate
+without installing it or claiming security acceptance; its 15 native Node
+regressions and actual-candidate check passed. Stage B remains unexecuted.
+This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
 Docker daemon changes. Current executable results belong in the acceptance
 report; the original proposal below is not itself acceptance evidence.
@@ -237,8 +240,11 @@ The new supply-chain manifest is tooling metadata, not an application schema.
 
 ## Capacity gate and reversible operator choices
 
-Fresh `df -h .`: root `/dev/sda2` is 234G total, 218G used, 3.8G available,
-99% full. Existing inspection found no separate attached data disk. `/tmp`,
+Latest user-requested recheck on 2026-11-11: root `/dev/sda2` is 234G total,
+214G used, **8.2 GiB available (8,779,223,040 bytes)**, 97% full. DockerRootDir
+is `/var/lib/docker` on the same filesystem. The previous 3.8/3.1 GiB readings
+are historical, not the current capacity. No separate data disk was observed
+by `lsblk`; available RAM at inspection was 3,254,708 KiB. `/tmp`,
 the worktree and validation root share this filesystem. Docker image/cache
 logical sizes overlap; they are not an additive physical-free-space forecast.
 No cache entry has been proven exclusively owned by this task. A reclaimable
@@ -274,7 +280,9 @@ attempts still enforce the existing 3 GiB free-disk guard):
    authority. Moving this host's Docker root/storage driver or editing daemon
    configuration is not included in this proposal.
 
-At current capacity, retain the build block; do not try another heavy export.
+The current 8.2 GiB exceeds the Stage A stop floor but is below the 15 GiB
+planning budget; retain the heavy Console export block. Do not equate more free
+space with an executed export or lower guards to try to pass.
 The Python wheel DNS/production closure/pip-audit block and five existing low
 Bandit findings are independent open gates, not fixed by this proposal.
 

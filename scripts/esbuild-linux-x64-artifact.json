@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "provider_name": "@omerta/esbuild-linux-x64",
+  "provider_version": "0.28.2-omerta.1",
+  "api_version": "0.28.2",
+  "platform": "linux",
+  "architecture": "x64",
+  "bytes": 16504125,
+  "sha256": "332c847f63affcb51c6ac278f4bc26f38cb11ce4c6a066464248afa52ce0f461",
+  "source_commit": "609683d892977362a0f99026cb74b96263d728a9",
+  "compiler_version": "go1.27.4",
+  "build_metadata_present": true,
+  "security_accepted": false,
+  "open_advisory": "CVE-2026-39824",
+  "evidence": "docs/capo/acceptance-report.md#p4-auditable-esbuild-candidate---2026-11-11"
+}
