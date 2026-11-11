@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "esbuild_version": "0.28.2",
+  "source_commit": "609683d892977362a0f99026cb74b96263d728a9",
+  "source": {
+    "url": "https://codeload.github.com/evanw/esbuild/tar.gz/609683d892977362a0f99026cb74b96263d728a9",
+    "sha256": "04cb2d38fb6af093577aa8bf174add7286099b65ef7854480cbbb8ff061cef1f",
+    "root": "esbuild-609683d892977362a0f99026cb74b96263d728a9",
+    "maximum_download_bytes": 33554432,
+    "maximum_expanded_bytes": 134217728
+  },
+  "compiler_version": "go1.27.4",
+  "official_compiler_image": {
+    "reference": "docker.io/library/golang@sha256:ea30e25680a5470bac02b08bb0e0a735fb75bd0ab7d431b9b95ee0abef362586",
+    "source_commit": "6aa5c5f09346fb65fdefa941a23eb3cb25ba7b1a",
+    "source_dockerfile": "https://raw.githubusercontent.com/docker-library/golang/6aa5c5f09346fb65fdefa941a23eb3cb25ba7b1a/1.27/alpine3.24/Dockerfile"
+  },
+  "compiler": {
+    "url": "https://go.dev/dl/go1.27.4.linux-amd64.tar.gz",
+    "sha256": "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840",
+    "root": "go",
+    "maximum_download_bytes": 104857600,
+    "maximum_expanded_bytes": 536870912
+  },
+  "target": {"GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1", "CGO_ENABLED": "0"},
+  "trivy_version": "0.76.1"
+}
