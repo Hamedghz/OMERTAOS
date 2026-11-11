@@ -113,8 +113,9 @@ verifier. Exit zero does **not** mean security acceptance: the current output
 explicitly says `security_accepted: false` and retains CVE-2026-39824.
 It neither installs the candidate nor runs a consumer command. The manifest is
 trusted local input; these checks do not defend against a malicious same-UID
-owner/root replacing it or changing the binary after verification. Console
-integration and a protected production tool location remain Stage B gates.
+owner/root replacing it or changing the binary after verification. The
+controlled Console integration below is Linux x64 only; production tool
+ownership and final image acceptance remain open.
 
 Prepare a separate locally named provider for **isolated** installer validation:
 
@@ -133,9 +134,8 @@ can then create a local tarball. Normal npm packaging changes executable mode
 to 755; keep the actively executed tool separately protected, not by chmodding
 shared installed/store hardlinks.
 
-The isolated 2026-11-11 fixture proved these **scoped** overrides with both
-native lock generators; do not paste them into Console without integration
-review. npm uses `overrides["esbuild@0.28.2"]["@esbuild/linux-x64"]`, pnpm uses
+The isolated 2026-11-11 fixture first proved these **scoped** overrides with both
+native lock generators. npm uses `overrides["esbuild@0.28.2"]["@esbuild/linux-x64"]`, pnpm uses
 workspace `overrides["esbuild@0.28.2>@esbuild/linux-x64"]`, each set to
 `file:../artifacts/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz`. Fresh fixtures
 used esbuild 0.28.2, tsx 4.23.15 and Vite 7.3.7. Native `npm ci` and
@@ -151,6 +151,65 @@ extracted from the original SRI-verified JS tarball. It checks CLI/API override,
 async spawn path, sync transform, tsx ESM/CJS, Vite transform and installed ELF
 inventory. All probe output retains `security_accepted: false`; the existing
 advisory and full Console/image acceptance remain open.
+
+### Controlled Console compiler input
+
+The authorized integration now pins both Console locks to esbuild 0.28.2 and
+the independent Linux x64 provider. Its canonical file reference is
+`file:../artifacts/tooling/esbuild/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz`.
+The provider is also a required direct dev dependency: npm 10.9.10 can silently
+omit a relative file override on an existing optional edge, even when its lock
+command exits zero. The explicit dependency prevents accepting that incomplete
+graph. Keep the publisher's JS SRI and binary hashes unchanged.
+
+Neither the executable nor tarball is committed. After separately producing
+the reviewed candidate/provider, stage the input into a **new** absolute,
+private directory outside this repository, then copy only the pinned archive
+data into the ignored workspace path:
+
+```bash
+export OMERTA_ESBUILD_CONTEXT=/absolute/private/parent/new-esbuild-context
+node scripts/stage_esbuild_context.mjs \
+  /absolute/private/path/build-1/esbuild \
+  /absolute/private/artifacts/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz \
+  "$OMERTA_ESBUILD_CONTEXT" --workspace "$PWD"
+node console/scripts/with-auditable-esbuild.mjs pnpm --dir console install --frozen-lockfile
+pnpm --dir console test --config vitest.config.mts --maxWorkers=1 --no-file-parallelism
+```
+
+For an existing verified context use
+`node scripts/stage_esbuild_context.mjs --link-workspace "$OMERTA_ESBUILD_CONTEXT" "$PWD"`.
+Staging checks independent binary/archive pins, refuses overwrite of changed
+data or symlink destinations, and does not chmod the checkout or installed
+packages. The default context is
+`$HOME/.local/share/omerta-tools/esbuild/linux-x64-0.28.2-omerta.1`.
+`OMERTA_ESBUILD_BINARY` selects an explicit protected binary instead; a
+conflicting `ESBUILD_BINARY_PATH` is rejected. Standard Console scripts and
+Docker entry/install commands verify identity before spawning consumers and
+propagate nonzero exits/signals; direct third-party commands outside the
+wrapper are not protected by it.
+
+Compose passes this narrow directory as the named `omerta_esbuild` context;
+direct Docker builds require `--build-context "omerta_esbuild=$OMERTA_ESBUILD_CONTEXT"`.
+The main context excludes `artifacts/`. No broad home/cache mount is required.
+CI builds the candidate from pinned source/compiler, requires the raw scan
+gate, packs/verifies the input, then transfers it to dependent jobs. A run
+reporting the recorded UNKNOWN advisory will block that producer: no
+suppression, successful remote CI, ARM artifact or final image acceptance is
+claimed. The ARM matrix is retained and cannot use this x64-only input.
+Do not run heavy Console/image exports below the 15 GiB planning budget, or
+workloads below 1 GiB available host RAM. Validation installs in private mirrors
+do not update running images or the original checkout's node_modules; an
+operator reinstall in the checkout does update its dependencies. Rolling back requires a
+reviewed revert of the integration and a locked reinstall/rebuild of affected
+Console tooling, not a database or volume change.
+
+The full Console pnpm installation and 48 collected tests passed in the dated
+controlled-integration run. Full `npm ci` remains blocked: the disk attempt
+timed out fetching a registry tarball; a bounded RAM-backed retry hit default
+noexec and was not weakened to pass. Re-run the same locked npm command in a
+new private **executable disk-backed** mirror with sufficient disk/network
+headroom; do not treat the smaller prior fixture as full Console npm acceptance.
 
 For a constrained host, image mode also accepts `--scratch-dir` pointing to an
 existing absolute, caller-owned, mode-700 directory outside the repo. It may use

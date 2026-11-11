@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "filename": "omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz",
+  "bytes": 9144069,
+  "sha256": "d14af949d1c6eacf2537bfda8c0e1ef51b2395fdf03ca4380f8d43add6370f62",
+  "integrity": "sha512-Gn78SEtfhBQGEVB0sEk8ipmOuY+IIVVMt4qxGcYwEZXUjwPoxjNRqcKCX8l/7uHJ0V/UEnIph85NUQhB0dI4+w==",
+  "binary_sha256": "332c847f63affcb51c6ac278f4bc26f38cb11ce4c6a066464248afa52ce0f461",
+  "security_accepted": false
+}

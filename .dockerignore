@@ -1,5 +1,6 @@
 .git
 .secrets-out/
+artifacts/
 **/__pycache__/
 **/*.pyc
 **/.pytest_cache/

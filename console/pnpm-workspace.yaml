@@ -13,6 +13,8 @@ allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeStrict: true
 overrides:
+  esbuild: 0.28.2
+  'esbuild@0.28.2>@esbuild/linux-x64': file:../artifacts/tooling/esbuild/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz
   '@babel/core': ^7.29.1
   '@typescript-eslint/parser': ^8.66.0
   ajv@<7: ^6.14.0

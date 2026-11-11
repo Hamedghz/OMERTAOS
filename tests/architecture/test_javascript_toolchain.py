@@ -65,17 +65,17 @@ def test_ci_and_container_images_use_the_canonical_node_version() -> None:
 
     assert "node-version: '20'" not in ci
     assert "node-version: '22'" not in ci
-    assert ci.count(f"node-version: '{NODE_VERSION}'") == 2
+    assert ci.count(f"node-version: '{NODE_VERSION}'") == 3
     assert gateway.count(f"FROM --platform=$BUILDPLATFORM {image}") == 2
     assert re.search(rf"FROM {re.escape(image)}@sha256:[a-f0-9]{{64}} AS runner", gateway)
     assert console.count(f"FROM {image}") == 3
     assert f"corepack prepare pnpm@{PNPM_VERSION} --activate" in console
     npm_install = f"npm install --global npm@{NPM_VERSION} --ignore-scripts --no-fund"
-    assert ci.count(npm_install) == 2
+    assert ci.count(npm_install) == 3
     assert gateway.count(npm_install) == 3
     assert console.count(npm_install) == 3
     version_guard = f'test "$(npm --version)" = "{NPM_VERSION}"'
-    assert ci.count(version_guard) == 2
+    assert ci.count(version_guard) == 3
     assert gateway.count(version_guard) == 3
     assert console.count(version_guard) == 3
 
@@ -156,7 +156,13 @@ def test_major_security_migration_keeps_owner_scoped_dependency_contracts() -> N
     assert Version(packages["node_modules/deepmerge-ts"]["version"]) >= Version("8.0.0")
     assert Version(_json("console/package.json")["devDependencies"]["typescript"]) >= Version("5.5")
     workspace = yaml.safe_load((REPO_ROOT / "console/pnpm-workspace.yaml").read_text())
-    assert workspace["overrides"] == _json("console/package.json")["overrides"]
+    npm_overrides = dict(_json("console/package.json")["overrides"])
+    pnpm_overrides = dict(workspace["overrides"])
+    assert _json("console/package.json")["devDependencies"]["esbuild"] == pnpm_overrides.pop("esbuild")
+    assert npm_overrides.pop("esbuild@0.28.2") == {
+        "@esbuild/linux-x64": pnpm_overrides.pop("esbuild@0.28.2>@esbuild/linux-x64"),
+    }
+    assert npm_overrides == pnpm_overrides
     assert workspace["minimumReleaseAgeStrict"] is True
     assert not workspace.get("minimumReleaseAgeExclude")
 
@@ -195,10 +201,53 @@ def test_console_tsx_uses_its_supported_modern_esbuild_in_both_locks() -> None:
     assert Version(packages["node_modules/tsx"]["version"]) >= Version("4.23.15")
     versions = [Version(package["version"]) for name, package in packages.items()
                 if name.endswith("node_modules/esbuild")]
-    assert versions and all(version >= Version("0.28.1") for version in versions)
+    assert versions and all(version == Version("0.28.2") for version in versions)
 
     lock = yaml.safe_load((REPO_ROOT / "console/pnpm-lock.yaml").read_text())
     assert lock["importers"]["."]["devDependencies"]["tsx"]["specifier"] == "^4.23.15"
     versions = [Version(name.removeprefix("esbuild@")) for name in lock["packages"]
                 if name.startswith("esbuild@")]
-    assert versions and all(version >= Version("0.28.1") for version in versions)
+    assert versions and all(version == Version("0.28.2") for version in versions)
+
+
+def test_console_auditable_tool_contract_is_explicit_and_fail_closed() -> None:
+    manifest = _json("console/package.json")
+    archive = _json("scripts/esbuild-provider-archive.json")
+    workspace = yaml.safe_load((REPO_ROOT / "console/pnpm-workspace.yaml").read_text())
+    spec = f"file:../artifacts/tooling/esbuild/{archive['filename']}"
+    assert manifest["devDependencies"]["@esbuild/linux-x64"] == spec
+    assert manifest["devDependencies"]["esbuild"] == "0.28.2"
+    assert manifest["overrides"]["esbuild@0.28.2"] == {"@esbuild/linux-x64": spec}
+    assert workspace["overrides"]["esbuild"] == "0.28.2"
+    assert workspace["overrides"]["esbuild@0.28.2>@esbuild/linux-x64"] == spec
+    for name in ("build", "start", "test", "test:watch", "seed", "prisma:generate"):
+        assert manifest["scripts"][name].startswith("node scripts/with-auditable-esbuild.mjs ")
+    dockerfile = (REPO_ROOT / "console/Dockerfile").read_text()
+    assert "COPY --from=omerta_esbuild --chmod=0555 /esbuild /opt/omerta-tools/esbuild" in dockerfile
+    assert dockerfile.count("ENV OMERTA_ESBUILD_BINARY=/opt/omerta-tools/esbuild") == 3
+    assert "COPY --from=builder /workspace/scripts /scripts" in dockerfile
+    assert "artifacts/" in (REPO_ROOT / ".dockerignore").read_text().splitlines()
+    compose = yaml.safe_load((REPO_ROOT / "deploy/docker/compose/quickstart.yml").read_text())
+    assert compose["services"]["console"]["build"]["additional_contexts"] == {
+        "omerta_esbuild": "${OMERTA_ESBUILD_CONTEXT:-${HOME}/.local/share/omerta-tools/esbuild/linux-x64-0.28.2-omerta.1}"
+    }
+    ci = yaml.safe_load((REPO_ROOT / ".github/workflows/ci.yml").read_text())
+    assert "auditable-esbuild" in ci["jobs"]["service-builds"]["needs"]
+    producer = ci["jobs"]["auditable-esbuild"]
+    assert not producer.get("continue-on-error", False)
+    build_steps = [step for step in producer["steps"]
+                   if "scripts/build_auditable_esbuild.py --run" in step.get("run", "")]
+    assert len(build_steps) == 1
+    assert not build_steps[0].get("continue-on-error", False)
+    assert "|| true" not in build_steps[0]["run"]
+    assert "linux/arm64" in ci["jobs"]["docker"]["strategy"]["matrix"]["platform"]
+
+    packages = _json("console/package-lock.json")["packages"]
+    provider = packages["node_modules/@esbuild/linux-x64"]
+    assert provider["name"] == "@omerta/esbuild-linux-x64"
+    assert provider["integrity"] == archive["integrity"]
+    lock = yaml.safe_load((REPO_ROOT / "console/pnpm-lock.yaml").read_text())
+    providers = [value for key, value in lock["packages"].items()
+                 if key.startswith("@omerta/esbuild-linux-x64@file:")]
+    assert len(providers) == 1
+    assert providers[0]["resolution"]["integrity"] == archive["integrity"]

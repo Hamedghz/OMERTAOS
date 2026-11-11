@@ -41,6 +41,19 @@ the development services publicly.
 
 ## Quickstart
 
+### Candidate compiler prerequisite
+
+The current working-branch Console integration requires the separately staged
+Linux x64 compiler/provider input described in
+[reproducibility](research/reproducibility.md#controlled-console-compiler-input).
+Set `OMERTA_ESBUILD_CONTEXT` to that verified narrow private directory, or use
+its documented default under `$HOME/.local/share/omerta-tools/`. It is passed
+as the named `omerta_esbuild` build context; binary/archive data are not in Git.
+Missing/changed input fails closed. This candidate still has an open scan
+advisory, and final image/live acceptance has not been repeated. It is not a
+production-ready or ARM-compatible replacement. Do not bypass the CI producer's
+raw security gate to label an image accepted.
+
 Quickstart upstream images and the four application Dockerfile base images are
 pinned by SHA-256 digest. Tags alongside the digest are descriptive; the digest
 selects the content. Update these references deliberately, then repeat locked
@@ -54,8 +67,11 @@ The local `.secrets-out/` directory is excluded from the build context. Supply
 the Runtime key through the existing Compose secret mechanism at runtime.
 
 ```bash
-docker compose --project-directory . -f deploy/docker/compose/quickstart.yml config
-docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build
+docker compose --project-directory . -f deploy/docker/compose/quickstart.yml config --quiet
+docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build runtime
+docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build control
+docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build gateway
+docker compose --project-directory . -f deploy/docker/compose/quickstart.yml build console
 docker compose --project-directory . -f deploy/docker/compose/quickstart.yml up -d
 docker compose --project-directory . -f deploy/docker/compose/quickstart.yml ps
 ```
@@ -88,6 +104,11 @@ export OMERTA_CORS_ORIGINS=http://localhost:13000
 docker compose --project-name omertaos-r5 --project-directory . \
   -f deploy/docker/compose/quickstart.yml config
 ```
+
+These commands describe the operator workflow, not permission to start a build
+or stack. Reserve at least 15 GiB free for the heavy Console export, begin with
+one Runtime, and stop workload below 1 GiB available host memory. Rendering
+configuration is not live acceptance.
 
 Use the same variables and `--project-name` when inspecting or stopping that
 stack. Internal service addresses such as `runtime:50051`, `control:8000`, and

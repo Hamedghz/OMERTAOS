@@ -37,6 +37,15 @@ VOLUMES = ("postgres-data", "mongo-data", "minio-data", "qdrant-data",
            "runtime-state", "runtime-lease-secret")
 
 
+def console_build_command(image: str, rendered_context: str | None = None) -> list[str]:
+    artifact = json.loads((ROOT / "scripts/esbuild-linux-x64-artifact.json").read_text())
+    default = Path.home() / ".local/share/omerta-tools/esbuild" / f"linux-x64-{artifact['provider_version']}"
+    context = Path(rendered_context or os.environ.get("OMERTA_ESBUILD_CONTEXT", str(default)))
+    require(context.is_absolute(), "OMERTA_ESBUILD_CONTEXT must be absolute")
+    return ["docker", "build", "--progress=plain", "--build-context", f"omerta_esbuild={context}",
+            "-f", "console/Dockerfile", "-t", image, "."]
+
+
 class AcceptanceFailure(RuntimeError):
     """Only operator-safe messages may be supplied to this exception."""
 
@@ -338,8 +347,8 @@ def main(argv=None):
                                        f"label=com.docker.compose.project={PROJECT}"])
         require(not running.strip(), "isolated project is already running; refusing to take it over")
         if args.build_console:
-            runner.run("Console image build", ["docker", "build", "--progress=plain", "-f",
-                       "console/Dockerfile", "-t", args.console_image, "."], timeout=2400)
+            context = rendered["services"]["console"].get("build", {}).get("additional_contexts", {}).get("omerta_esbuild")
+            runner.run("Console image build", console_build_command(args.console_image, context), timeout=2400)
         runner.report["images"] = {}
         for service in APPLICATIONS:
             image = configs["canonical"][0]["services"][service]["image"]

@@ -10,14 +10,19 @@ RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
 
 # Copy the console manifest and the local workspace packages it depends on
 COPY console/package.json console/pnpm-lock.yaml console/pnpm-workspace.yaml ./console/
+COPY console/scripts/with-auditable-esbuild.mjs ./console/scripts/with-auditable-esbuild.mjs
+COPY scripts/verify_esbuild_artifact.mjs scripts/esbuild-linux-x64-artifact.json ./scripts/
+COPY --from=omerta_esbuild --chmod=0555 /esbuild /opt/omerta-tools/esbuild
+COPY --from=omerta_esbuild /omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz ./artifacts/tooling/esbuild/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz
 COPY shared/secret-provider-node ./shared/secret-provider-node
 COPY packages/ui-core ./packages/ui-core
 
 WORKDIR /workspace/console
+ENV OMERTA_ESBUILD_BINARY=/opt/omerta-tools/esbuild
 
 RUN --mount=type=cache,id=omerta-console-pnpm-v11,target=/pnpm/store,sharing=locked \
     pnpm config set store-dir /pnpm/store \
-    && pnpm install --frozen-lockfile --prefer-offline --network-concurrency=2 --child-concurrency=2 \
+    && node scripts/with-auditable-esbuild.mjs pnpm install --frozen-lockfile --prefer-offline --network-concurrency=2 --child-concurrency=2 \
         --fetch-retries=1 --fetch-timeout=120000
 
 # Stage 2: build (Next.js + Prisma generate)
@@ -30,6 +35,10 @@ RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
 
 # Reuse installed dependencies from deps stage
 COPY --from=deps /workspace/console/node_modules ./console/node_modules
+COPY --from=deps /workspace/scripts ./scripts
+COPY --from=deps /workspace/artifacts/tooling/esbuild ./artifacts/tooling/esbuild
+COPY --from=deps /opt/omerta-tools /opt/omerta-tools
+ENV OMERTA_ESBUILD_BINARY=/opt/omerta-tools/esbuild
 
 # Copy full source and shared packages required for build-time steps
 COPY console/. ./console
@@ -49,10 +58,10 @@ RUN mkdir -p public
 ARG PRISMA_DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
 ENV DATABASE_URL=${PRISMA_DATABASE_URL}
 
-RUN pnpm prisma generate
+RUN pnpm prisma:generate
 # Next subtracts one from this value when choosing build workers.
 RUN CIRCLE_NODE_TOTAL=2 pnpm build
-RUN pnpm exec tsc --project scripts/tsconfig.json
+RUN node scripts/with-auditable-esbuild.mjs pnpm exec tsc --project scripts/tsconfig.json
 
 # Stage 3: runtime image
 FROM node:22.23.2-alpine3.24@sha256:b6f26b36c8ff49624cfdac716b8ea1138d606df02586a77d364bb5536a634f85 AS runner
@@ -82,6 +91,9 @@ COPY --from=builder /workspace/console/package.json ./package.json
 COPY --from=builder /workspace/console/next.config.mjs ./next.config.mjs
 COPY --from=builder /workspace/console/prisma ./prisma
 COPY --from=builder /workspace/console/scripts ./scripts
+COPY --from=builder /workspace/scripts /scripts
+COPY --from=builder /opt/omerta-tools /opt/omerta-tools
+ENV OMERTA_ESBUILD_BINARY=/opt/omerta-tools/esbuild
 
 USER nextjs
 

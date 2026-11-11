@@ -78,7 +78,72 @@ jobs:
             runtime-daemon.sha256
           if-no-files-found: error
 
+  auditable-esbuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.2'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Align pinned npm
+        run: npm install --global npm@10.9.10 --ignore-scripts --no-fund && test "$(npm --version)" = "10.9.10"
+      - name: Verify auditable compiler artifact identity controls
+        run: node --test tests/tooling/*.test.mjs
+      - name: Install reviewed scanner
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: v0.76.1
+          path: ${{ runner.temp }}/omerta-trivy
+      - name: Allocate private producer paths outside the checkout
+        id: producer
+        run: |
+          PRIVATE_ROOT="$HOME/.local/share/omerta-validation/ci-esbuild-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          node -e 'const fs=require("node:fs"),p=require("node:path");const root=process.argv[1];if(fs.existsSync(root))throw Error("private root exists");fs.mkdirSync(p.dirname(root),{recursive:true,mode:0o700});fs.mkdirSync(root,{mode:0o700});' "$PRIVATE_ROOT"
+          echo "root=$PRIVATE_ROOT" >> "$GITHUB_OUTPUT"
+      - name: Build and require candidate provenance and vulnerability gates
+        env:
+          PRIVATE_ROOT: ${{ steps.producer.outputs.root }}
+        run: |
+          mkdir -m 700 "$PRIVATE_ROOT/db"
+          trivy image --download-db-only --cache-dir "$PRIVATE_ROOT/db"
+          python3 scripts/build_auditable_esbuild.py --run --compiler-image \
+            --work-dir "$PRIVATE_ROOT/build" \
+            --trivy "$(command -v trivy)" --trivy-cache "$PRIVATE_ROOT/db"
+      - name: Prepare verified narrow build input
+        env:
+          PRIVATE_ROOT: ${{ steps.producer.outputs.root }}
+        run: |
+          mkdir -m 700 "$PRIVATE_ROOT/pack"
+          node scripts/prepare_esbuild_provider.mjs \
+            "$PRIVATE_ROOT/build/build-1/esbuild" \
+            "$PRIVATE_ROOT/build/source/esbuild-609683d892977362a0f99026cb74b96263d728a9/LICENSE.md" \
+            "$PRIVATE_ROOT/package"
+          npm pack "$PRIVATE_ROOT/package" --json --pack-destination="$PRIVATE_ROOT/pack"
+          node scripts/stage_esbuild_context.mjs \
+            "$PRIVATE_ROOT/build/build-1/esbuild" \
+            "$PRIVATE_ROOT/pack/omerta-esbuild-linux-x64-0.28.2-omerta.1.tgz" \
+            "$PRIVATE_ROOT/context"
+      - name: Upload only successful candidate input
+        uses: actions/upload-artifact@v7
+        with:
+          name: auditable-esbuild-${{ github.sha }}
+          path: ${{ steps.producer.outputs.root }}/context/
+          if-no-files-found: error
+      - name: Preserve producer evidence on failure too
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: auditable-esbuild-evidence-${{ github.sha }}
+          path: |
+            ${{ steps.producer.outputs.root }}/build/receipt.json
+            ${{ steps.producer.outputs.root }}/build/*.stdout
+            ${{ steps.producer.outputs.root }}/build/*.stderr
+
   service-builds:
+    needs: auditable-esbuild
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,8 +161,22 @@ jobs:
         run: |
           corepack enable
           corepack prepare pnpm@11.13.1 --activate
-      - name: Verify auditable compiler artifact identity controls
-        run: node --test tests/tooling/*.test.mjs
+      - name: Allocate private consumer context
+        id: consumer
+        run: |
+          CONTEXT="$HOME/.local/share/omerta-tools/ci-service-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/esbuild"
+          node -e 'const fs=require("node:fs");if(fs.existsSync(process.argv[1]))throw Error("context exists");fs.mkdirSync(process.argv[1],{recursive:true,mode:0o700});' "$CONTEXT"
+          echo "path=$CONTEXT" >> "$GITHUB_OUTPUT"
+          echo "OMERTA_ESBUILD_CONTEXT=$CONTEXT" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v7
+        with:
+          name: auditable-esbuild-${{ github.sha }}
+          path: ${{ steps.consumer.outputs.path }}
+      - name: Restore mode only on the newly downloaded tool and verify identity
+        run: |
+          chmod 555 "$OMERTA_ESBUILD_CONTEXT/esbuild"
+          node scripts/verify_esbuild_artifact.mjs "$OMERTA_ESBUILD_CONTEXT/esbuild"
+          node scripts/stage_esbuild_context.mjs --link-workspace "$OMERTA_ESBUILD_CONTEXT" "$GITHUB_WORKSPACE"
       - name: Gateway build and tests
         run: |
           npm ci --prefix gateway
@@ -105,7 +184,7 @@ jobs:
           npm test --prefix gateway
       - name: Console build and tests
         run: |
-          pnpm --dir console install --frozen-lockfile
+          node console/scripts/with-auditable-esbuild.mjs pnpm --dir console install --frozen-lockfile
           pnpm --dir console prisma:generate
           pnpm --dir console test --config vitest.config.mts
           pnpm --dir console build
@@ -168,7 +247,7 @@ jobs:
 
   docker:
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
-    needs: [test, service-builds, security]
+    needs: [test, service-builds, security, auditable-esbuild]
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
@@ -176,6 +255,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      - name: Allocate private Console build input
+        if: matrix.service == 'console'
+        id: input
+        run: |
+          CONTEXT="$HOME/.local/share/omerta-tools/ci-docker-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$RUNNER_ARCH/esbuild"
+          mkdir -p "$(dirname "$CONTEXT")"
+          mkdir -m 700 "$CONTEXT"
+          echo "path=$CONTEXT" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v7
+        if: matrix.service == 'console'
+        with:
+          name: auditable-esbuild-${{ github.sha }}
+          path: ${{ steps.input.outputs.path }}
       - name: Build compose image
         uses: docker/build-push-action@v6
         with:
@@ -184,6 +276,7 @@ jobs:
           push: false
           platforms: ${{ matrix.platform }}
           tags: omertaos-${{ matrix.service }}:${{ github.sha }}
+          build-contexts: ${{ matrix.service == 'console' && format('omerta_esbuild={0}', steps.input.outputs.path) || '' }}
 
   sbom:
     runs-on: ubuntu-latest

@@ -7,9 +7,9 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 echo "[install] Applying database migrations..."
-./node_modules/.bin/prisma migrate deploy
+node ./scripts/with-auditable-esbuild.mjs ./node_modules/.bin/prisma migrate deploy
 
 echo "[install] Bootstrapping console admin user..."
-node ./scripts/dist/bootstrap-admin.js
+node ./scripts/with-auditable-esbuild.mjs node ./scripts/dist/bootstrap-admin.js
 
 echo "[install] Quickstart install completed."

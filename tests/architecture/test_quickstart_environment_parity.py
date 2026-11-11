@@ -161,6 +161,19 @@ class QuickstartParityTests(unittest.TestCase):
                          "--output", str(parity.ROOT / "artifacts/test.json"), "--build-console"])
         run.assert_not_called()
 
+    def test_console_build_uses_only_the_explicit_narrow_context(self):
+        with patch.dict(parity.os.environ, {"OMERTA_ESBUILD_CONTEXT": "/private/input with spaces"}):
+            command = parity.console_build_command("console:fixture")
+        index = command.index("--build-context")
+        self.assertEqual(command[index + 1], "omerta_esbuild=/private/input with spaces")
+        self.assertEqual(command[-3:], ["-t", "console:fixture", "."])
+        with patch.dict(parity.os.environ, {"OMERTA_ESBUILD_CONTEXT": "/ignored/environment"}):
+            explicit = parity.console_build_command("console:fixture", "/rendered/context")
+        self.assertIn("omerta_esbuild=/rendered/context", explicit)
+        with patch.dict(parity.os.environ, {"OMERTA_ESBUILD_CONTEXT": "relative/input"}):
+            with self.assertRaises(parity.AcceptanceFailure):
+                parity.console_build_command("console:fixture")
+
 
 if __name__ == "__main__":
     unittest.main()

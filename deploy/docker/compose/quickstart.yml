@@ -240,6 +240,8 @@ services:
     build:
       context: .
       dockerfile: console/Dockerfile
+      additional_contexts:
+        omerta_esbuild: ${OMERTA_ESBUILD_CONTEXT:-${HOME}/.local/share/omerta-tools/esbuild/linux-x64-0.28.2-omerta.1}
     environment:
       OMERTA_DOCKER: "1"
       DOCKER: "true"

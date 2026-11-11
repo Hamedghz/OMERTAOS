@@ -1,5 +1,122 @@
 # CAPO acceptance report
 
+## P4 controlled Console compiler integration - 2026-11-11
+
+Approved scope: connect the reviewed candidate to Console, both native locks,
+consumer preflight and Docker's input contract; **no heavy build**. Baseline
+`1971eaf07c948a8fc16a26603b905ad0f71b4fc8`, unchanged branch
+`Radin/omerta-env-namespace`, pre-edit tag
+`checkpoint/p4-esbuild-console-start-1971eaf`. At the user's request that
+baseline was pushed and its remote SHA verified; remote CAPO remained
+`2e8b9142b1da68c119720452d7ff8608c5a5bdbc`. Subsequent checkpoint identity is
+recorded by Git history, not a self-referential report hash.
+
+Console now pins esbuild 0.28.2 and the independently named Linux x64 provider
+from the earlier isolated experiments. Its archive has a separate digest/SRI
+manifest; no executable/tarball is committed. Staging creates a new protected
+context outside the checkout and copies only the pinned archive data into the
+ignored workspace path. Consumer preflight rejects missing/changed input and
+conflicting overrides, sets the verified executable path, and propagates child
+failure/signals. Standard Console commands, Docker install/entry commands and
+the parity harness use that contract. It does not confer security acceptance
+or protect a hostile same-UID/root owner or arbitrary commands bypassing it.
+
+Docker uses a narrow named context, not a broad home/cache context. CI has a
+pinned producer/scanner and dependent artifact consumers; **the raw advisory
+gate is not suppressed**. The existing ARM matrix remains, but no ARM candidate
+exists and this x64 input is not accepted there. The workflow was not executed
+remotely; working-branch push is outside its configured branch filters. A run
+reporting the retained advisory will block the producer and dependent jobs.
+
+### Executed gates
+
+All installation/test commands ran sequentially in private public-source
+mirrors, without the user's env files or changes to existing node_modules.
+Actual toolchain remains Node 22.23.2 / npm 10.9.10 / pnpm 11.13.1. The existing
+Node validation image was used by immutable ID; no image was built. Containers
+were non-root, readonly-root, capability-free, no-new-privileges, bounded to two
+CPUs/256 PIDs; installation used bridge networking and functional tests none.
+The full pnpm profile used 1536 MiB and a 1024 MiB V8 heap, with the unchanged
+1 GiB available-host-RAM / 3 GiB output-disk stop guards.
+
+| Command / gate | Actual result / wall duration |
+|---|---|
+| `node --test tests/tooling/*.test.mjs` | Exit 0 / 2.796s; 39 passed, 0 failed/skipped |
+| Native `npm install --package-lock-only --include=dev` with explicit provider | Exit 0 / 34.472s; correct own-provider identity/SRI, only its version/location changed; no unrelated version upgrades |
+| Native `pnpm update esbuild@0.28.2 --depth=Infinity --lockfile-only` with bounded fetch flags | Exit 0 / 48.957s; only esbuild/platform family changes; generated locks promoted without hand edits |
+| Clean full Console `pnpm install --frozen-lockfile` with bounded fetch/store flags | Exit 0 / 353.286s; real postinstalls enabled, lock digest unchanged |
+| Installed pnpm provider/CLI/sync+async API/tsx probe | Exit 0 / 4.375s |
+| `pnpm test --config vitest.config.mts --maxWorkers=1 --no-file-parallelism` | Exit 0 / 104.814s; 17 files, 48 passed, 0 failed/skipped, including all 3 Prisma wrapper regressions; Vitest reports 93.79s internally |
+| Four affected architecture files (toolchain, parity, workspace, Quickstart Runtime) | Exit 0 / 13.545s; 45 passed plus 2 subtests, 0 failed/skipped; pytest reports 7.79s internally |
+| Ruff for changed Python files | Exit 0 / 3.125s |
+| `sh -n` for Console entry/install scripts | Exit 0 / 0.007s |
+| Canonical `docker compose --env-file dev.env ... config --quiet` | Exit 0 / 0.975s; public placeholders only, not live acceptance |
+| Actual private candidate identity / patch whitespace | Both exit 0 / 0.277s and 0.070s |
+| Guarded real `pnpm prisma:generate` in the installed mirror | Exit 0 / 13.794s; Prisma Client 6.18.0 generated with public dummy PostgreSQL URL, no DB connection or checksum bypass |
+
+### Failures, diagnosis and limits
+
+- **Environment/permissions:** staging an executable inside the existing
+  group-writable checkout was correctly rejected and independently reproduced.
+  No checkout chmod or relaxed verifier was used; the executable moved to a
+  new private external context while the pinned archive alone stays in-repo.
+- **Dependency/configuration:** seeded npm optional-edge resolution twice
+  logged corrupt-tarball retries and exited zero while omitting the provider.
+  Native targeted refresh also omitted it. The archive itself passed dry-pack;
+  pacote independently reproduced ENOENT from the nested edge's relative path.
+  Unseeded generation found the provider but changed 277 unrelated package
+  versions/locations: that lock was preserved and rejected, not promoted.
+  A mandatory root provider plus scoped override generated the narrow correct
+  lock. The architecture regression now requires both identity and integrity.
+- **Resource limitation:** a first full pnpm lock attempt exited 134 at the
+  512 MiB V8 limit in a 1 GiB container. Heap-limit diagnosis was reproduced;
+  the bounded 1536/1024 MiB profile succeeded without lowering the host guard.
+- **Blocked full npm acceptance:** disk-backed `npm ci --include=dev` exited 1
+  after 169.337s on registry `word-wrap-1.2.5.tgz` read ETIMEDOUT. A single
+  bounded retry used ephemeral node_modules tmpfs to limit disk usage: outer
+  exit 1 / 84.694s, real npm exit 126 / 80.123s because `node-gyp-build` could
+  not execute. Independent mount/fixture diagnosis confirmed default
+  `noexec` plus EACCES (exit 0 / 3.124s). That control was **not disabled**;
+  installed npm consumer checks were therefore skipped. Full npm clean-install
+  acceptance remains blocked; the earlier small fixture is not a substitute.
+- **Private harness defects:** the first extra Prisma probe inherited the
+  validation image's production environment and attempted an unavailable pnpm
+  subprocess; the first mount diagnostic had incorrectly escaped JS newlines.
+  Both exited 1, remain recorded, and were rerun only after matching the
+  established CI/development profile and correcting the diagnostic string.
+  No application behavior or test expectation was weakened.
+
+Deprecated inflight, rimraf 3, ESLint 8, legacy Glob and humanwhocodes warnings
+remain; no broad dependency unlock was accepted. The full-install receipt is
+intentionally **failed** because npm did not pass, despite all pnpm/Console
+tests passing. Latest validation minima were 1,953,718,272 bytes available RAM
+and 4,030,947,328 bytes free disk across these batches; no resource guard tripped.
+The memory-backed retry is volatile, not persistence or reboot evidence.
+
+Exact argv, exits, durations and raw logs are retained under
+`/home/omerta/.local/share/omerta-validation/esbuild-console-20261111-d/`
+(`receipt.json`, `npm-retry/`, `static-validation/`, `consumer-check/`,
+`consumer-check-corrected/`). Lock experiments and rejected locks remain under
+the corresponding `esbuild-console-20261111-a`, `-b`, `-c` directories, including
+`minimal-lock-repair/receipt.json`. No failed receipt was overwritten.
+
+No production Next/image build/export, image-wide ELF/SBOM/security scan,
+live request/persistence/restart acceptance, ARM execution, systemd or benchmark
+was run. Current free disk is about 3.8 GiB, below the 15 GiB heavy-build budget.
+The UNKNOWN x/sys advisory, existing Bandit findings, independent Python
+wheel/audit/closure gates and final P4 acceptance remain open. No P5 completion,
+security certification, production readiness or E2 live advancement is claimed.
+Existing application services, volumes, secrets, host permissions and mount
+flags were unchanged. No merge or direct CAPO update was performed. Rollback is
+a reviewed revert of this integration plus a locked Console reinstall/rebuild;
+there is no API/schema/data migration or volume removal.
+
+The successful baseline push reported 163 Dependabot alerts for the GitHub
+default branch (9 critical, 58 high, 77 moderate, 19 low). That server warning
+is not a fresh scan or result for this working branch. Only a limited
+high-confidence secret-pattern inspection of the 195 new baseline Git blobs
+was performed before push, with no matches; it is not a full secret audit.
+
 ## P4 isolated esbuild package-install feasibility - 2026-11-11
 
 After the user's resume, clean baseline `3410928` was checkpointed as

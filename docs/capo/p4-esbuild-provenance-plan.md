@@ -1,8 +1,8 @@
 # P4 auditable esbuild rebuild proposal
 
 Date: 2026-11-11. Status: **candidate built, upstream tests and scan coverage
-verified; raw advisory gate failed; Console integration and final image
-acceptance remain open**.
+verified; raw advisory gate failed; controlled Console pnpm integration
+validated locally, full npm/image acceptance remains open**.
 Baseline: `63f6f6e99ce220de3a02f3f1a2c0300f71b0401b`, branch
 `Radin/omerta-env-namespace`; pre-edit checkpoint
 `checkpoint/p4-esbuild-plan-start-63f6f6e`.
@@ -14,8 +14,11 @@ without installing it or claiming security acceptance; its 15 native Node
 regressions and actual-candidate check passed. After resume, isolated Stage B
 fixtures proved native npm/pnpm locks, separate clean locked installs and
 CLI/API/tsx/Vite behavior before/after app relocation; the local package also
-repacked identically. Canonical Console integration, consumer preflight and
-final image/security acceptance remain unexecuted/open. The acceptance report
+repacked identically. The user then approved controlled Console/lock/consumer
+guard/Docker-input integration, explicitly excluding heavy builds. Its native
+lock generation preserves unrelated versions and introduces a separately
+pinned, ignored archive input plus an external protected executable. Final
+image/security acceptance remains open. The acceptance report
 records this distinction; the isolated fixture is not a completed Stage B.
 This approval does not waive resource guards or authorize deleting
 persistent volumes/shared caches, publishing, P5, host-wide installation or
