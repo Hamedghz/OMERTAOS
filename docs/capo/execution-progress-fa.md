@@ -96,7 +96,7 @@ P4 با مجوز کاربر آغاز شده و هنوز بسته نیست. پس 
 | P1 | بازبینی و انتقال تغییرات مفید checkout دیگر | چهار فایل منتقل شد؛ password از props کلاینت حذف شد؛ چهار تست Login در suite با ۳۶ تست پاس شد؛ build تولیدی موفق | تکمیل محلی؛ push نشده |
 | P2 / M4.1.3 | rebuild کنسول و Control، harness تکرارپذیر و رفع correlation زمان‌بندی | هر دو variant، ورود واقعی، echo و replay و context سه رویداد audit موفق؛ بررسی مقادیر حساس منتخب لاگ موفق؛ stack متوقف و شش volume حفظ شد | تکمیل محلی؛ push نشده |
 | P3 | restart، replay/fencing، persistence، backup و restore مجزا | نصب تازه، restart، backup/restore رمزگذاری‌شده و ارتقای clone داده واقعی R6 پاس؛ حدود شواهد در گزارش پذیرش | تکمیل محدود محلی؛ push نشده |
-| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | majorهای منتخب و npm مصوب بررسی شدند؛ audit سه برنامه اصلی پاک، Desktop و Bridge UI هرکدام سه high و یک moderate؛ اسکن imageها مردود، export Console، Python و پذیرش Docker نسخه جدید باز |
+| P4 | بازبینی امنیت و وابستگی و اعتبارسنجی تجمیعی CAPO | دسته‌بندی هشدارها، اصلاح متمرکز، تست متناسب و smoke/authenticated flow روی نسخه نهایی | majorهای منتخب و npm مصوب بررسی شدند؛ audit سه برنامه اصلی پاک و سپس Desktop/Bridge UI هم اصلاح و audit شدند؛ اسکن imageها مردود، export Console، Python و پذیرش Docker نسخه جدید باز |
 | P5 | checkpoint، تطبیق شواهد و آماده‌سازی تغییرات برای GitHub | diff و commitهای قابل مرور، گزارش pass/fail/blocked؛ push/merge فقط با مجوز مربوط | منتظر تأیید |
 | P6 / M5 | تصمیم درباره بازنشستگی aliasها | نبود مصرف فعال با scan/telemetry و عبور gateهای مهاجرت؛ rollback روشن | منتظر تأیید |
 | P7 | طرح native/WARLOCK و بررسی static اسکریپت‌ها | plan برگشت‌پذیر user/env/systemd/update/rollback/backup/restore؛ sudo و نصب سرویس مجوز جدا می‌خواهد | منتظر تأیید |
@@ -552,6 +552,23 @@ volume برای عبور از gate حذف نشد. هیچ push/merge انجام �
 شکست اولیه probe و هر دو audit مردود حفظ شدند. checkpoint محلی:
 `checkpoint/p4-npm-alignment-2026-11-11`؛ مرحله P4 بسته نشده است.
 
+### اصلاح سازگار وابستگی‌های دو UI در P4 — ۲۰۲۶-۱۱-۱۱
+
+با checkpoint شروع `checkpoint/p4-ui-patches-start-411f4e1` و در همان شاخه،
+`402428d` چهار وابستگی آسیب‌پذیر Desktop و Bridge UI را اصلاح کرد:
+Vite برابر ۶٫۴٫۶، baseline-browser-mapping برابر ۲٫۱۱٫۳۴، Browserslist برابر
+۴٫۲۹٫۵ و source-map-js برابر ۱٫۲٫۲ در lockها ثبت شدند. Vite در major شش
+ماند؛ Node/npm/pnpm، React و مرزهای احراز هویت و Runtime تغییر نکردند.
+diff قفل‌ها فقط بسته‌های هدف و داده‌ها/ابزارهای وابسته به Browserslist را دارد.
+
+۳۲ تست قرارداد و Ruff پاس شدند؛ نصب قفل‌شده، build وب و typecheck هر دو UI
+پاس شدند و audit مستقل هر دو از سه high و یک moderate به صفر رسید.
+حداقل RAM برابر ۳۹۸۶ MiB و دیسک برابر ۳٫۸۶۱ GiB بود. هشدار قبلی Tailwind
+درباره content در Desktop حفظ شد؛ مرورگر، native و Tauri آزمایش نشدند.
+هیچ build داکر، stack، cleanup یا push/merge اجرا نشد. این نتیجه اسکن‌های
+مردود image، کمبود دیسک export Console، Python یا پذیرش زنده را نمی‌بندد.
+checkpoint محلی: `checkpoint/p4-ui-dependency-patches-2026-11-11`؛ P4 باز است.
+
 ## دفتر پیشرفت
 
 | تاریخ | اقدام | نتیجه واقعی | قدم بعد |
@@ -569,6 +586,7 @@ volume برای عبور از gate حذف نشد. هیچ push/merge انجام �
 | ۲۰۲۶-۱۱-۱۰ | مهاجرت majorهای منتخب با مجوز جدا | `f47c8ad`؛ locked install/build و تست‌های مرتبط پاس، audit lockها و اسکن سورس بدون finding؛ خطاهای override رفع و کنترل سن انتشار سخت‌تر شد | رفع tracing root، دسترسی wheelها و gateهای image/security/live در همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۰ | رفع ریشه tracing کنسول | `79fe192`؛ ۴۳ تست و build و ۹۶ manifest پاس؛ fixture ناموفق ثبت و رفع؛ هشدار ریشه میزبان بسته شد | batch ترتیبی imageها، گیت‌های امنیتی و دسترسی wheelها در همین P4؛ نه P5 یا push |
 | ۲۰۲۶-۱۱-۱۱ | تعمیر انتقال build و ارتقای مصوب npm | `20eb56f`، `5e7c9da`، `882b7ed`؛ npm/npx میزبان ۱۰.۹.۱۰، lockها و تست‌ها پاس؛ Gateway ساخته شد؛ export Console با محافظ دیسک لغو ولی probe یکسان تگ باقی‌مانده در retry پاس شد؛ tar در هر دو artifact finding ندارد، اسکن‌ها همچنان مردود | ظرفیت دیسک بدون حذف خودکار، export موفق Console و هشدارهای باقی‌مانده، Python و پذیرش زنده در همین P4؛ نه P5 یا push |
+| ۲۰۲۶-۱۱-۱۱ | بستن auditهای دو UI بدون تغییر major | `402428d`؛ ۳۲ تست، نصب‌های locked، build و typecheck پاس؛ audit Desktop و Bridge UI اکنون صفر finding؛ هشدار قدیمی Tailwind ثبت شد | هشدارهای image/Go/esbuild، ظرفیت دیسک، Python و پذیرش زنده در همین P4؛ نه P5 یا push |
 
 برای ادامه، به همین جدول سطر افزوده شود و وضعیت مرحله مرتبط فقط پس از ثبت
 نتیجه تغییر کند. این سند snapshot برنامه است؛ گزارش پذیرش مرجع جزئیات آزمایش

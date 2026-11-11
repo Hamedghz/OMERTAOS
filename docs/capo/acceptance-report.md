@@ -1,5 +1,62 @@
 # CAPO acceptance report
 
+## P4 auxiliary UI dependency repairs - 2026-11-11
+
+Starting clean HEAD `411f4e1`, unchanged branch `Radin/omerta-env-namespace`;
+pre-edit checkpoint `checkpoint/p4-ui-patches-start-411f4e1`.
+Repair `402428d` closes the two auxiliary lock-audit failures recorded below,
+not the remaining Docker/Python/live gates. Each previous audit reported three
+high and one moderate finding; independent lock inspection confirmed the old
+versions. Root cause: stale dependency graphs, not the npm tool upgrade.
+
+Both `console/desktop-shell` and `integrations/windows-agentic-bridge/bridge-ui`
+now lock Vite 6.4.6, baseline-browser-mapping 2.11.34, Browserslist 4.29.5 and
+source-map-js 1.2.2. The [upstream Vite 6 changelog](https://raw.githubusercontent.com/vitejs/vite/v6.4.6/packages/vite/CHANGELOG.md)
+records the intervening security backports. Vite remains major 6; React, its
+Vite plugin, Node/npm/pnpm and application runtime dependency declarations are
+unchanged. Generated lock diffs contain only these four packages and four
+Browserslist data/helper dependencies, all with integrity fields. No manual
+lock editing, broad `audit fix`, force/legacy-peer install or audit suppression.
+Console's pnpm release-age policy and all execution/auth boundaries are unchanged.
+
+| Sequential gate | Actual result / wall seconds |
+|---|---|
+| Both npm lock generations | Exit 0 / 9.63s and 8.52s |
+| Toolchain, packaging and integration contracts | Exit 0 / 22.60s; 32 passed in 11.71s, zero failed/skipped; includes two new UI security-floor cases covering every matching nested lock entry |
+| Changed-test Ruff | Exit 0 / 2.86s |
+| Desktop locked install / production web build / explicit typecheck | Exit 0 each / 32.44s, 59.93s, 20.83s |
+| Desktop explicit fresh npm audit | Exit 0 / 3.61s; zero findings |
+| Bridge UI locked install / production web build / explicit typecheck | Exit 0 each / 15.28s, 10.97s, 11.10s |
+| Bridge UI explicit fresh npm audit | Exit 0 / 5.53s; zero findings |
+
+Exact argv, exits, warnings, semantic lock diffs and timing are retained in
+ignored `artifacts/p4/ui-compatible-patches.json`; the local sequential runner
+is `ui-compatible-patches.mjs`. Minimum available RAM: 3986 MiB; free disk:
+3.861 GiB. The 1 GiB RAM / 3 GiB disk guards did not fire. No image build or
+persistent service was started, and no data/image/cache/volume cleanup occurred.
+
+Reproduce for each of the two directories, sequentially:
+`npm ci --prefer-offline --prefix <directory>`,
+`npm run build --prefix <directory>`,
+`node <directory>/node_modules/typescript/bin/tsc --noEmit --project <directory>/tsconfig.json`,
+`npm audit --json --prefix <directory>`.
+Architecture argv is retained in the receipt and uses the existing read-only,
+network-disabled Python validation image; no system package installation.
+
+The Desktop build retains the Tailwind missing/empty `content` warning already
+present in the preceding receipt. These applications have no unit-test script;
+no unit/browser/native/Tauri acceptance is claimed. Main Console, Gateway,
+Python and Runtime suites were not rerun for this isolated dependency repair.
+The previous image scan failures, Console disk-guard cancellation, Python wheel
+access blocker and final live acceptance remain open; no new image/OS scan was
+substituted by these registry audits. P4 and the full roadmap remain incomplete.
+
+Rollback requires a reviewed reversal of this dependency patch and locked
+reinstallation/rebuild of the affected web surfaces; it restores known advisory
+versions and is not automatic remediation. No schema or persistent-data rollback
+is needed. Local checkpoint `checkpoint/p4-ui-dependency-patches-2026-11-11`;
+nothing pushed or merged, and no P5/native/benchmark approval is inferred.
+
 ## P4 transport repairs and approved npm patch - 2026-11-10/11
 
 Branch remains `Radin/omerta-env-namespace`. Starting HEAD `46d36c5` was clean;
