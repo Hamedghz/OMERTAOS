@@ -24,10 +24,6 @@ if (!/^postgres(ql)?:\/\//i.test(env.DATABASE_URL)) {
   process.exit(1);
 }
 
-if (!env.PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING) {
-  env.PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING = '1';
-}
-
 const prismaCli = require.resolve('prisma/build/index.js');
 const result = spawnSync(process.execPath, [prismaCli, 'generate'], {
   stdio: 'inherit',
