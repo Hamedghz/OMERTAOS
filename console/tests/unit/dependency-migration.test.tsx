@@ -26,6 +26,18 @@ afterEach(() => {
 });
 
 describe('major dependency consumer compatibility', () => {
+  it.each(['mts', 'cts'])('executes a typed %s fixture through the real tsx CLI', (extension) => {
+    const directory = fixtureDirectory();
+    writeFileSync(path.join(directory, 'dependency.ts'), 'export const value: number = 42;');
+    const file = path.join(directory, `main.${extension}`);
+    writeFileSync(file, extension === 'mts'
+      ? "import { value } from './dependency.ts'; const result: number = await Promise.resolve(value); console.log(result);"
+      : "const { value } = require('./dependency.ts'); const result: number = value; console.log(result);");
+    expect(execFileSync(process.execPath, [require.resolve('tsx/cli'), file], {
+      cwd: directory, encoding: 'utf8', timeout: 15000,
+    }).trim()).toBe('42');
+  });
+
   it('anchors Next tracing to the checkout despite external lockfiles and another cwd', () => {
     const directory = fixtureDirectory();
     const repository = path.join(directory, 'checkout');

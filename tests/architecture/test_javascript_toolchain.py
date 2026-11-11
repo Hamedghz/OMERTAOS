@@ -185,3 +185,20 @@ def test_auxiliary_ui_locks_keep_security_floors_without_a_vite_major_change(app
         assert all(version >= Version(minimum) for version in versions), (app, name)
         if name == "vite":
             assert all(version.major == 6 for version in versions), app
+
+
+def test_console_tsx_uses_its_supported_modern_esbuild_in_both_locks() -> None:
+    manifest = _json("console/package.json")
+    assert manifest["devDependencies"]["tsx"] == "^4.23.15"
+    packages = _json("console/package-lock.json")["packages"]
+    assert packages[""]["devDependencies"]["tsx"] == "^4.23.15"
+    assert Version(packages["node_modules/tsx"]["version"]) >= Version("4.23.15")
+    versions = [Version(package["version"]) for name, package in packages.items()
+                if name.endswith("node_modules/esbuild")]
+    assert versions and all(version >= Version("0.28.1") for version in versions)
+
+    lock = yaml.safe_load((REPO_ROOT / "console/pnpm-lock.yaml").read_text())
+    assert lock["importers"]["."]["devDependencies"]["tsx"]["specifier"] == "^4.23.15"
+    versions = [Version(name.removeprefix("esbuild@")) for name in lock["packages"]
+                if name.startswith("esbuild@")]
+    assert versions and all(version >= Version("0.28.1") for version in versions)
